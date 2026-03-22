@@ -735,7 +735,7 @@ async function corrigirTexto(gabData,atvName,atvTexto,key,modulo){
   const userMsg='GABARITOS:\n'+gabTexto+'\n\nATIVIDADE ('+atvName+'):\n'+atvLimitado+'\n\nCorrija e responda APENAS em JSON: {"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"","descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[],"pontos_negativos":[],"feedback":""}';
   const sys='Professor universitário. Módulo '+modulo+'. Responda APENAS JSON válido sem markdown.';
   const content=[{type:'text',text:userMsg}];
-  const res=await fetch('https://corretoia-proxy.sgt-pfeuffer.workers.dev',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content}]})});
+  const res=await fetch('https://corretoia-proxy.sgt-pfeuffer.workers.dev',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const txt=data.content.map(c=>c.text||'').join('').trim();
