@@ -736,7 +736,8 @@ async function corrigirTexto(gabData,atvName,atvTexto,key,modulo){
   const sys='Professor universitário. Módulo '+modulo+'. Responda APENAS JSON válido sem markdown.';
   const content=[{type:'text',text:userMsg}];
   const res=await fetch('https://corretoia-proxy.sgt-pfeuffer.workers.dev',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,system:sys,messages:[{role:'user',content}]})});
-  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
+  const data=await res.json();
+if(data._status && data._status>=400){throw new Error(data.error?.message||`HTTP ${data._status}`);}
   const data=await res.json();
   const txt=data.content.map(c=>c.text||'').join('').trim();
   try{const p=JSON.parse(txt.replace(/```json|```/g,'').trim());p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';return p;}
