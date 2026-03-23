@@ -193,6 +193,55 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .sfield input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s;}
 .sfield input:focus{border-color:var(--accent);}
 #cost-box{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:14px 18px;margin-bottom:12px;display:none;}
+.res-top-tabs{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px;}
+.res-ttab{padding:5px 16px;border-radius:6px;border:none;background:transparent;color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.15s;}
+.res-ttab.active{background:var(--surface2);color:var(--text);font-weight:500;}
+.res-view{display:none;}.res-view.active{display:block;}
+.res-split{display:grid;grid-template-columns:220px 1fr;gap:10px;min-height:420px;}
+.res-lista{background:var(--surface);border:1px solid var(--border);border-radius:11px;display:flex;flex-direction:column;overflow:hidden;}
+.res-lista-hdr{padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);}
+.res-lista-body{overflow-y:auto;flex:1;}
+.res-li{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background 0.1s;}
+.res-li:hover{background:var(--surface2);}
+.res-li.sel{background:rgba(79,124,255,0.1);border-left:2px solid var(--accent);}
+.res-li.pend{opacity:0.55;background:var(--surface2);}
+.res-li-name{font-size:12px;font-weight:600;color:var(--text);}
+.res-li-sub{font-size:10px;color:var(--muted2);margin-top:1px;}
+.pend-tag{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(245,158,11,0.15);color:var(--yellow);}
+.res-det{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.res-det-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.res-det-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text);}
+.res-det-sub{font-size:11px;color:var(--muted2);margin-top:3px;}
+.crit-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.crit-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
+.crit-tbl td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text);line-height:1.4;}
+.crit-tbl tr:last-child td{border-bottom:none;}
+.crit-esp{color:var(--muted2);font-size:10px;line-height:1.4;}
+.crit-ent{font-size:10px;line-height:1.4;color:var(--text);}
+.crit-neg{color:var(--red);font-size:10px;font-family:'DM Mono',monospace;}
+.crit-ok{color:var(--muted);font-size:11px;}
+.mc-strip{padding:9px 12px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.6;border-left:2px solid var(--accent);}
+.turma-blk{margin-bottom:22px;}
+.turma-blk-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.turma-blk-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--text);}
+.t-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;}
+.t-tag.criar{background:rgba(34,197,94,0.12);color:#22c55e;}
+.t-tag.delinear{background:rgba(79,124,255,0.12);color:#4f7cff;}
+.t-tag.entender{background:rgba(245,158,11,0.12);color:#f59e0b;}
+.turma-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.turma-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);padding:5px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
+.turma-tbl td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+.turma-tbl tr:last-child td{border-bottom:none;}
+.turma-tbl tr.tfoot td{background:var(--surface2);font-weight:600;font-size:11px;color:var(--muted2);}
+.nc{font-family:'DM Mono',monospace;font-size:12px;}
+.nc.a{color:var(--green);}.nc.m{color:var(--yellow);}.nc.b{color:var(--red);}.nc.n{color:var(--muted);}
+.custo-real{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:4px 11px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;}
+.del-modal-bg{background:rgba(11,13,18,0.7);border-radius:11px;padding:20px;display:none;margin-top:10px;}
+.del-modal-bg.show{display:block;}
+.del-modal{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:18px 20px;max-width:360px;}
+.del-modal-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px;}
+.del-modal-sub{font-size:12px;color:var(--muted2);line-height:1.5;margin-bottom:14px;}
+.del-modal-btns{display:flex;gap:8px;}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 30px;color:var(--muted);text-align:center;}
 .empty-ico{font-size:36px;margin-bottom:12px;opacity:0.35;}
 .empty-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text);opacity:0.45;}
@@ -376,12 +425,34 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         <div id="hist-body"></div>
       </div>
       <div class="panel" id="panel-results">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-          <div><div class="ptitle" id="res-title">Resultados</div><p class="psub" id="res-sub" style="margin-bottom:0;"></p></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div><div class="ptitle" id="res-title">Resultados</div><p class="psub" id="res-sub" style="margin-bottom:4px;"></p><div id="res-custo-real"></div></div>
           <button class="btn-o" onclick="goTab('nova')">← Nova Correção</button>
         </div>
         <div class="stats" id="res-stats"></div>
-        <div id="res-body"></div>
+        <div class="res-top-tabs">
+          <button class="res-ttab active" onclick="resTab('aluno',this)">Por Aluno</button>
+          <button class="res-ttab" onclick="resTab('turma',this)">Resumo da Turma</button>
+        </div>
+        <div class="res-view active" id="res-view-aluno">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+            <input class="finput wide" type="text" id="res-busca" placeholder="Buscar aluno..." oninput="renderResLista()" style="max-width:200px;">
+            <select class="finput" id="res-fdisc" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
+            <select class="finput" id="res-ftipo" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option></select>
+          </div>
+          <div class="res-split">
+            <div class="res-lista"><div class="res-lista-hdr" id="res-lista-count">—</div><div class="res-lista-body" id="res-lista-body"></div></div>
+            <div class="res-det" id="res-det-panel"><div class="empty"><div class="empty-ico">👤</div><div class="empty-t">Selecione um aluno</div><div class="empty-s">Clique em um nome para ver os critérios detalhados.</div></div></div>
+          </div>
+        </div>
+        <div class="res-view" id="res-view-turma">
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+            <select class="finput" id="res-tdisc" onchange="renderResTurma()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
+            <select class="finput" id="res-ttipo" onchange="renderResTurma()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option></select>
+            <button class="btn-sm green" onclick="exportTurmaExcel()">↓ Excel turma</button>
+          </div>
+          <div id="res-turma-body"></div>
+        </div>
       </div>
       <div class="panel" id="panel-config">
         <div class="ptitle">Configurações</div>
@@ -495,7 +566,7 @@ function renderCost(qtd){
   const box=document.getElementById('cost-box');
   if(!qtd){box.style.display='none';return;}
   box.style.display='block';
-  const inp=2500+(gabFiles.length*800),out=800,tI=qtd*inp,tO=qtd*out;
+  const inp=2500+(gabFiles.length*800),out=1400,tI=qtd*inp,tO=qtd*out;
   const usd=(tI/1e6*3)+(tO/1e6*15);
   document.getElementById('est-usd').textContent='$'+usd.toFixed(3);
   document.getElementById('est-brl').textContent='R$'+(usd*5.80).toFixed(2);
@@ -654,43 +725,189 @@ async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo){
   content.push({type:'text',text:`\nInstruções: Você é professor universitário corrigindo atividade do Módulo ${modulo}.
 1. Identifique o nome do aluno no documento (procure no cabeçalho ou corpo do texto).
 2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender) com base no gabarito.
-3. Compare o conteúdo da atividade com o gabarito e atribua uma nota de 0 a 10.
-4. Responda APENAS com JSON válido sem markdown:
-{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"x,x/10","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"explique como chegou na nota","descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[""],"pontos_negativos":[""],"feedback":"feedback detalhado para o aluno"}`});
+3. Extraia do gabarito os critérios de avaliação com seus pesos/pontos.
+4. Para cada critério, descreva em linguagem humana e resumida o que era esperado e o que o aluno entregou.
+5. Atribua uma nota de 0 a 10 com base nos critérios.
+6. Responda APENAS com JSON válido sem markdown:
+{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"x,x/10","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"explique passo a passo como chegou na nota","criterios":[{"label":"nome do critério","esperado":"o que o gabarito previa em linguagem simples","entregue":"o que o aluno fez em linguagem simples","peso":"X,X pts","desconto":"","motivo":""}],"descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[""],"pontos_negativos":[""],"feedback":"feedback detalhado para o aluno"}`});
   const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico e responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,system:sys,messages:[{role:'user',content}]})});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
+  const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
   const txt=data.content.map(c=>c.text||'').join('').trim();
-  try{const p=JSON.parse(txt.replace(/```json|```/g,'').trim());p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';return p;}
-  catch(ex){return{nome_aluno:atvName.replace(/\.[^.]+$/,''),disciplina:'Erro',tipo_atividade:'entender',nota_final:'Erro',nota_numerica:0,escala_maxima:10,memoria_calculo:txt?txt.substring(0,400):ex.message,descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento'],feedback:'Erro ao processar.',_arquivo:atvName,_disc:'Erro',_tipo:'entender'};}
+  try{const p=JSON.parse(txt.replace(/```json|```/g,'').trim());p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';p._tokIn=tokIn;p._tokOut=tokOut;return p;}
+  catch(ex){return{nome_aluno:atvName.replace(/\.[^.]+$/,''),disciplina:'Erro',tipo_atividade:'entender',nota_final:'Erro',nota_numerica:0,escala_maxima:10,memoria_calculo:txt?txt.substring(0,400):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento'],feedback:'Erro ao processar.',_arquivo:atvName,_disc:'Erro',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut};}
 }
+let _curSess=null,_selIdx=null;
 function renderResults(s){
-  document.getElementById('res-title').textContent=`Módulo ${s.modulo} — ${s.data}`;
-  document.getElementById('res-sub').textContent=`${s.total} atividade(s) · ${s.groups.length} disciplina(s) · ${s.hora}`;
+  _curSess=s;_selIdx=null;
+  document.getElementById('res-title').textContent='Módulo '+s.modulo+' — '+s.data;
+  document.getElementById('res-sub').textContent=s.total+' atividade(s) · '+s.groups.length+' disciplina(s) · '+s.hora;
   const allN=s.groups.flatMap(g=>Object.values(g.atividades).flat().map(r=>r.nota_numerica)).filter(n=>n>0);
   const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';
-  document.getElementById('res-stats').innerHTML=`<div class="scard"><div class="sval">${s.total}</div><div class="slbl">Atividades</div></div><div class="scard"><div class="sval">${s.groups.length}</div><div class="slbl">Disciplinas</div></div><div class="scard"><div class="sval" style="color:var(--accent)">${med}</div><div class="slbl">Média</div></div><div class="scard"><div class="sval" style="color:var(--green)">${allN.length?Math.max(...allN).toFixed(1):'-'}</div><div class="slbl">Maior</div></div><div class="scard"><div class="sval" style="color:var(--red)">${allN.length?Math.min(...allN).toFixed(1):'-'}</div><div class="slbl">Menor</div></div>`;
-  document.getElementById('res-body').innerHTML=s.groups.map((g,gi)=>{
-    const first=ATV_TYPES.find(t=>(g.atividades[t]||[]).length>0)||'criar';
-    const tabs=ATV_TYPES.map(t=>{const cnt=(g.atividades[t]||[]).length;const st=t==='criar'?'color:#22c55e':t==='delinear'?'color:#4f7cff':'color:#f59e0b';return`<button class="atv-tab ${t===first?'active':''}" onclick="switchAtvTab(${gi},'${t}',this)" style="${t===first?st:''}">${t.charAt(0).toUpperCase()+t.slice(1)}${cnt>0?` (${cnt})`:''}</button>`;}).join('');
-    const panes=ATV_TYPES.map(t=>{const rs=g.atividades[t]||[];const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const m=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';return`<div id="atv-${gi}-${t}" style="display:${t===first?'block':'none'};"><div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-family:'DM Mono',monospace;">${rs.length} aluno(s) · média ${m}</div>${rs.map((r,ri)=>ccrd(r,`${gi}-${t}-${ri}`)).join('')}</div>`;}).join('');
-    return`<div class="disc-group"><div class="disc-group-hdr"><span class="disc-group-mod">Módulo ${s.modulo}</span><span class="disc-group-name">${g.disciplina}</span><span style="margin-left:auto;"><button class="btn-sm green" onclick="exportMescladoDisc('${s.modulo}','${g.disciplina.replace(/'/g,"\\'")}')">↓ Excel</button></span></div><div class="atv-tabs" id="atv-tabs-${gi}">${tabs}</div>${panes}</div>`;
-  }).join('');
+  document.getElementById('res-stats').innerHTML='<div class="scard"><div class="sval">'+s.total+'</div><div class="slbl">Atividades</div></div><div class="scard"><div class="sval">'+s.groups.length+'</div><div class="slbl">Disciplinas</div></div><div class="scard"><div class="sval" style="color:var(--accent)">'+med+'</div><div class="slbl">Média</div></div><div class="scard"><div class="sval" style="color:var(--green)">'+(allN.length?Math.max(...allN).toFixed(1):'-')+'</div><div class="slbl">Maior</div></div><div class="scard"><div class="sval" style="color:var(--red)">'+(allN.length?Math.min(...allN).toFixed(1):'-')+'</div><div class="slbl">Menor</div></div>';
+  const allR=s.groups.flatMap(g=>Object.values(g.atividades).flat());
+  const tI=allR.reduce((a,r)=>a+(r._tokIn||0),0),tO=allR.reduce((a,r)=>a+(r._tokOut||0),0);
+  const custoEl=document.getElementById('res-custo-real');
+  if(tI+tO>0){const usd=(tI/1e6*3)+(tO/1e6*15);custoEl.innerHTML='<span class="custo-real">💰 Custo real: $'+usd.toFixed(4)+' · R$'+(usd*5.80).toFixed(3)+' · '+((tI+tO)/1000).toFixed(1)+'k tokens</span>';}
+  else custoEl.innerHTML='';
+  const discs=[...new Set(s.groups.map(g=>g.disciplina))];
+  ['res-fdisc','res-tdisc'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Todas as disciplinas</option>'+discs.map(d=>'<option>'+d+'</option>').join('');});
+  renderResLista();renderResTurma();
 }
-function switchAtvTab(gi,tipo,btn){
-  ATV_TYPES.forEach(t=>{const el=document.getElementById(`atv-${gi}-${t}`);if(el)el.style.display='none';});
-  document.getElementById(`atv-${gi}-${tipo}`).style.display='block';
-  document.getElementById(`atv-tabs-${gi}`).querySelectorAll('.atv-tab').forEach(b=>{b.classList.remove('active');b.style.color='';});
-  btn.classList.add('active');btn.style.color={criar:'#22c55e',delinear:'#4f7cff',entender:'#f59e0b'}[tipo]||'';
+function resAllRows(){
+  if(!_curSess)return[];
+  return _curSess.groups.flatMap(g=>ATV_TYPES.flatMap(t=>(g.atividades[t]||[]).map(r=>({...r,_gIdx:_curSess.groups.indexOf(g),_tKey:t}))));
 }
-function ccrd(r,id){
+function resTab(v,btn){
+  document.querySelectorAll('.res-view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('res-view-'+v).classList.add('active');
+  document.querySelectorAll('.res-ttab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function _resFiltered(){
+  const b=(document.getElementById('res-busca')?.value||'').toLowerCase();
+  const fd=document.getElementById('res-fdisc')?.value||'';
+  const ft=document.getElementById('res-ftipo')?.value||'';
+  return resAllRows().filter(r=>{
+    if(b&&!(r.nome_aluno||'').toLowerCase().includes(b))return false;
+    if(fd&&r._disc!==fd)return false;
+    if(ft&&r._tKey!==ft.toLowerCase())return false;
+    return true;
+  });
+}
+function renderResLista(){
+  const rows=_resFiltered();
+  document.getElementById('res-lista-count').textContent=rows.length+' aluno'+(rows.length!==1?'s':'');
+  document.getElementById('res-lista-body').innerHTML=rows.map((r,i)=>{
+    if(r._pendente)return '<div class="res-li pend" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+r.nome_aluno+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span class="pend-tag">pendente</span></div>';
+    const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
+    const nc=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';
+    return '<div class="res-li'+(_selIdx===i?' sel':'')+'" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+(r.nome_aluno||'Aluno')+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;color:'+nc+'">'+r.nota_numerica.toFixed(1)+'</span></div>';
+  }).join('')||'<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">Nenhum resultado.</div>';
+  if(_selIdx===null&&rows.length>0)selResAluno(0);
+  else if(_selIdx!==null)selResAluno(_selIdx);
+}
+function selResAluno(i){
+  _selIdx=i;
+  const rows=_resFiltered();
+  document.querySelectorAll('.res-li').forEach((el,idx)=>el.classList.toggle('sel',idx===i));
+  const r=rows[i];
+  if(!r){document.getElementById('res-det-panel').innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-t">Selecione um aluno</div></div>';return;}
+  if(r._pendente){document.getElementById('res-det-panel').innerHTML='<div class="empty"><div class="empty-ico">⏳</div><div class="empty-t">Aguardando reenvio</div><div class="empty-s">'+r.nome_aluno+' está pendente no Dashboard.</div></div>';return;}
   const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
-  const cls=p>=0.7?'nh':p>=0.5?'nm':'nl';const dot=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';
-  const ds=(r.descontos||[]).map(d=>`<div class="drow"><span class="dpts">${d.pontos}</span><span>${d.motivo}</span></div>`).join('')||'<div style="color:var(--muted);font-size:12px;padding:4px 0;">Sem descontos.</div>';
-  const pos=(r.pontos_positivos||[]).map(p=>`<span class="pill g">${p}</span>`).join('')||'<span style="color:var(--muted);font-size:12px;">—</span>';
-  const neg=(r.pontos_negativos||[]).map(p=>`<span class="pill y">${p}</span>`).join('')||'<span style="color:var(--muted);font-size:12px;">—</span>';
-  return`<div class="cc" id="cc-${id}"><div class="cc-hdr" onclick="document.getElementById('cc-${id}').classList.toggle('open')"><div class="cc-left"><div class="sdot" style="background:${dot}"></div><div><div class="cc-name">${r.nome_aluno||'Aluno'}</div><div class="cc-file">${r._arquivo||''}</div></div></div><div class="cc-right"><span class="npill ${cls}">${r.nota_final||'—'}</span><span class="chev">⌄</span></div></div><div class="cc-body"><div class="cbs"><div class="cbl calc">Memória de Cálculo</div><div class="cbbox">${r.memoria_calculo||'—'}</div></div><div class="cbs"><div class="cbl disc">Descontos</div><div style="background:var(--surface2);border-radius:8px;padding:5px 11px;">${ds}</div></div><div class="cbs"><div class="cbl pos">Positivos</div><div class="plist">${pos}</div></div><div class="cbs"><div class="cbl neg">A Melhorar</div><div class="plist">${neg}</div></div><div class="cbs"><div class="cbl feed">Feedback</div><div class="cbbox">${r.feedback||'—'}</div></div></div></div>`;
+  const nbcls=p>=0.7?'nh':p>=0.5?'nm':'nl';
+  const crits=r.criterios||[];
+  const critRows=crits.length?crits.map(c=>'<tr><td style="font-weight:600;white-space:nowrap;font-size:11px;">'+(c.label||'—')+'</td><td class="crit-esp">'+(c.esperado||'—')+'</td><td class="crit-ent">'+(c.entregue||'—')+'</td><td style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted2);">'+(c.peso||'—')+'</td><td>'+(c.desconto?'<span class="crit-neg">'+c.desconto+'</span><br><span style="font-size:9px;color:var(--muted);">'+(c.motivo||'')+'</span>':'<span class="crit-ok">—</span>')+'</td></tr>').join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:10px 8px;">'+(r.descontos||[]).map(d=>d.motivo+': '+d.pontos).join(' · ')||'Sem critérios detalhados nesta correção.'+'</td></tr>';
+  const pos=(r.pontos_positivos||[]).map(x=>'<span class="pill g">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const neg=(r.pontos_negativos||[]).map(x=>'<span class="pill y">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const safeNome=(r.nome_aluno||'Aluno').replace(/'/g,"\\'");
+  document.getElementById('res-det-panel').innerHTML=
+    '<div class="res-det-hdr"><div><div class="res-det-name">'+(r.nome_aluno||'Aluno')+'</div><div class="res-det-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+' · '+(r._arquivo||'')+'</div></div><span class="npill '+nbcls+'">'+(r.nota_final||'—')+'</span></div>'+
+    '<div style="overflow-x:auto;"><table class="crit-tbl"><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table></div>'+
+    '<div class="mc-strip">'+(r.memoria_calculo||'—')+'</div>'+
+    '<div style="margin-bottom:4px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">Positivos</div><div class="plist">'+pos+'</div></div>'+
+    '<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">A melhorar</div><div class="plist">'+neg+'</div></div>'+
+    '<div class="cbs"><div class="cbl feed">Feedback</div><div class="cbbox">'+(r.feedback||'—')+'</div></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'+
+      '<button class="btn-sm green" onclick="exportAlunoExcel('+i+')">↓ Excel</button>'+
+      '<button class="btn-sm accent" onclick="exportAlunoPDF('+i+')">↓ PDF</button>'+
+      '<button class="btn-sm red" onclick="mostrarModalExcluir('+i+')">✕ Excluir atividade</button>'+
+    '</div>'+
+    '<div class="del-modal-bg" id="del-modal"><div class="del-modal">'+
+      '<div class="del-modal-title">Excluir atividade de '+safeNome+'?</div>'+
+      '<div class="del-modal-sub">A atividade será removida do histórico e <b>'+safeNome+'</b> ficará marcada como <b>pendente</b> no Dashboard para reenvio.</div>'+
+      '<div class="del-modal-btns">'+
+        '<button class="btn red" style="padding:7px 16px;font-size:12px;" onclick="confirmarExcluir('+i+')">Confirmar exclusão</button>'+
+        '<button class="btn-o" style="padding:7px 14px;font-size:12px;" onclick="document.getElementById(\'del-modal\').classList.remove(\'show\')">Cancelar</button>'+
+      '</div>'+
+    '</div></div>';
+}
+function mostrarModalExcluir(i){
+  const m=document.getElementById('del-modal');if(m)m.classList.add('show');
+}
+async function confirmarExcluir(i){
+  const rows=_resFiltered();
+  const r=rows[i];if(!r||!_curSess)return;
+  const g=_curSess.groups[r._gIdx];if(!g)return;
+  const arr=g.atividades[r._tKey]||[];
+  const rIdx=arr.findIndex(x=>x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno);
+  if(rIdx>=0)arr.splice(rIdx,1);
+  _curSess.total=_curSess.groups.flatMap(g=>Object.values(g.atividades).flat()).length;
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  const sessIdx=sessions.findIndex(s=>s.id===_curSess.id);
+  if(sessIdx>=0)sessions[sessIdx]=_curSess;
+  _selIdx=null;
+  renderResLista();renderResTurma();renderSidebar();
+  toast('Atividade excluída. '+r.nome_aluno+' marcado como pendente.','ok');
+}
+function renderResTurma(){
+  if(!_curSess)return;
+  const fd=document.getElementById('res-tdisc')?.value||'';
+  const ft=document.getElementById('res-ttipo')?.value||'';
+  let html='';
+  _curSess.groups.forEach(g=>{
+    if(fd&&g.disciplina!==fd)return;
+    ATV_TYPES.forEach(tipo=>{
+      if(ft&&tipo!==ft.toLowerCase())return;
+      const rs=(g.atividades[tipo]||[]).filter(r=>!r._pendente);if(!rs.length)return;
+      const critSet=[];const seen=new Set();
+      rs.forEach(r=>(r.criterios||[]).forEach(c=>{if(!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}}));
+      const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);
+      const med=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';
+      const thCrits=critSet.map(l=>'<th title="'+l+'">'+(l.length>14?l.substring(0,13)+'…':l)+'</th>').join('');
+      const dataRows=rs.map(r=>{
+        const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
+        const nc=p>=0.7?'a':p>=0.5?'m':'b';
+        const cells=critSet.map(lbl=>{const c=(r.criterios||[]).find(x=>x.label===lbl);if(!c)return'<td class="nc n">—</td>';return'<td class="nc">'+(c.desconto?'<span style="font-size:10px;color:var(--red);">'+c.desconto+'</span>':'✓')+'</td>';}).join('');
+        return'<tr><td style="font-weight:600;">'+(r.nome_aluno||'—')+'</td>'+cells+'<td class="nc '+nc+'">'+r.nota_numerica.toFixed(1)+'</td></tr>';
+      }).join('');
+      const avgCells=critSet.map(lbl=>{const ok=rs.filter(r=>(r.criterios||[]).find(c=>c.label===lbl&&!c.desconto)).length;return'<td class="nc n">'+ok+'/'+rs.length+'</td>';}).join('');
+      html+='<div class="turma-blk"><div class="turma-blk-hdr"><span class="turma-blk-title">'+g.disciplina+'</span><span class="t-tag '+tipo+'">'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'</span><span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;">Módulo '+_curSess.modulo+' · média '+med+'</span></div><div style="overflow-x:auto;"><table class="turma-tbl"><thead><tr><th>Aluno</th>'+thCrits+'<th>Nota final</th></tr></thead><tbody>'+dataRows+'</tbody><tfoot><tr class="tfoot"><td>OK por critério</td>'+avgCells+'<td class="nc n">'+med+'</td></tr></tfoot></table></div></div>';
+    });
+  });
+  document.getElementById('res-turma-body').innerHTML=html||'<div style="color:var(--muted);font-size:13px;">Nenhum resultado.</div>';
+}
+function exportAlunoExcel(i){
+  const rows=_resFiltered();const r=rows[i];if(!r)return;
+  const wb=XLSX.utils.book_new();
+  const data=[['Aluno',r.nome_aluno],['Disciplina',r._disc],['Tipo',r._tKey],['Nota Final',r.nota_final],[''],['Critério','Esperado','Entregue','Peso','Desconto','Motivo']];
+  (r.criterios||[]).forEach(c=>data.push([c.label,c.esperado,c.entregue,c.peso,c.desconto||'',c.motivo||'']));
+  data.push([''],['Memória de Cálculo',r.memoria_calculo],[''],['Feedback',r.feedback]);
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=[{wch:22},{wch:40},{wch:40},{wch:10},{wch:10},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Resultado');
+  XLSX.writeFile(wb,(r.nome_aluno||'aluno').replace(/\s+/g,'_')+'_'+r._tKey+'.xlsx');toast('✓ Excel exportado!','ok');
+}
+function exportAlunoPDF(i){
+  const rows=_resFiltered();const r=rows[i];if(!r)return;
+  const critRows=(r.criterios||[]).map(c=>'<tr><td><b>'+(c.label||'')+'</b></td><td style="color:#555;">'+(c.esperado||'—')+'</td><td>'+(c.entregue||'—')+'</td><td>'+(c.peso||'—')+'</td><td style="color:'+(c.desconto?'#c0392b':'#27ae60')+';">'+(c.desconto||'✓')+' '+(c.motivo?'('+c.motivo+')':'')+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;margin:30px;color:#222;}h1{font-size:16px;margin-bottom:4px;}h2{font-size:13px;color:#555;margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top;}.nota{font-size:20px;font-weight:bold;color:'+(r.nota_numerica>=7?'#27ae60':r.nota_numerica>=5?'#e67e22':'#c0392b')+'}.mc{background:#f8f9fa;padding:10px;border-left:3px solid #4f7cff;font-size:11px;margin-bottom:12px;}.feed{background:#f8f9fa;padding:10px;font-size:11px;}</style></head><body><h1>'+(r.nome_aluno||'Aluno')+'</h1><h2>'+r._disc+' · '+r._tKey+' · Módulo '+(_curSess?.modulo||'')+'</h2><p>Nota: <span class="nota">'+(r.nota_final||'—')+'</span></p><h3>Critérios de Avaliação</h3><table><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table><h3>Memória de Cálculo</h3><div class="mc">'+(r.memoria_calculo||'—')+'</div><h3>Feedback</h3><div class="feed">'+(r.feedback||'—')+'</div></body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();
+}
+function exportTurmaExcel(){
+  if(!_curSess){toast('Sem sessão.','err');return;}
+  const wb=XLSX.utils.book_new();
+  _curSess.groups.forEach(g=>{
+    ATV_TYPES.forEach(tipo=>{
+      const rs=(g.atividades[tipo]||[]).filter(r=>!r._pendente);if(!rs.length)return;
+      const critSet=[];const seen=new Set();
+      rs.forEach(r=>(r.criterios||[]).forEach(c=>{if(!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}}));
+      const header=['Aluno',...critSet,'Descontos','Nota Final'];
+      const dataRows=rs.map(r=>{
+        const cells=critSet.map(lbl=>{const c=(r.criterios||[]).find(x=>x.label===lbl);return c?(c.desconto?c.desconto+' '+c.motivo:'✓'):'-';});
+        const tot=(r.descontos||[]).reduce((a,d)=>a+(parseFloat(d.pontos)||0),0).toFixed(1);
+        return[r.nome_aluno||'—',...cells,tot,r.nota_numerica||0];
+      });
+      const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);
+      const ws=XLSX.utils.aoa_to_sheet([['Módulo '+_curSess.modulo+' — '+g.disciplina+' — '+tipo],[''],...[header],...dataRows,[''],['Média','','','',(ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(2):'-')]]);
+      const sn=(g.disciplina.substring(0,15)+'_'+tipo).replace(/[^a-zA-Z0-9_]/g,'').substring(0,31);
+      XLSX.utils.book_append_sheet(wb,ws,sn);
+    });
+  });
+  XLSX.writeFile(wb,'CorretoIA_Turma_Mod'+_curSess.modulo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.xlsx');
+  toast('✓ Excel da turma exportado!','ok');
+}
 }
 async function criarOuCarregarTurma(){
   const mod=document.getElementById('t-modulo').value.trim();
