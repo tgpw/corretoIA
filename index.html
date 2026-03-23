@@ -784,7 +784,7 @@ function renderResLista(){
     if(r._pendente)return '<div class="res-li pend" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+r.nome_aluno+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span class="pend-tag">pendente</span></div>';
     const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
     const nc=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';
-    return '<div class="res-li'+(_selIdx===i?' sel':'')+'" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+(r.nome_aluno||'Aluno')+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;color:'+nc+'">'+r.nota_numerica.toFixed(1)+'</span></div>';
+    return '<div class="res-li'+(_selIdx===i?' sel':'')+'" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+(r.nome_aluno||'Aluno')+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span style="font-family:monospace;font-size:12px;font-weight:600;color:'+nc+'">'+r.nota_numerica.toFixed(1)+'</span></div>';
   }).join('')||'<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">Nenhum resultado.</div>';
   if(_selIdx===null&&rows.length>0)selResAluno(0);
   else if(_selIdx!==null)selResAluno(_selIdx);
@@ -799,7 +799,7 @@ function selResAluno(i){
   const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
   const nbcls=p>=0.7?'nh':p>=0.5?'nm':'nl';
   const crits=r.criterios||[];
-  const critRows=crits.length?crits.map(c=>'<tr><td style="font-weight:600;white-space:nowrap;font-size:11px;">'+(c.label||'—')+'</td><td class="crit-esp">'+(c.esperado||'—')+'</td><td class="crit-ent">'+(c.entregue||'—')+'</td><td style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted2);">'+(c.peso||'—')+'</td><td>'+(c.desconto?'<span class="crit-neg">'+c.desconto+'</span><br><span style="font-size:9px;color:var(--muted);">'+(c.motivo||'')+'</span>':'<span class="crit-ok">—</span>')+'</td></tr>').join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:10px 8px;">'+(r.descontos||[]).map(d=>d.motivo+': '+d.pontos).join(' · ')||'Sem critérios detalhados nesta correção.'+'</td></tr>';
+  const critRows=crits.length?crits.map(c=>'<tr><td style="font-weight:600;white-space:nowrap;font-size:11px;">'+(c.label||'—')+'</td><td class="crit-esp">'+(c.esperado||'—')+'</td><td class="crit-ent">'+(c.entregue||'—')+'</td><td style="font-family:monospace;font-size:10px;color:var(--muted2);">'+(c.peso||'—')+'</td><td>'+(c.desconto?'<span class="crit-neg">'+c.desconto+'</span><br><span style="font-size:9px;color:var(--muted);">'+(c.motivo||'')+'</span>':'<span class="crit-ok">—</span>')+'</td></tr>').join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:10px 8px;">'+(r.descontos||[]).map(d=>d.motivo+': '+d.pontos).join(' · ')||'Sem critérios detalhados nesta correção.'+'</td></tr>';
   const pos=(r.pontos_positivos||[]).map(x=>'<span class="pill g">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
   const neg=(r.pontos_negativos||[]).map(x=>'<span class="pill y">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
   const safeNome=(r.nome_aluno||'Aluno').replace(/'/g,"\\'");
@@ -864,7 +864,7 @@ function renderResTurma(){
         return'<tr><td style="font-weight:600;">'+(r.nome_aluno||'—')+'</td>'+cells+'<td class="nc '+nc+'">'+r.nota_numerica.toFixed(1)+'</td></tr>';
       }).join('');
       const avgCells=critSet.map(lbl=>{const ok=rs.filter(r=>(r.criterios||[]).find(c=>c.label===lbl&&!c.desconto)).length;return'<td class="nc n">'+ok+'/'+rs.length+'</td>';}).join('');
-      html+='<div class="turma-blk"><div class="turma-blk-hdr"><span class="turma-blk-title">'+g.disciplina+'</span><span class="t-tag '+tipo+'">'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'</span><span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;">Módulo '+_curSess.modulo+' · média '+med+'</span></div><div style="overflow-x:auto;"><table class="turma-tbl"><thead><tr><th>Aluno</th>'+thCrits+'<th>Nota final</th></tr></thead><tbody>'+dataRows+'</tbody><tfoot><tr class="tfoot"><td>OK por critério</td>'+avgCells+'<td class="nc n">'+med+'</td></tr></tfoot></table></div></div>';
+      html+='<div class="turma-blk"><div class="turma-blk-hdr"><span class="turma-blk-title">'+g.disciplina+'</span><span class="t-tag '+tipo+'">'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'</span><span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:monospace;">Módulo '+_curSess.modulo+' · média '+med+'</span></div><div style="overflow-x:auto;"><table class="turma-tbl"><thead><tr><th>Aluno</th>'+thCrits+'<th>Nota final</th></tr></thead><tbody>'+dataRows+'</tbody><tfoot><tr class="tfoot"><td>OK por critério</td>'+avgCells+'<td class="nc n">'+med+'</td></tr></tfoot></table></div></div>';
     });
   });
   document.getElementById('res-turma-body').innerHTML=html||'<div style="color:var(--muted);font-size:13px;">Nenhum resultado.</div>';
@@ -907,7 +907,6 @@ function exportTurmaExcel(){
   });
   XLSX.writeFile(wb,'CorretoIA_Turma_Mod'+_curSess.modulo+'_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.xlsx');
   toast('✓ Excel da turma exportado!','ok');
-}
 }
 async function criarOuCarregarTurma(){
   const mod=document.getElementById('t-modulo').value.trim();
