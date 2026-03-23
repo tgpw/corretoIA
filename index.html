@@ -528,36 +528,90 @@ function doMatch(){
 }
 function norm(s){return s.toLowerCase().replace(/\.[^.]+$/,'').replace(/[^a-z0-9]/g,' ').trim();}
 function sim(a,b){const wA=new Set(a.split(' ').filter(w=>w.length>2)),wB=new Set(b.split(' ').filter(w=>w.length>2));let c=0;wA.forEach(w=>{if(wB.has(w))c++;});return c/Math.max(wA.size+wB.size-c,1);}
-async function extractPdfText(file){
-  return new Promise((resolve)=>{
-    const reader=new FileReader();
-    reader.onload=function(e){
-      try{
-        const arr=new Uint8Array(e.target.result);
-        let str='';
-        for(let i=0;i<arr.length;i++){const c=arr[i];if(c>=32&&c<127)str+=String.fromCharCode(c);else if(c===10||c===13)str+=' ';}
-        const parts=[];const re=/\(([^)]{2,300})\)/g;let m;
-        while((m=re.exec(str))!==null){const t=m[1].replace(/\\n/g,' ').replace(/\\/g,'').trim();if(t.length>2&&/[a-zA-ZÀ-ú]{2,}/.test(t))parts.push(t);}
-        const result=parts.join(' ').substring(0,6000);
-        resolve(result||'[texto não extraído do PDF]');
-      }catch(ex){resolve('[erro: '+ex.message+']');}
-    };
-    reader.onerror=()=>resolve('[erro ao ler arquivo]');
-    reader.readAsArrayBuffer(file);
-  });
+// Converte qualquer arquivo (PDF, imagem, DOCX) para base64 jpeg via canvas
+async function fileToBase64Images(file){
+  const isImage=/\.(jpg|jpeg|png|webp)$/i.test(file.name);
+  if(isImage){
+    return new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const b64=e.target.result.split(',')[1];
+        const mime=file.type||'image/jpeg';
+        resolve([{b64,mime}]);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  // PDF: renderiza páginas via PDF.js (CDN)
+  if(/\.pdf$/i.test(file.name)){
+    try{
+      if(!window.pdfjsLib){
+        await new Promise((res,rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+          s.onload=res;s.onerror=rej;document.head.appendChild(s);
+        });
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+      const ab=await file.arrayBuffer();
+      const pdf=await window.pdfjsLib.getDocument({data:ab}).promise;
+      const pages=[];
+      const maxPages=Math.min(pdf.numPages,4); // máx 4 páginas por arquivo
+      for(let i=1;i<=maxPages;i++){
+        const page=await pdf.getPage(i);
+        const vp=page.getViewport({scale:1.5});
+        const canvas=document.createElement('canvas');
+        canvas.width=vp.width;canvas.height=vp.height;
+        await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+        const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+        pages.push({b64,mime:'image/jpeg'});
+      }
+      return pages;
+    }catch(e){console.warn('PDF.js falhou:',e);return[];}
+  }
+  // DOCX: tenta extrair texto
+  if(/\.(docx|doc)$/i.test(file.name)){
+    try{
+      if(!window.mammoth){
+        await new Promise((res,rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+          s.onload=res;s.onerror=rej;document.head.appendChild(s);
+        });
+      }
+      const ab=await file.arrayBuffer();
+      const result=await window.mammoth.extractRawText({arrayBuffer:ab});
+      const texto=result.value.substring(0,8000);
+      // Renderiza texto em canvas para enviar como imagem
+      const canvas=document.createElement('canvas');
+      canvas.width=800;canvas.height=1000;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,800,1000);
+      ctx.fillStyle='#000000';ctx.font='14px Arial';
+      const lines=texto.match(/.{1,90}/g)||[];
+      lines.slice(0,60).forEach((line,i)=>ctx.fillText(line,20,30+i*16));
+      const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+      return[{b64,mime:'image/jpeg'}];
+    }catch(e){console.warn('DOCX falhou:',e);return[];}
+  }
+  return[];
 }
+
 async function iniciarCorrecao(){
   if(!getKey()){toast('Informe a chave API.','err');return;}
   const modulo=getMod();if(!modulo){toast('Informe o módulo.','err');return;}
-  showLoad(true);setLoad('Extraindo texto dos gabaritos...',5);
+  showLoad(true);setLoad('Processando gabaritos...',5);
   try{
-    const gabData=await Promise.all(gabFiles.map(async f=>{const texto=await extractPdfText(f);return{name:f.name,texto,mime:mimeof(f)};}));
+    const gabData=await Promise.all(gabFiles.map(async f=>{
+      const imgs=await fileToBase64Images(f);
+      return{name:f.name,imgs};
+    }));
     const all=[];
     for(let i=0;i<atvFiles.length;i++){
       const af=atvFiles[i];
       setLoad(`Corrigindo ${i+1}/${atvFiles.length}: ${af.name.substring(0,24)}...`,Math.round(((i+1)/atvFiles.length)*80)+10);
-      const atvTexto=await extractPdfText(af);
-      const r=await corrigirTexto(gabData,af.name,atvTexto,getKey(),modulo);
+      const atvImgs=await fileToBase64Images(af);
+      const r=await corrigirComVisao(gabData,af.name,atvImgs,getKey(),modulo);
       all.push(r);
     }
     setLoad('Salvando na nuvem...',92);
@@ -576,16 +630,25 @@ async function iniciarCorrecao(){
   }catch(e){showLoad(false);console.error(e);toast('Erro: '+e.message,'err');}
 }
 function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
-function sanitize(str){return (str||'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'').substring(0,3000);}
-async function corrigirTexto(gabData,atvName,atvTexto,key,modulo){
-  const gabTexto=gabData.map((g,i)=>`GABARITO ${i+1} (${g.name}):\n${sanitize(g.texto)}`).join('\n\n');
-  const atvLimitado=sanitize(atvTexto);
-  const userMsg='GABARITOS:\n'+gabTexto+'\n\nATIVIDADE ('+atvName+'):\n'+atvLimitado+'\n\nCorrija e responda APENAS em JSON: {"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"","descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[],"pontos_negativos":[],"feedback":""}';
-  const sys='Professor universitário. Módulo '+modulo+'. Responda APENAS JSON válido sem markdown.';
-  const content=[{type:'text',text:userMsg}];
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,system:sys,messages:[{role:'user',content}]})});
+async function corrigirComVisao(gabData,atvName,atvImgs,key,modulo){
+  const content=[];
+  // Adiciona gabaritos
+  gabData.forEach((g,i)=>{
+    content.push({type:'text',text:`GABARITO ${i+1} (${g.name}):`});
+    g.imgs.forEach(img=>content.push({type:'image',source:{type:'base64',media_type:img.mime,data:img.b64}}));
+  });
+  // Adiciona atividade do aluno
+  content.push({type:'text',text:`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`});
+  if(atvImgs.length>0){
+    atvImgs.forEach(img=>content.push({type:'image',source:{type:'base64',media_type:img.mime,data:img.b64}}));
+  }else{
+    content.push({type:'text',text:'[arquivo não pôde ser processado]'});
+  }
+  content.push({type:'text',text:'\nAnalise as imagens acima. Identifique o nome do aluno, a disciplina e o tipo de atividade (Criar, Delinear ou Entender). Compare a atividade com o gabarito e corrija. Responda APENAS em JSON válido sem markdown:\n{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"","descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[],"pontos_negativos":[],"feedback":""}'});
+  const sys=`Você é um professor universitário corrigindo atividades do Módulo ${modulo}. Analise visualmente os documentos e responda APENAS com JSON válido sem markdown.`;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,system:sys,messages:[{role:'user',content}]})});
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
-  if(data._status&&data._status>=400){throw new Error(data.error?.message||`HTTP ${data._status}`);}
   const txt=data.content.map(c=>c.text||'').join('').trim();
   try{const p=JSON.parse(txt.replace(/```json|```/g,'').trim());p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';return p;}
   catch(ex){return{nome_aluno:atvName.replace(/\.[^.]+$/,''),disciplina:'Erro',tipo_atividade:'entender',nota_final:'Erro',nota_numerica:0,escala_maxima:10,memoria_calculo:txt?txt.substring(0,200):ex.message,descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento'],feedback:'Erro ao processar.',_arquivo:atvName,_disc:'Erro',_tipo:'entender'};}
