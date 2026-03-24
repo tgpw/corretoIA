@@ -235,6 +235,21 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .turma-tbl tr.tfoot td{background:var(--surface2);font-weight:600;font-size:11px;color:var(--muted2);}
 .nc{font-family:'DM Mono',monospace;font-size:12px;}
 .nc.a{color:var(--green);}.nc.m{color:var(--yellow);}.nc.b{color:var(--red);}.nc.n{color:var(--muted);}
+.mc-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;}
+.mc-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
+.mc-tbl th.r{text-align:right;}
+.mc-tbl td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text);line-height:1.4;}
+.mc-tbl td.r{text-align:right;font-family:'DM Mono',monospace;white-space:nowrap;}
+.mc-tbl tr.trow td{background:var(--surface2);font-weight:600;border-top:1px solid var(--border2);}
+.mc-peso{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);}
+.mc-desc{font-family:'DM Mono',monospace;font-size:11px;color:var(--red);font-weight:600;}
+.mc-ok{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);}
+.mc-nc{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;}
+.mc-nc.a{color:var(--green);}.mc-nc.m{color:var(--yellow);}.mc-nc.b{color:var(--red);}
+.mc-motivo{font-size:10px;color:var(--muted2);margin-top:2px;line-height:1.4;}
+.nome-wrap{position:relative;display:inline-block;}
+.nome-edit-pop{position:absolute;top:110%;left:0;z-index:300;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;min-width:250px;display:none;box-shadow:0 8px 28px rgba(0,0,0,.45);}
+.nome-edit-pop.show{display:block;}
 .custo-real{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:4px 11px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;}
 .del-modal-bg{background:rgba(11,13,18,0.7);border-radius:11px;padding:20px;display:none;margin-top:10px;}
 .del-modal-bg.show{display:block;}
@@ -739,7 +754,7 @@ async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo,nomeManua
 4. Para cada critério, descreva em linguagem humana e resumida o que era esperado e o que o aluno entregou.
 5. Atribua uma nota de 0 a 10 com base nos critérios.
 6. Responda APENAS com JSON válido sem markdown:
-{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"x,x/10","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"explique passo a passo como chegou na nota","criterios":[{"label":"nome do critério","esperado":"o que o gabarito previa em linguagem simples","entregue":"o que o aluno fez em linguagem simples","peso":"X,X pts","desconto":"","motivo":""}],"descontos":[{"motivo":"","pontos":""}],"pontos_positivos":[""],"pontos_negativos":[""],"feedback":"feedback detalhado para o aluno"}`});
+{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"x,x/10","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"explique passo a passo como chegou na nota","criterios":[{"label":"nome do critério","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo em linguagem simples ou vazio","nota_crit":12}],"pontos_positivos":[""],"pontos_negativos":[""],"feedback":"feedback construtivo para o aluno"}`});
   const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico e responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
@@ -802,93 +817,200 @@ function renderResLista(){
 function selResAluno(i){
   _selIdx=i;
   const rows=_resFiltered();
-  document.querySelectorAll('.res-li').forEach((el,idx)=>el.classList.toggle('sel',idx===i));
+  document.querySelectorAll('.res-li').forEach(function(el,idx){el.classList.toggle('sel',idx===i);});
   const r=rows[i];
   if(!r){document.getElementById('res-det-panel').innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-t">Selecione um aluno</div></div>';return;}
   if(r._pendente){document.getElementById('res-det-panel').innerHTML='<div class="empty"><div class="empty-ico">⏳</div><div class="empty-t">Aguardando reenvio</div><div class="empty-s">'+r.nome_aluno+' está pendente no Dashboard.</div></div>';return;}
   const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
   const nbcls=p>=0.7?'nh':p>=0.5?'nm':'nl';
-  const crits=r.criterios||[];
-  const critRows=crits.length?crits.map(c=>'<tr><td style="font-weight:600;white-space:nowrap;font-size:11px;">'+(c.label||'—')+'</td><td class="crit-esp">'+(c.esperado||'—')+'</td><td class="crit-ent">'+(c.entregue||'—')+'</td><td style="font-family:monospace;font-size:10px;color:var(--muted2);">'+(c.peso||'—')+'</td><td>'+(c.desconto?'<span class="crit-neg">'+c.desconto+'</span><br><span style="font-size:9px;color:var(--muted);">'+(c.motivo||'')+'</span>':'<span class="crit-ok">—</span>')+'</td></tr>').join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:11px;padding:10px 8px;">'+(r.descontos||[]).map(d=>d.motivo+': '+d.pontos).join(' · ')||'Sem critérios detalhados nesta correção.'+'</td></tr>';
-  const pos=(r.pontos_positivos||[]).map(x=>'<span class="pill g">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
-  const neg=(r.pontos_negativos||[]).map(x=>'<span class="pill y">'+x+'</span>').join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const pos=(r.pontos_positivos||[]).map(function(x){return'<span class="pill g">'+x+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const neg=(r.pontos_negativos||[]).map(function(x){return'<span class="pill y">'+x+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
   const safeNome=(r.nome_aluno||'Aluno').replace(/'/g,"\\'");
-  document.getElementById('res-det-panel').innerHTML=
-    '<div class="res-det-hdr"><div><div class="res-det-name" onclick="editarNomeAluno('+i+')" title="Clique para editar" style="cursor:pointer;border-bottom:1px dashed var(--border2);display:inline-block;">'+(r.nome_aluno||'Aluno')+'</div><div class="res-det-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+' · '+(r._arquivo||'')+'</div></div><span class="npill '+nbcls+'">'+(r.nota_final||'—')+'</span></div>'+
-    '<div style="overflow-x:auto;"><table class="crit-tbl"><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table></div>'+
-    '<div class="mc-strip">'+(r.memoria_calculo||'—')+'</div>'+
-    '<div style="margin-bottom:4px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">Positivos</div><div class="plist">'+pos+'</div></div>'+
-    '<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">A melhorar</div><div class="plist">'+neg+'</div></div>'+
-    '<div class="cbs"><div class="cbl feed">Feedback</div><div class="cbbox">'+(r.feedback||'—')+'</div></div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'+
-      '<button class="btn-sm green" onclick="exportAlunoExcel('+i+')">↓ Excel</button>'+
-      '<button class="btn-sm accent" onclick="exportAlunoPDF('+i+')">↓ PDF</button>'+
-      '<button class="btn-sm red" onclick="mostrarModalExcluir('+i+')">✕ Excluir atividade</button>'+
-    '</div>'+
-    '<div class="del-modal-bg" id="del-modal"><div class="del-modal">'+
-      '<div class="del-modal-title">Excluir atividade de '+safeNome+'?</div>'+
-      '<div class="del-modal-sub">A atividade será removida do histórico e <b>'+safeNome+'</b> ficará marcada como <b>pendente</b> no Dashboard para reenvio.</div>'+
-      '<div class="del-modal-btns">'+
-        '<button class="btn red" style="padding:7px 16px;font-size:12px;" onclick="confirmarExcluir('+i+')">Confirmar exclusão</button>'+
-        '<button class="btn-o" style="padding:7px 14px;font-size:12px;" onclick="document.getElementById(\'del-modal\').classList.remove(\'show\')">Cancelar</button>'+
-      '</div>'+
-    '</div></div>';
+  const el=document.getElementById('res-det-panel');
+  el.innerHTML='';
+  const hdr=document.createElement('div');hdr.className='res-det-hdr';
+  const nomeWrap=document.createElement('div');nomeWrap.className='nome-wrap';
+  const nomeSpan=document.createElement('span');nomeSpan.className='res-det-name';
+  nomeSpan.textContent=r.nome_aluno||'Aluno';
+  nomeSpan.style.cssText='cursor:pointer;border-bottom:1px dashed var(--accent)';
+  nomeSpan.onclick=function(){abrirEditNome(i);};
+  const editIcon=document.createElement('span');
+  editIcon.textContent=' ✎';editIcon.style.cssText='font-size:10px;color:var(--muted2);cursor:pointer;margin-left:4px';
+  editIcon.onclick=function(){abrirEditNome(i);};
+  const pop=document.createElement('div');pop.className='nome-edit-pop';pop.id='nome-edit-pop';
+  pop.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:7px;">Editar nome</div>'
+    +'<input class="finput" id="nome-edit-inp" type="text" placeholder="Nome completo" style="width:100%;margin-bottom:8px;">'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button class="btn-sm green" id="btn-salvar-nome">Salvar</button>'
+    +'<button class="btn-sm" style="border-color:var(--border2);color:var(--muted2)" onclick="fecharEditNome()">Cancelar</button>'
+    +'</div>';
+  nomeWrap.appendChild(nomeSpan);nomeWrap.appendChild(editIcon);nomeWrap.appendChild(pop);
+  const subDiv=document.createElement('div');subDiv.className='res-det-sub';
+  subDiv.textContent=r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+' · '+(r._arquivo||'');
+  const leftDiv=document.createElement('div');leftDiv.appendChild(nomeWrap);leftDiv.appendChild(subDiv);
+  const notaPill=document.createElement('span');notaPill.className='npill '+nbcls;notaPill.textContent=r.nota_final||'—';
+  hdr.appendChild(leftDiv);hdr.appendChild(notaPill);
+  el.appendChild(hdr);
+  const btnSalvar=pop.querySelector('#btn-salvar-nome');
+  if(btnSalvar)btnSalvar.onclick=function(){salvarNomeAluno(i);};
+  const mcDiv=document.createElement('div');mcDiv.style.overflowX='auto';mcDiv.innerHTML=mcTabela(r);el.appendChild(mcDiv);
+  const posDiv=document.createElement('div');posDiv.style.marginBottom='4px';
+  posDiv.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">Positivos</div><div class="plist">'+pos+'</div>';
+  el.appendChild(posDiv);
+  const negDiv=document.createElement('div');
+  negDiv.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">A melhorar</div><div class="plist">'+neg+'</div>';
+  el.appendChild(negDiv);
+  const feedDiv=document.createElement('div');feedDiv.className='cbs';
+  feedDiv.innerHTML='<div class="cbl feed">Feedback</div><div class="cbbox">'+(r.feedback||'—')+'</div>';
+  el.appendChild(feedDiv);
+  const actDiv=document.createElement('div');actDiv.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;';
+  actDiv.innerHTML='<button class="btn-sm green" onclick="exportAlunoExcel('+i+')">↓ Excel</button>'
+    +'<button class="btn-sm accent" onclick="exportAlunoPDF('+i+')">↓ PDF</button>'
+    +'<button class="btn-sm red" onclick="mostrarModalExcluir('+i+')">✕ Excluir</button>';
+  el.appendChild(actDiv);
+  const modalBg=document.createElement('div');modalBg.className='del-modal-bg';modalBg.id='del-modal';
+  modalBg.innerHTML='<div class="del-modal">'
+    +'<div class="del-modal-title">Excluir atividade de '+safeNome+'?</div>'
+    +'<div class="del-modal-sub">A atividade será removida e <b>'+safeNome+'</b> ficará <b>pendente</b> no Dashboard.</div>'
+    +'<div class="del-modal-btns">'
+    +'<button class="btn red" style="padding:7px 16px;font-size:12px;" onclick="confirmarExcluir('+i+')">Confirmar exclusão</button>'
+    +'<button class="btn-o" style="padding:7px 14px;font-size:12px;" onclick="document.getElementById(\'del-modal\').classList.remove(\'show\')">Cancelar</button>'
+    +'</div></div>';
+  el.appendChild(modalBg);
 }
-function mostrarModalExcluir(i){
-  const m=document.getElementById('del-modal');if(m)m.classList.add('show');
+
+function mcTabela(r){
+  var crits=r.criterios||[];
+  if(!crits.length){
+    return '<div class="mc-strip">'+(r.memoria_calculo||'Sem detalhamento de criterios.')+'</div>';
+  }
+  var totalPeso=crits.reduce(function(a,c){return a+(parseFloat(c.peso_max)||0);},0);
+  var totalDesc=crits.reduce(function(a,c){return a+(parseFloat(c.desconto)||0);},0);
+  var totalNota=crits.reduce(function(a,c){
+    var pm=parseFloat(c.peso_max)||0;
+    var dc=parseFloat(c.desconto)||0;
+    var nc=parseFloat(c.nota_crit);
+    return a+(isNaN(nc)?pm-dc:nc);
+  },0);
+  var escala=r.escala_maxima||10;
+  var rows=crits.map(function(c){
+    var pm=parseFloat(c.peso_max)||0;
+    var dc=parseFloat(c.desconto)||0;
+    var nc=isNaN(parseFloat(c.nota_crit))?pm-dc:parseFloat(c.nota_crit);
+    var rat=pm>0?nc/pm:0;
+    var cls=rat>=0.7?'a':rat>=0.5?'m':'b';
+    return '<tr>'
+      +'<td><span style="font-weight:600;font-size:11px;">'+(c.label||'')+'</span>'
+      +(c.esperado?'<div class="mc-motivo" style="color:var(--muted2);">Esperado: '+c.esperado+'</div>':'')
+      +(c.entregue?'<div class="mc-motivo">Entregue: '+c.entregue+'</div>':'')
+      +'</td>'
+      +'<td>'+(dc>0?'<span class="mc-desc">-'+dc+'</span><div class="mc-motivo">'+(c.motivo||'')+'</div>':'<span class="mc-ok">sem desconto</span>')+'</td>'
+      +'<td class="r"><span class="mc-peso">'+pm+' pts</span></td>'
+      +'<td class="r"><span class="mc-nc '+cls+'">'+nc+' pts</span></td>'
+      +'</tr>';
+  }).join('');
+  var notaF=r.nota_numerica!=null?r.nota_numerica:parseFloat((totalNota/totalPeso*escala).toFixed(1));
+  var pf=escala>0?notaF/escala:0;
+  var clsF=pf>=0.7?'a':pf>=0.5?'m':'b';
+  var footer='<tr class="trow">'
+    +'<td style="font-size:11px;color:var(--muted2);">Total</td>'
+    +'<td><span class="mc-desc">-'+totalDesc.toFixed(1)+' pts</span></td>'
+    +'<td class="r"><span class="mc-peso" style="font-weight:600;">'+totalPeso+' pts</span></td>'
+    +'<td class="r"><span class="mc-nc '+clsF+'" style="font-size:12px;">'+totalNota.toFixed(0)+' pts &rarr; '+notaF.toFixed(1)+'/'+escala+'</span></td>'
+    +'</tr>';
+  return '<table class="mc-tbl">'
+    +'<thead><tr><th>Criterio / Esperado / Entregue</th><th>Desconto</th><th class="r">Peso</th><th class="r">Nota</th></tr></thead>'
+    +'<tbody>'+rows+footer+'</tbody>'
+    +'</table>';
+}
+var _editIdx=null;
+function abrirEditNome(i){
+  _editIdx=i;
+  var rows=_resFiltered();var r=rows[i];if(!r)return;
+  var pop=document.getElementById('nome-edit-pop');if(!pop)return;
+  var inp=document.getElementById('nome-edit-inp');
+  if(inp)inp.value=r.nome_aluno||'';
+  pop.classList.add('show');
+  setTimeout(function(){if(inp)inp.focus();},60);
+}
+function fecharEditNome(){
+  var pop=document.getElementById('nome-edit-pop');
+  if(pop)pop.classList.remove('show');
+  _editIdx=null;
+}
+async function salvarNomeAluno(i){
+  var idx=(i!==undefined&&i!==null)?i:_editIdx;
+  if(idx===null||idx===undefined)return;
+  var inp=document.getElementById('nome-edit-inp');
+  var novo=inp?inp.value.trim():'';
+  if(!novo){toast('Digite um nome.','err');return;}
+  var rows=_resFiltered();var r=rows[idx];if(!r||!_curSess)return;
+  var g=_curSess.groups[r._gIdx];if(!g)return;
+  var arr=g.atividades[r._tKey]||[];
+  var ri=arr.findIndex(function(x){return x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno;});
+  if(ri>=0)arr[ri].nome_aluno=novo;
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  var si=sessions.findIndex(function(s){return s.id===_curSess.id;});
+  if(si>=0)sessions[si]=_curSess;
+  fecharEditNome();_selIdx=null;
+  selResAluno(idx);renderResLista();renderSidebar();
+  toast('Nome atualizado!','ok');
 }
 async function confirmarExcluir(i){
-  const rows=_resFiltered();
-  const r=rows[i];if(!r||!_curSess)return;
-  const g=_curSess.groups[r._gIdx];if(!g)return;
-  const arr=g.atividades[r._tKey]||[];
-  const rIdx=arr.findIndex(x=>x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno);
+  var rows=_resFiltered();
+  var r=rows[i];if(!r||!_curSess)return;
+  var g=_curSess.groups[r._gIdx];if(!g)return;
+  var arr=g.atividades[r._tKey]||[];
+  var rIdx=arr.findIndex(function(x){return x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno;});
   if(rIdx>=0)arr.splice(rIdx,1);
-  _curSess.total=_curSess.groups.flatMap(g=>Object.values(g.atividades).flat()).length;
+  _curSess.total=_curSess.groups.flatMap(function(g){return Object.values(g.atividades).flat();}).length;
   await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
-  const sessIdx=sessions.findIndex(s=>s.id===_curSess.id);
+  var sessIdx=sessions.findIndex(function(s){return s.id===_curSess.id;});
   if(sessIdx>=0)sessions[sessIdx]=_curSess;
   _selIdx=null;
   renderResLista();renderResTurma();renderSidebar();
-  toast('Atividade excluída. '+r.nome_aluno+' marcado como pendente.','ok');
+  toast('Atividade excluida. '+r.nome_aluno+' marcado como pendente.','ok');
 }
-function editarNomeAluno(i){
-  const rows=_resFiltered();const r=rows[i];if(!r||!_curSess)return;
-  const novo=prompt('Nome do aluno:',r.nome_aluno||'');
-  if(novo===null||novo.trim()==='')return;
-  const g=_curSess.groups[r._gIdx];if(!g)return;
-  const arr=g.atividades[r._tKey]||[];
-  const rIdx=arr.findIndex(x=>x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno);
-  if(rIdx>=0){arr[rIdx].nome_aluno=novo.trim();}
-  sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
-  const sIdx=sessions.findIndex(s=>s.id===_curSess.id);
-  if(sIdx>=0)sessions[sIdx]=_curSess;
-  selResAluno(i);renderResLista();renderSidebar();
-  toast('✓ Nome atualizado!','ok');
+function mostrarModalExcluir(i){
+  var m=document.getElementById('del-modal');if(m)m.classList.add('show');
 }
 function renderResTurma(){
   if(!_curSess)return;
-  const fd=document.getElementById('res-tdisc')?.value||'';
-  const ft=document.getElementById('res-ttipo')?.value||'';
-  let html='';
-  _curSess.groups.forEach(g=>{
+  var fd=document.getElementById('res-tdisc')?document.getElementById('res-tdisc').value:'';
+  var ft=document.getElementById('res-ttipo')?document.getElementById('res-ttipo').value:'';
+  var html='';
+  _curSess.groups.forEach(function(g){
     if(fd&&g.disciplina!==fd)return;
-    ATV_TYPES.forEach(tipo=>{
+    ATV_TYPES.forEach(function(tipo){
       if(ft&&tipo!==ft.toLowerCase())return;
-      const rs=(g.atividades[tipo]||[]).filter(r=>!r._pendente);if(!rs.length)return;
-      const critSet=[];const seen=new Set();
-      rs.forEach(r=>(r.criterios||[]).forEach(c=>{if(!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}}));
-      const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);
-      const med=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';
-      const thCrits=critSet.map(l=>'<th title="'+l+'">'+(l.length>14?l.substring(0,13)+'…':l)+'</th>').join('');
-      const dataRows=rs.map(r=>{
-        const p=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
-        const nc=p>=0.7?'a':p>=0.5?'m':'b';
-        const cells=critSet.map(lbl=>{const c=(r.criterios||[]).find(x=>x.label===lbl);if(!c)return'<td class="nc n">—</td>';return'<td class="nc">'+(c.desconto?'<span style="font-size:10px;color:var(--red);">'+c.desconto+'</span>':'✓')+'</td>';}).join('');
-        return'<tr><td style="font-weight:600;">'+(r.nome_aluno||'—')+'</td>'+cells+'<td class="nc '+nc+'">'+r.nota_numerica.toFixed(1)+'</td></tr>';
+      var rs=(g.atividades[tipo]||[]).filter(function(r){return!r._pendente;});
+      if(!rs.length)return;
+      var critSet=[];var seen=new Set();
+      rs.forEach(function(r){(r.criterios||[]).forEach(function(c){if(!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}});});
+      var ns=rs.map(function(r){return r.nota_numerica;}).filter(function(n){return n>0;});
+      var med=ns.length?(ns.reduce(function(a,b){return a+b;},0)/ns.length).toFixed(1):'-';
+      var thCrits=critSet.map(function(l){return'<th title="'+l+'">'+(l.length>14?l.substring(0,13)+'...':l)+'</th>';}).join('');
+      var dataRows=rs.map(function(r){
+        var p2=r.escala_maxima>0?r.nota_numerica/r.escala_maxima:0;
+        var nc=p2>=0.7?'a':p2>=0.5?'m':'b';
+        var cells=critSet.map(function(lbl){
+          var c=(r.criterios||[]).find(function(x){return x.label===lbl;});
+          if(!c)return'<td class="nc n">-</td>';
+          return'<td class="nc">'+(c.desconto>0?'<span style="font-size:10px;color:var(--red);">-'+c.desconto+'</span>':'<span style="color:var(--green);">OK</span>')+'</td>';
+        }).join('');
+        return'<tr><td style="font-weight:600;">'+(r.nome_aluno||'-')+'</td>'+cells+'<td class="nc '+nc+'">'+r.nota_numerica.toFixed(1)+'</td></tr>';
       }).join('');
-      const avgCells=critSet.map(lbl=>{const ok=rs.filter(r=>(r.criterios||[]).find(c=>c.label===lbl&&!c.desconto)).length;return'<td class="nc n">'+ok+'/'+rs.length+'</td>';}).join('');
-      html+='<div class="turma-blk"><div class="turma-blk-hdr"><span class="turma-blk-title">'+g.disciplina+'</span><span class="t-tag '+tipo+'">'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'</span><span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:monospace;">Módulo '+_curSess.modulo+' · média '+med+'</span></div><div style="overflow-x:auto;"><table class="turma-tbl"><thead><tr><th>Aluno</th>'+thCrits+'<th>Nota final</th></tr></thead><tbody>'+dataRows+'</tbody><tfoot><tr class="tfoot"><td>OK por critério</td>'+avgCells+'<td class="nc n">'+med+'</td></tr></tfoot></table></div></div>';
+      var avgCells=critSet.map(function(lbl){
+        var ok=rs.filter(function(r){var c=(r.criterios||[]).find(function(x){return x.label===lbl;});return c&&!c.desconto;}).length;
+        return'<td class="nc n">'+ok+'/'+rs.length+'</td>';
+      }).join('');
+      html+='<div class="turma-blk"><div class="turma-blk-hdr"><span class="turma-blk-title">'+g.disciplina+'</span>'
+        +'<span class="t-tag '+tipo+'">'+tipo.charAt(0).toUpperCase()+tipo.slice(1)+'</span>'
+        +'<span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;">Modulo '+_curSess.modulo+' · media '+med+'</span></div>'
+        +'<div style="overflow-x:auto;"><table class="turma-tbl"><thead><tr><th>Aluno</th>'+thCrits+'<th>Nota final</th></tr></thead>'
+        +'<tbody>'+dataRows+'</tbody>'
+        +'<tfoot><tr class="tfoot"><td>OK por criterio</td>'+avgCells+'<td class="nc n">'+med+'</td></tr></tfoot>'
+        +'</table></div></div>';
     });
   });
   document.getElementById('res-turma-body').innerHTML=html||'<div style="color:var(--muted);font-size:13px;">Nenhum resultado.</div>';
@@ -998,7 +1120,14 @@ function renderDashboard(){
   }
   const CORES={criar:'#22c55e',delinear:'#4f7cff',entender:'#f59e0b'};
   gridEl.innerHTML=Object.entries(tree).map(([key,d])=>{
-    const turma=turmas.find(t=>t.id===key);
+    const [dMod,dDisc]=key.split('||');
+    const turma=turmas.find(function(t){
+      if(t.id===key)return true;
+      if(t.modulo!==dMod)return false;
+      var a=t.disciplina.toLowerCase().replace(/[^a-z0-9]/g,'');
+      var b=dDisc.toLowerCase().replace(/[^a-z0-9]/g,'');
+      return a===b||a.includes(b)||b.includes(a);
+    });
     const total=turma?turma.alunos.length:null;
     const bars=ATV_TYPES.map(t=>{
       const n=d.corrigidos[t].size;
@@ -1014,7 +1143,14 @@ function renderDashboard(){
     return'<div class="dash-card"><div class="dash-card-title">'+d.disc+'</div><div class="dash-card-mod">Módulo '+d.mod+'</div>'+bars+'</div>';
   }).join('');
   pendEl.innerHTML=Object.entries(tree).map(([key,d])=>{
-    const turma=turmas.find(t=>t.id===key);
+    const [pMod,pDisc]=key.split('||');
+    const turma=turmas.find(function(t){
+      if(t.id===key)return true;
+      if(t.modulo!==pMod)return false;
+      var a=t.disciplina.toLowerCase().replace(/[^a-z0-9]/g,'');
+      var b=pDisc.toLowerCase().replace(/[^a-z0-9]/g,'');
+      return a===b||a.includes(b)||b.includes(a);
+    });
     if(!turma||!turma.alunos.length){
       return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">Módulo '+d.mod+'</span></div>'+
         '<div style="font-size:12px;color:var(--muted);">Cadastre a turma para ver pendentes por aluno.</div>'+
@@ -1160,6 +1296,10 @@ function b64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload
 function mimeof(f){const n=f.name.toLowerCase();if(n.endsWith('.pdf'))return'application/pdf';if(n.endsWith('.jpg')||n.endsWith('.jpeg'))return'image/jpeg';if(n.endsWith('.png'))return'image/png';if(n.endsWith('.webp'))return'image/webp';return'application/octet-stream';}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 ['dz-gab','dz-atv','dz-upload-gab'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',()=>el.classList.remove('over'));});
+document.addEventListener('click',function(e){
+  var pop=document.getElementById('nome-edit-pop');
+  if(pop&&pop.classList.contains('show')&&!pop.contains(e.target)&&!e.target.closest('.nome-wrap'))fecharEditNome();
+});
 document.getElementById('pw').focus();
 (async function autoLogin(){
   if(sessionStorage.getItem('cIA5_logged')==='1'){
