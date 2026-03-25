@@ -860,7 +860,21 @@ function selResAluno(i){
     +'</div>';
   nomeWrap.appendChild(nomeSpan);nomeWrap.appendChild(editIcon);nomeWrap.appendChild(pop);
   const subDiv=document.createElement('div');subDiv.className='res-det-sub';
-  subDiv.textContent=r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+' · '+(r._arquivo||'');
+  subDiv.style.display='flex';subDiv.style.alignItems='center';subDiv.style.gap='6px';subDiv.style.flexWrap='wrap';
+  const discSpan=document.createElement('span');discSpan.textContent=r._disc;
+  const discEdit=document.createElement('span');discEdit.textContent='✎';discEdit.title='Editar disciplina';
+  discEdit.style.cssText='font-size:10px;color:var(--accent);cursor:pointer;border-bottom:1px dashed var(--accent);padding:0 2px;';
+  discEdit.onclick=function(){abrirEditDisc(i);};
+  const discPop=document.createElement('div');discPop.className='nome-edit-pop';discPop.id='disc-edit-pop';
+  discPop.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:7px;">Editar disciplina</div>'
+    +'<select class="finput" id="disc-edit-sel" onchange="onDiscSelChange()" style="width:100%;margin-bottom:8px;font-size:12px;padding:7px 10px;"></select>'
+    +'<input class="finput" id="disc-edit-inp" type="text" placeholder="Nome da disciplina" style="width:100%;margin-bottom:8px;display:none;">'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button class="btn-sm green" onclick="salvarDisc()">Salvar</button>'
+    +'<button class="btn-sm" style="border-color:var(--border2);color:var(--muted2)" onclick="fecharEditDisc()">Cancelar</button>'
+    +'</div>';
+  const sepSpan=document.createElement('span');sepSpan.textContent=' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+' · '+(r._arquivo||'');
+  subDiv.appendChild(discSpan);subDiv.appendChild(discEdit);subDiv.appendChild(discPop);subDiv.appendChild(sepSpan);
   const leftDiv=document.createElement('div');leftDiv.appendChild(nomeWrap);leftDiv.appendChild(subDiv);
   const notaPill=document.createElement('span');notaPill.className='npill '+nbcls;notaPill.textContent=r.nota_final||'—';
   hdr.appendChild(leftDiv);hdr.appendChild(notaPill);
@@ -951,6 +965,53 @@ function fecharEditNome(){
   var pop=document.getElementById('nome-edit-pop');
   if(pop)pop.classList.remove('show');
   _editIdx=null;
+}
+var _editDiscIdx=null;
+function abrirEditDisc(i){
+  _editDiscIdx=i;
+  var rows=_resFiltered();var r=rows[i];if(!r)return;
+  var pop=document.getElementById('disc-edit-pop');if(!pop)return;
+  // Preenche dropdown com disciplinas únicas da sessão atual
+  var discs=_curSess?[...new Set(_curSess.groups.map(function(g){return g.disciplina;}))]:[r._disc];
+  var sel=pop.querySelector('#disc-edit-sel');
+  if(sel){sel.innerHTML=discs.map(function(d){return'<option value="'+d+'"'+(d===r._disc?' selected':'')+'>'+d+'</option>';}).join('')+'<option value="__novo__">✎ Digitar novo nome...</option>';}
+  var inp=pop.querySelector('#disc-edit-inp');if(inp){inp.style.display='none';inp.value='';}
+  pop.classList.add('show');
+}
+function fecharEditDisc(){
+  var pop=document.getElementById('disc-edit-pop');
+  if(pop)pop.classList.remove('show');
+  _editDiscIdx=null;
+}
+function onDiscSelChange(){
+  var sel=document.getElementById('disc-edit-sel');
+  var inp=document.getElementById('disc-edit-inp');
+  if(!sel||!inp)return;
+  inp.style.display=sel.value==='__novo__'?'block':'none';
+  if(sel.value==='__novo__')setTimeout(function(){inp.focus();},40);
+}
+async function salvarDisc(){
+  var idx=_editDiscIdx;if(idx===null||idx===undefined)return;
+  var sel=document.getElementById('disc-edit-sel');
+  var inp=document.getElementById('disc-edit-inp');
+  var novo=(sel&&sel.value!=='__novo__')?(sel.value):(inp?inp.value.trim():'');
+  if(!novo){toast('Informe a disciplina.','err');return;}
+  var rows=_resFiltered();var r=rows[idx];if(!r||!_curSess)return;
+  var antigaDisc=r._disc;
+  // Atualiza todos os registros com a disciplina antiga no mesmo grupo
+  var g=_curSess.groups[r._gIdx];if(!g)return;
+  g.disciplina=novo;
+  // Atualiza _disc em todos os registros desse grupo
+  ATV_TYPES.forEach(function(t){(g.atividades[t]||[]).forEach(function(a){a._disc=novo;a.disciplina=novo;});});
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  var si=sessions.findIndex(function(s){return s.id===_curSess.id;});
+  if(si>=0)sessions[si]=_curSess;
+  fecharEditDisc();_selIdx=null;
+  // Atualiza filtros de disciplina
+  var discs=[...new Set(_curSess.groups.map(function(g){return g.disciplina;}))];
+  ['res-fdisc','res-tdisc'].forEach(function(id){var el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Todas as disciplinas</option>'+discs.map(function(d){return'<option>'+d+'</option>';}).join('');});
+  renderResLista();renderResTurma();renderSidebar();
+  toast('Disciplina atualizada!','ok');
 }
 async function salvarNomeAluno(i){
   var idx=(i!==undefined&&i!==null)?i:_editIdx;
@@ -1311,6 +1372,8 @@ function limparArquivosNova(){
   document.getElementById('match-box').style.display='none';
   document.getElementById('cloud-gab-status').textContent='';
   document.getElementById('modulo').value='';
+  var fiGab=document.getElementById('fi-gab');if(fiGab)fiGab.value='';
+  var fiAtv=document.getElementById('fi-atv');if(fiAtv)fiAtv.value='';
   checkReady();
 }
 function showLoad(on){document.getElementById('loading').classList.toggle('on',on);if(!on)document.getElementById('lbar').style.width='0%';}
@@ -1323,6 +1386,8 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 document.addEventListener('click',function(e){
   var pop=document.getElementById('nome-edit-pop');
   if(pop&&pop.classList.contains('show')&&!pop.contains(e.target)&&!e.target.closest('.nome-wrap'))fecharEditNome();
+  var dpop=document.getElementById('disc-edit-pop');
+  if(dpop&&dpop.classList.contains('show')&&!dpop.contains(e.target)&&!e.target.closest('.res-det-sub'))fecharEditDisc();
 });
 document.getElementById('pw').focus();
 (async function autoLogin(){
