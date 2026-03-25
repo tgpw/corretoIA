@@ -748,20 +748,34 @@ async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo,nomeManua
   });
   adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
   content.push({type:'text',text:`\nInstruções: Você é professor universitário corrigindo atividade do Módulo ${modulo}.
-1. Identifique o nome do aluno no documento (procure no cabeçalho ou corpo do texto).
+REGRAS OBRIGATÓRIAS — siga à risca:
+1. Identifique o nome do aluno no documento (cabeçalho ou corpo do texto).
 2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender) com base no gabarito.
-3. Extraia do gabarito os critérios de avaliação com seus pesos/pontos.
-4. Para cada critério, descreva em linguagem humana e resumida o que era esperado e o que o aluno entregou.
-5. Atribua uma nota de 0 a 10 com base nos critérios.
-6. Responda APENAS com JSON válido sem markdown:
-{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"","nota_final":"x,x/10","nota_numerica":0,"escala_maxima":10,"memoria_calculo":"explique passo a passo como chegou na nota","criterios":[{"label":"nome do critério","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo em linguagem simples ou vazio","nota_crit":12}],"pontos_positivos":[""],"pontos_negativos":[""],"feedback":"feedback construtivo para o aluno"}`});
-  const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico e responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,system:sys,messages:[{role:'user',content}]})});
+3. Extraia do gabarito EXATAMENTE os critérios de avaliação com seus pesos/pontos — NÃO invente critérios nem pesos. Use os mesmos rótulos e valores que constam no gabarito.
+4. Para cada critério: descreva em linguagem simples o que era esperado e o que o aluno entregou. Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
+5. CÁLCULO DA NOTA: some todas as nota_crit, divida pelo total de peso_max e multiplique por escala_maxima. Exemplo: se soma_nota_crit=38 e soma_peso_max=50 e escala=10, nota_numerica=7.6. NUNCA retorne nota_numerica igual a 0 a menos que a atividade esteja completamente em branco.
+6. nota_final deve ser formatado como "X,X/10" (use vírgula, não ponto).
+7. Responda APENAS com JSON válido sem markdown, sem texto antes ou depois:
+{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
+  const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico seguindo EXATAMENTE os critérios e pesos do gabarito fornecido. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
   const txt=data.content.map(c=>c.text||'').join('').trim();
-  try{const p=JSON.parse(txt.replace(/```json|```/g,'').trim());p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';p._tokIn=tokIn;p._tokOut=tokOut;if(nomeManual)p.nome_aluno=nomeManual;return p;}
+  try{
+    const p=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    p._arquivo=atvName;p._disc=p.disciplina||'Não identificado';p._tipo=p.tipo_atividade||'entender';p._tokIn=tokIn;p._tokOut=tokOut;
+    if(nomeManual)p.nome_aluno=nomeManual;
+    // Recalcula nota se vier zerada ou ausente mas há critérios preenchidos
+    if((!p.nota_numerica||p.nota_numerica===0)&&p.criterios&&p.criterios.length){
+      const totalPeso=p.criterios.reduce((a,c)=>a+(parseFloat(c.peso_max)||0),0);
+      const totalNota=p.criterios.reduce((a,c)=>{const pm=parseFloat(c.peso_max)||0;const dc=parseFloat(c.desconto)||0;const nc=parseFloat(c.nota_crit);return a+(isNaN(nc)?pm-dc:nc);},0);
+      const escala=p.escala_maxima||10;
+      if(totalPeso>0){p.nota_numerica=parseFloat((totalNota/totalPeso*escala).toFixed(1));p.nota_final=String(p.nota_numerica).replace('.',',')+'/'+escala;}
+    }
+    return p;
+  }
   catch(ex){return{nome_aluno:atvName.replace(/\.[^.]+$/,''),disciplina:'Erro',tipo_atividade:'entender',nota_final:'Erro',nota_numerica:0,escala_maxima:10,memoria_calculo:txt?txt.substring(0,400):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento'],feedback:'Erro ao processar.',_arquivo:atvName,_disc:'Erro',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut};}
 }
 let _curSess=null,_selIdx=null;
@@ -1284,10 +1298,20 @@ function goTab(tab){
   document.getElementById('panel-'+panelId).classList.add('active');
   const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,historico:4,config:5}[tab];
   if(idx>=0)document.querySelectorAll('.tbtn')[idx].classList.add('active');
+  if(tab==='nova')limparArquivosNova();
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
   if(tab==='gabaritos')renderGabList();
   if(tab==='turmas')renderTurmasList();
+}
+function limparArquivosNova(){
+  gabFiles=[];atvFiles=[];atvNomes=[];
+  renderChips('ch-gab',gabFiles,'rmGab');
+  renderChips('ch-atv',atvFiles,'rmAtv');
+  document.getElementById('match-box').style.display='none';
+  document.getElementById('cloud-gab-status').textContent='';
+  document.getElementById('modulo').value='';
+  checkReady();
 }
 function showLoad(on){document.getElementById('loading').classList.toggle('on',on);if(!on)document.getElementById('lbar').style.width='0%';}
 function setLoad(msg,pct){document.getElementById('lmsg').textContent=msg;document.getElementById('lbar').style.width=pct+'%';}
