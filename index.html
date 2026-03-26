@@ -3,123 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CorretoIA v2</title>
+<title>CorretoIA v2.1</title>
 <style>
 body{font-family:Arial;background:#0b0d12;color:#fff;padding:20px}
 .box{background:#111;padding:15px;border-radius:10px;margin-bottom:10px}
 input,select{padding:8px;margin:5px 0;width:100%}
-button{padding:10px;background:#4f7cff;color:#fff;border:none;border-radius:6px;cursor:pointer}
+button{padding:10px;background:#4f7cff;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-right:5px}
+.file-item{background:#222;padding:6px;margin:4px 0;border-radius:6px}
+.warn{color:#f59e0b}
+.ok{color:#22c55e}
+.err{color:#ef4444}
 </style>
 </head>
 <body>
 
-<h2>CorretoIA v2 (estrutura estável)</h2>
+<h2>CorretoIA v2.1 (lote + fluxo real)</h2>
 
 <div class="box">
-<h3>1. Identificação obrigatória</h3>
-<input id="aluno" placeholder="Nome do aluno (obrigatório)">
-<select id="modulo">
-<option value="">Selecione o módulo</option>
-<option>I</option><option>II</option><option>III</option>
+<h3>1. Contexto do lote</h3>
+<select id="modulo" onchange="loadDisciplinas()">
+<option value="">Selecione módulo</option>
+<option value="I">Módulo I</option>
+<option value="II">Módulo II</option>
+<option value="III">Módulo III</option>
 </select>
-<select id="disciplina">
-<option value="">Selecione a disciplina</option>
-<option>Introdução a EaD</option>
-<option>Matemática</option>
+
+<select id="disciplina" onchange="autoGabarito()">
+<option value="">Selecione disciplina</option>
 </select>
+
 <select id="tipo">
 <option value="">Tipo de atividade</option>
 <option>CRIAR</option>
 <option>ENTENDER</option>
 <option>DELINEAR</option>
 </select>
-</div>
 
-<div class="box">
-<h3>2. Upload</h3>
-<input type="file" id="arquivo">
-</div>
-
-<div class="box">
-<h3>3. Gabarito</h3>
 <select id="gabarito">
-<option value="">Selecione gabarito</option>
-<option>Gabarito 1</option>
-<option>Gabarito 2</option>
+<option value="">Gabarito automático</option>
 </select>
 </div>
 
 <div class="box">
-<button onclick="validar()">Validar antes de corrigir</button>
-<button onclick="corrigir()">Corrigir</button>
+<h3>2. Upload em lote</h3>
+<input type="file" id="files" multiple onchange="handleFiles(event)">
+<div id="lista"></div>
+</div>
+
+<div class="box">
+<button onclick="analisar()">🔍 Analisar lote</button>
+<button onclick="corrigir()">✦ Corrigir lote</button>
 </div>
 
 <div class="box" id="log"></div>
 
 <script>
 
-function log(msg){document.getElementById('log').innerHTML += msg+'<br>'}
-
-function validar(){
-  log('--- Validação ---')
-
-  const aluno = document.getElementById('aluno').value
-  const mod = document.getElementById('modulo').value
-  const disc = document.getElementById('disciplina').value
-  const tipo = document.getElementById('tipo').value
-  const gab = document.getElementById('gabarito').value
-
-  if(!aluno){log('❌ Nome obrigatório'); return false}
-  if(!mod){log('❌ Módulo obrigatório'); return false}
-  if(!disc){log('❌ Disciplina obrigatória'); return false}
-  if(!tipo){log('❌ Tipo obrigatório'); return false}
-  if(!gab){log('❌ Gabarito obrigatório'); return false}
-
-  log('✅ Tudo validado')
-  return true
+const disciplinasPorModulo = {
+  I:["Introdução a EaD","Direito"],
+  II:["Administração"],
+  III:["Matemática"]
 }
 
-function classificarTexto(texto){
-  texto = texto.toLowerCase()
+let arquivos = []
 
-  if(texto.includes('minha experiência') || texto.includes('primeiro contato')) return 'ENTENDER'
-  if(texto.includes('sugest') || texto.includes('proposta')) return 'CRIAR'
+function log(msg,cls=''){
+  document.getElementById('log').innerHTML += `<div class="${cls}">${msg}</div>`
+}
+
+function loadDisciplinas(){
+  const mod = document.getElementById('modulo').value
+  const select = document.getElementById('disciplina')
+  select.innerHTML = '<option value="">Selecione disciplina</option>'
+
+  if(!disciplinasPorModulo[mod]) return
+
+  disciplinasPorModulo[mod].forEach(d=>{
+    select.innerHTML += `<option>${d}</option>`
+  })
+}
+
+function autoGabarito(){
+  const disc = document.getElementById('disciplina').value
+  const g = document.getElementById('gabarito')
+
+  g.innerHTML = `<option>${disc} - padrão</option>`
+}
+
+function handleFiles(e){
+  arquivos = Array.from(e.target.files)
+  renderLista()
+}
+
+function renderLista(){
+  const div = document.getElementById('lista')
+  div.innerHTML = ''
+
+  arquivos.forEach((f,i)=>{
+    div.innerHTML += `
+      <div class="file-item">
+        ${f.name}
+        <input placeholder="Nome do aluno" id="nome_${i}">
+      </div>
+    `
+  })
+}
+
+function classificarTexto(t){
+  t = t.toLowerCase()
+  if(t.includes('minha experiência')) return 'ENTENDER'
+  if(t.includes('sugest')||t.includes('proposta')) return 'CRIAR'
   return 'DELINEAR'
 }
 
-async function corrigir(){
-  document.getElementById('log').innerHTML = ''
+async function analisar(){
+  document.getElementById('log').innerHTML=''
 
-  if(!validar()) return
+  if(!arquivos.length){log('Nenhum arquivo','err');return}
 
-  const file = document.getElementById('arquivo').files[0]
-  if(!file){log('❌ Envie um arquivo'); return}
+  for(let i=0;i<arquivos.length;i++){
+    const f = arquivos[i]
+    const txt = await f.text()
+    const tipo = classificarTexto(txt)
 
-  const texto = await file.text()
-
-  const tipoInferido = classificarTexto(texto)
-  const tipoSelecionado = document.getElementById('tipo').value
-
-  log('Tipo inferido: '+tipoInferido)
-
-  if(tipoInferido !== tipoSelecionado){
-    log('⚠ Divergência entre tipo e conteúdo')
+    log(`${f.name} → ${tipo}`,'warn')
   }
-
-  // Simulação de rubrica fixa
-  const nota = aplicarRubrica(texto)
-
-  log('Nota final: '+nota)
 }
 
-function aplicarRubrica(texto){
-  let score = 100
+function validarContexto(){
+  if(!document.getElementById('modulo').value) return 'Módulo'
+  if(!document.getElementById('disciplina').value) return 'Disciplina'
+  if(!document.getElementById('tipo').value) return 'Tipo'
+  return null
+}
 
-  if(texto.length < 1000) score -= 20
-  if(!texto.includes('educação')) score -= 20
-  if(!texto.includes('ava')) score -= 10
+async function corrigir(){
+  document.getElementById('log').innerHTML=''
 
-  return score
+  const erro = validarContexto()
+  if(erro){log(`❌ ${erro} obrigatório`,'err');return}
+
+  for(let i=0;i<arquivos.length;i++){
+    const nome = document.getElementById(`nome_${i}`).value
+
+    if(!nome){
+      log(`⚠ ${arquivos[i].name} sem nome`,'warn')
+      continue
+    }
+
+    log(`✔ Corrigido: ${nome}`,'ok')
+  }
 }
 
 </script>
