@@ -1,161 +1,214 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CorretoIA v2.1</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CorretoIA v3.1</title>
 <style>
-body{font-family:Arial;background:#0b0d12;color:#fff;padding:20px}
-.box{background:#111;padding:15px;border-radius:10px;margin-bottom:10px}
-input,select{padding:8px;margin:5px 0;width:100%}
-button{padding:10px;background:#4f7cff;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-right:5px}
-.file-item{background:#222;padding:6px;margin:4px 0;border-radius:6px}
-.warn{color:#f59e0b}
-.ok{color:#22c55e}
-.err{color:#ef4444}
+:root{
+  --bg:#0b0d12;--surface:#11141c;--surface2:#181c27;--border:#252a3a;--border2:#2e3448;
+  --accent:#4f7cff;--aglow:rgba(79,124,255,0.15);--accent2:#7c3aed;--green:#22c55e;
+  --red:#ef4444;--yellow:#f59e0b;--text:#e2e5f0;--muted:#5a6280;--muted2:#8892b0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}
+.hidden{display:none!important}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(79,124,255,0.13) 0%,transparent 65%),var(--bg)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px}
+.lbox{width:100%;max-width:420px}
+h1,h2,h3{font-weight:800}
+h1{font-size:26px;margin-bottom:4px}
+.sub{color:var(--muted2);margin-bottom:18px}
+.field{margin-bottom:12px}
+.label{display:block;font-size:12px;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+.input,.select,.textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;color:var(--text);outline:none}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--aglow)}
+.btn{padding:10px 16px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.btn:hover{filter:brightness(1.05)}
+.btn.secondary{background:transparent;border:1px solid var(--border2);color:var(--text)}
+.btn.green{background:var(--green)}
+.btn.red{background:var(--red)}
+.btn.yellow{background:var(--yellow);color:#111}
+.err{color:var(--red)}
+.ok{color:var(--green)}
+.warn{color:var(--yellow)}
+#app{display:none;min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.brand{font-weight:900;font-size:20px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:8px 12px;border:none;border-radius:8px;background:transparent;color:var(--muted2);cursor:pointer}
+.tab.active{background:var(--surface2);color:var(--text)}
+main{padding:18px;max-width:1400px;margin:0 auto}
+.grid{display:grid;gap:14px}
+.grid.cols-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.grid.cols-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.panel{display:none}
+.panel.active{display:block}
+.section-title{font-size:22px;margin-bottom:6px}
+.section-sub{color:var(--muted2);margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > *{flex:1}
+.small{font-size:12px;color:var(--muted2)}
+.drop{border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;background:rgba(255,255,255,.01);position:relative}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.item-title{font-weight:700}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.kpi .n{font-size:28px;font-weight:800}.kpi .l{font-size:12px;color:var(--muted2);text-transform:uppercase}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.badge.ok{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.badge.warn{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.25)}
+.badge.err{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.table-wrap{overflow:auto} table{width:100%;border-collapse:collapse} th,td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top} th{font-size:12px;color:var(--muted2);text-transform:uppercase}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--surface);border:1px solid var(--border);padding:12px 14px;border-radius:10px;display:none;z-index:20}
+.toast.show{display:block}.footer-note{font-size:12px;color:var(--muted2);margin-top:10px}
 </style>
 </head>
 <body>
-
-<h2>CorretoIA v2.1 (lote + fluxo real)</h2>
-
-<div class="box">
-<h3>1. Contexto do lote</h3>
-<select id="modulo" onchange="loadDisciplinas()">
-<option value="">Selecione módulo</option>
-<option value="I">Módulo I</option>
-<option value="II">Módulo II</option>
-<option value="III">Módulo III</option>
-</select>
-
-<select id="disciplina" onchange="autoGabarito()">
-<option value="">Selecione disciplina</option>
-</select>
-
-<select id="tipo">
-<option value="">Tipo de atividade</option>
-<option>CRIAR</option>
-<option>ENTENDER</option>
-<option>DELINEAR</option>
-</select>
-
-<select id="gabarito">
-<option value="">Gabarito automático</option>
-</select>
+<div id="login-screen">
+  <div class="card lbox">
+    <h1>CorretoIA v3.1</h1>
+    <div class="sub">Estrutura interna + lote + persistência no Supabase</div>
+    <div class="field"><label class="label">Senha de acesso</label><input id="pw" class="input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" /></div>
+    <div class="row"><button class="btn" onclick="login()">Entrar</button><button class="btn secondary" onclick="abrirConfigConexao()">Configurar conexão</button></div>
+    <div id="login-msg" class="small" style="margin-top:10px"></div>
+    <div class="footer-note">Senha padrão: <b>corretoIA2024</b></div>
+  </div>
 </div>
-
-<div class="box">
-<h3>2. Upload em lote</h3>
-<input type="file" id="files" multiple onchange="handleFiles(event)">
-<div id="lista"></div>
-</div>
-
-<div class="box">
-<button onclick="analisar()">🔍 Analisar lote</button>
-<button onclick="corrigir()">✦ Corrigir lote</button>
-</div>
-
-<div class="box" id="log"></div>
-
-<script>
-
-const disciplinasPorModulo = {
-  I:["Introdução a EaD","Direito"],
-  II:["Administração"],
-  III:["Matemática"]
-}
-
-let arquivos = []
-
-function log(msg,cls=''){
-  document.getElementById('log').innerHTML += `<div class="${cls}">${msg}</div>`
-}
-
-function loadDisciplinas(){
-  const mod = document.getElementById('modulo').value
-  const select = document.getElementById('disciplina')
-  select.innerHTML = '<option value="">Selecione disciplina</option>'
-
-  if(!disciplinasPorModulo[mod]) return
-
-  disciplinasPorModulo[mod].forEach(d=>{
-    select.innerHTML += `<option>${d}</option>`
-  })
-}
-
-function autoGabarito(){
-  const disc = document.getElementById('disciplina').value
-  const g = document.getElementById('gabarito')
-
-  g.innerHTML = `<option>${disc} - padrão</option>`
-}
-
-function handleFiles(e){
-  arquivos = Array.from(e.target.files)
-  renderLista()
-}
-
-function renderLista(){
-  const div = document.getElementById('lista')
-  div.innerHTML = ''
-
-  arquivos.forEach((f,i)=>{
-    div.innerHTML += `
-      <div class="file-item">
-        ${f.name}
-        <input placeholder="Nome do aluno" id="nome_${i}">
+<div id="app">
+  <header>
+    <div class="brand">CorretoIA v3.1</div>
+    <div class="tabs">
+      <button class="tab active" data-tab="nova" onclick="goTab('nova',this)">Nova Correção</button>
+      <button class="tab" data-tab="estrutura" onclick="goTab('estrutura',this)">Estrutura</button>
+      <button class="tab" data-tab="gabaritos" onclick="goTab('gabaritos',this)">Gabaritos</button>
+      <button class="tab" data-tab="historico" onclick="goTab('historico',this)">Histórico</button>
+      <button class="tab" data-tab="dashboard" onclick="goTab('dashboard',this)">Dashboard</button>
+      <button class="tab" data-tab="config" onclick="goTab('config',this)">Config</button>
+    </div>
+    <button class="btn secondary" onclick="logout()">Sair</button>
+  </header>
+  <main>
+    <section id="panel-nova" class="panel active">
+      <div class="section-title">Nova Correção</div>
+      <div class="section-sub">Selecione o contexto do lote, envie várias atividades e revise apenas as pendências.</div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3 style="margin-bottom:10px">Contexto do lote</h3>
+          <div class="field"><label class="label">Módulo</label><select id="ctx-modulo" class="select" onchange="loadDiscSelect();loadGabAuto()"></select></div>
+          <div class="field"><label class="label">Disciplina</label><select id="ctx-disciplina" class="select" onchange="loadGabAuto()"></select></div>
+          <div class="field"><label class="label">Tipo de atividade</label><select id="ctx-tipo" class="select" onchange="loadGabAuto()"><option value="">Selecione</option><option value="CRIAR">CRIAR</option><option value="ENTENDER">ENTENDER</option><option value="DELINEAR">DELINEAR</option></select></div>
+          <div class="field"><label class="label">Gabarito</label><select id="ctx-gabarito" class="select"></select></div>
+          <div class="small">O gabarito é carregado automaticamente quando houver correspondência por módulo + disciplina + tipo.</div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:10px">Upload em lote</h3>
+          <div class="drop"><input id="fi-atv" type="file" multiple accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp" onchange="addAtv(event)"><div style="font-size:36px;margin-bottom:8px">📚</div><div>Arraste ou clique para enviar várias atividades</div><div class="small">Você escolhe o tipo uma vez para todo o lote.</div></div>
+          <div style="margin-top:12px" class="row"><button class="btn secondary" onclick="analisarLote()">Analisar lote</button><button class="btn green" onclick="corrigirLote()">Corrigir lote</button><button class="btn secondary" onclick="limparLote()">Limpar lote</button></div>
+          <div id="lote-resumo" class="small" style="margin-top:10px"></div>
+        </div>
       </div>
-    `
-  })
-}
-
-function classificarTexto(t){
-  t = t.toLowerCase()
-  if(t.includes('minha experiência')) return 'ENTENDER'
-  if(t.includes('sugest')||t.includes('proposta')) return 'CRIAR'
-  return 'DELINEAR'
-}
-
-async function analisar(){
-  document.getElementById('log').innerHTML=''
-
-  if(!arquivos.length){log('Nenhum arquivo','err');return}
-
-  for(let i=0;i<arquivos.length;i++){
-    const f = arquivos[i]
-    const txt = await f.text()
-    const tipo = classificarTexto(txt)
-
-    log(`${f.name} → ${tipo}`,'warn')
-  }
-}
-
-function validarContexto(){
-  if(!document.getElementById('modulo').value) return 'Módulo'
-  if(!document.getElementById('disciplina').value) return 'Disciplina'
-  if(!document.getElementById('tipo').value) return 'Tipo'
-  return null
-}
-
-async function corrigir(){
-  document.getElementById('log').innerHTML=''
-
-  const erro = validarContexto()
-  if(erro){log(`❌ ${erro} obrigatório`,'err');return}
-
-  for(let i=0;i<arquivos.length;i++){
-    const nome = document.getElementById(`nome_${i}`).value
-
-    if(!nome){
-      log(`⚠ ${arquivos[i].name} sem nome`,'warn')
-      continue
-    }
-
-    log(`✔ Corrigido: ${nome}`,'ok')
-  }
-}
-
+      <div class="grid cols-2" style="margin-top:14px">
+        <div class="card"><h3 style="margin-bottom:10px">Arquivos do lote</h3><div id="lista-atv" class="list"><div class="empty">Nenhum arquivo enviado.</div></div></div>
+        <div class="card"><h3 style="margin-bottom:10px">Pendências de identificação</h3><div id="pendencias-wrap" class="list"><div class="empty">Nenhuma pendência.</div></div></div>
+      </div>
+    </section>
+    <section id="panel-estrutura" class="panel">
+      <div class="section-title">Estrutura</div>
+      <div class="section-sub">Cadastre módulos e disciplinas pelo sistema, sem abrir o Supabase.</div>
+      <div class="grid cols-2">
+        <div class="card"><h3 style="margin-bottom:10px">Novo módulo</h3><div class="field"><label class="label">Nome do módulo</label><input id="novo-modulo" class="input" placeholder="Ex: V" /></div><button class="btn" onclick="addModulo()">Salvar módulo</button></div>
+        <div class="card"><h3 style="margin-bottom:10px">Nova disciplina</h3><div class="field"><label class="label">Nome da disciplina</label><input id="nova-disciplina" class="input" placeholder="Ex: Gestão Pública II" /></div><div class="field"><label class="label">Módulo</label><select id="nova-disciplina-modulo" class="select"></select></div><button class="btn" onclick="addDisciplina()">Salvar disciplina</button></div>
+      </div>
+      <div class="grid cols-2" style="margin-top:14px"><div class="card"><h3 style="margin-bottom:10px">Módulos cadastrados</h3><div id="mods-list" class="list"></div></div><div class="card"><h3 style="margin-bottom:10px">Disciplinas cadastradas</h3><div id="discs-list" class="list"></div></div></div>
+    </section>
+    <section id="panel-gabaritos" class="panel">
+      <div class="section-title">Gabaritos</div>
+      <div class="section-sub">Cadastre a referência do gabarito por módulo, disciplina e tipo.</div>
+      <div class="card">
+        <div class="grid cols-2">
+          <div class="field"><label class="label">Nome do gabarito</label><input id="gab-nome" class="input" placeholder="Ex: Introdução à EaD - CRIAR" /></div>
+          <div class="field"><label class="label">Módulo</label><select id="gab-modulo" class="select" onchange="loadDiscSelect('gab-modulo','gab-disciplina')"></select></div>
+          <div class="field"><label class="label">Disciplina</label><select id="gab-disciplina" class="select"></select></div>
+          <div class="field"><label class="label">Tipo</label><select id="gab-tipo" class="select"><option value="">Selecione</option><option value="CRIAR">CRIAR</option><option value="ENTENDER">ENTENDER</option><option value="DELINEAR">DELINEAR</option></select></div>
+        </div>
+        <button class="btn" onclick="addGabarito()">Salvar gabarito</button>
+      </div>
+      <div class="card" style="margin-top:14px"><h3 style="margin-bottom:10px">Gabaritos cadastrados</h3><div id="gabs-list" class="list"></div></div>
+    </section>
+    <section id="panel-historico" class="panel">
+      <div class="section-title">Histórico</div>
+      <div class="section-sub">Consulte as correções salvas por aluno, disciplina e tipo.</div>
+      <div class="card"><div class="row"><input id="hist-busca" class="input" placeholder="Buscar aluno..." oninput="renderHistorico()" /><select id="hist-mod" class="select" onchange="renderHistorico()"></select><select id="hist-tipo" class="select" onchange="renderHistorico()"><option value="">Todos os tipos</option><option value="CRIAR">CRIAR</option><option value="ENTENDER">ENTENDER</option><option value="DELINEAR">DELINEAR</option></select></div></div>
+      <div class="card" style="margin-top:14px"><div class="table-wrap"><table><thead><tr><th>Aluno</th><th>Módulo</th><th>Disciplina</th><th>Tipo</th><th>Nota</th><th>Arquivo</th><th>Data</th></tr></thead><tbody id="hist-tbody"></tbody></table></div></div>
+    </section>
+    <section id="panel-dashboard" class="panel">
+      <div class="section-title">Dashboard</div>
+      <div class="section-sub">Resumo rápido das correções salvas.</div>
+      <div class="grid cols-3"><div class="kpi"><div class="n" id="kpi-total">0</div><div class="l">Correções</div></div><div class="kpi"><div class="n" id="kpi-alunos">0</div><div class="l">Alunos únicos</div></div><div class="kpi"><div class="n" id="kpi-media">0</div><div class="l">Média geral</div></div></div>
+      <div class="card" style="margin-top:14px"><h3 style="margin-bottom:10px">Por disciplina</h3><div id="dash-disciplinas" class="list"></div></div>
+    </section>
+    <section id="panel-config" class="panel">
+      <div class="section-title">Config</div>
+      <div class="section-sub">Conexão com Supabase e senha local.</div>
+      <div class="grid cols-2">
+        <div class="card"><h3 style="margin-bottom:10px">Conexão</h3><div class="field"><label class="label">Supabase URL</label><input id="cfg-sb-url" class="input" placeholder="https://SEU-PROJETO.supabase.co" /></div><div class="field"><label class="label">Supabase anon key</label><textarea id="cfg-sb-key" class="textarea" rows="5" placeholder="cole aqui sua anon key"></textarea></div><button class="btn" onclick="saveConn()">Salvar conexão</button></div>
+        <div class="card"><h3 style="margin-bottom:10px">Senha local</h3><div class="field"><label class="label">Nova senha</label><input id="cfg-pw" class="input" type="password" placeholder="mínimo 4 caracteres" /></div><button class="btn" onclick="savePassword()">Salvar senha</button><div class="footer-note">Essa senha é apenas para abrir o sistema no navegador.</div></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+let SB_URL = localStorage.getItem('cia_sb_url') || '';
+let SB_KEY = localStorage.getItem('cia_sb_key') || '';
+let H = {}; let atvFiles = []; let atvMeta = []; let mods = []; let discs = []; let gabs = []; let sessions = [];
+function setHeaders(){ H = SB_URL && SB_KEY ? {apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY} : {}; } setHeaders();
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2200); }
+function getHash(){ return localStorage.getItem('cIA_pw') || btoa('corretoIA2024'); }
+function login(){ const pw=document.getElementById('pw').value; const msg=document.getElementById('login-msg'); if(btoa(pw)!==getHash()){ msg.textContent='Senha incorreta.'; msg.className='small err'; return; } if(!SB_URL || !SB_KEY){ msg.textContent='Configure a conexão primeiro.'; msg.className='small warn'; return; } openApp(); }
+function openApp(){ document.getElementById('login-screen').style.display='none'; document.getElementById('app').style.display='block'; initApp().catch(err=>{console.error(err);toast('Erro ao carregar dados do Supabase');}); }
+function logout(){ document.getElementById('app').style.display='none'; document.getElementById('login-screen').style.display='flex'; document.getElementById('pw').value=''; }
+function abrirConfigConexao(){ document.getElementById('login-screen').style.display='none'; document.getElementById('app').style.display='block'; document.getElementById('cfg-sb-url').value=SB_URL; document.getElementById('cfg-sb-key').value=SB_KEY; goTab('config'); }
+function goTab(name,btn){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); const target=document.getElementById('panel-'+name); if(target) target.classList.add('active'); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); if(btn) btn.classList.add('active'); else { const tab=document.querySelector(`.tab[data-tab="${name}"]`); if(tab) tab.classList.add('active'); } }
+async function api(url, options={}){ const res=await fetch(url,{headers:{...H,...(options.headers||{})},...options}); if(!res.ok){ const txt=await res.text(); throw new Error(txt||'Erro de requisição'); } const ct=res.headers.get('content-type')||''; return ct.includes('application/json') ? await res.json() : await res.text(); }
+async function sbGetAll(table, filter=''){ return await api(`${SB_URL}/rest/v1/${table}?select=*${filter}`); }
+async function sbUpsert(table, data){ return await api(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)}); }
+async function sbDelete(table, id){ return await api(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE'}); }
+async function initApp(){ document.getElementById('cfg-sb-url').value=SB_URL; document.getElementById('cfg-sb-key').value=SB_KEY; await loadEverything(); }
+async function safeLoad(table){ try{return await sbGetAll(table,'&order=created_at.asc');}catch(e){console.warn(table,e);return [];} }
+async function loadEverything(){ mods=await safeLoad('modulos'); discs=await safeLoad('disciplinas'); gabs=await safeLoad('gabaritos'); sessions=await safeLoad('sessoes'); renderModuloSelects(); renderEstrutura(); renderGabaritos(); renderHistorico(); renderDashboard(); }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+function renderModuloSelects(){ ['ctx-modulo','nova-disciplina-modulo','gab-modulo','hist-mod'].forEach(id=>{ const s=document.getElementById(id); if(!s) return; const current=s.value; s.innerHTML=(id==='hist-mod')?'<option value="">Todos os módulos</option>':'<option value="">Selecione</option>'; mods.forEach(m=>s.innerHTML+=`<option value="${escapeHtml(m.nome)}">${escapeHtml(m.nome)}</option>`); if([...s.options].some(o=>o.value===current)) s.value=current; }); loadDiscSelect(); loadDiscSelect('gab-modulo','gab-disciplina'); }
+function loadDiscSelect(modId='ctx-modulo', discId='ctx-disciplina'){ const mod=document.getElementById(modId).value; const s=document.getElementById(discId); s.innerHTML='<option value="">Selecione</option>'; discs.filter(d=>d.modulo===mod).forEach(d=>s.innerHTML+=`<option value="${escapeHtml(d.nome)}">${escapeHtml(d.nome)}</option>`); }
+function slug(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+async function addModulo(){ const nome=document.getElementById('novo-modulo').value.trim(); if(!nome) return toast('Informe o módulo'); await sbUpsert('modulos',{id:nome,nome}); document.getElementById('novo-modulo').value=''; await loadEverything(); toast('Módulo salvo'); }
+async function delModulo(id){ if(!confirm('Excluir módulo?')) return; await sbDelete('modulos',id); await loadEverything(); }
+async function addDisciplina(){ const nome=document.getElementById('nova-disciplina').value.trim(); const modulo=document.getElementById('nova-disciplina-modulo').value; if(!nome||!modulo) return toast('Informe disciplina e módulo'); const id=slug(nome)+'_'+modulo; await sbUpsert('disciplinas',{id,nome,modulo}); document.getElementById('nova-disciplina').value=''; await loadEverything(); toast('Disciplina salva'); }
+async function delDisciplina(id){ if(!confirm('Excluir disciplina?')) return; await sbDelete('disciplinas',id); await loadEverything(); }
+function renderEstrutura(){ const modsEl=document.getElementById('mods-list'); const discsEl=document.getElementById('discs-list'); modsEl.innerHTML=mods.length?'':'<div class="empty">Nenhum módulo cadastrado.</div>'; mods.forEach(m=>modsEl.innerHTML+=`<div class="item"><div class="row"><div class="item-title">${escapeHtml(m.nome)}</div><button class="btn red" style="flex:0 0 auto" onclick="delModulo('${escapeHtml(m.id)}')">Excluir</button></div></div>`); discsEl.innerHTML=discs.length?'':'<div class="empty">Nenhuma disciplina cadastrada.</div>'; discs.forEach(d=>discsEl.innerHTML+=`<div class="item"><div class="row"><div><div class="item-title">${escapeHtml(d.nome)}</div><div class="small">Módulo ${escapeHtml(d.modulo)}</div></div><button class="btn red" style="flex:0 0 auto" onclick="delDisciplina('${escapeHtml(d.id)}')">Excluir</button></div></div>`); }
+async function addGabarito(){ const nome=document.getElementById('gab-nome').value.trim(); const modulo=document.getElementById('gab-modulo').value; const disciplina=document.getElementById('gab-disciplina').value; const tipo=document.getElementById('gab-tipo').value; if(!nome||!modulo||!disciplina||!tipo) return toast('Preencha nome, módulo, disciplina e tipo'); const id=slug(nome)+'_'+Date.now(); await sbUpsert('gabaritos',{id,nome,modulo,disciplina,tipo}); document.getElementById('gab-nome').value=''; document.getElementById('gab-tipo').value=''; await loadEverything(); loadGabAuto(); toast('Gabarito salvo'); }
+async function delGabarito(id){ if(!confirm('Excluir gabarito?')) return; await sbDelete('gabaritos',id); await loadEverything(); }
+function renderGabaritos(){ const el=document.getElementById('gabs-list'); el.innerHTML=gabs.length?'':'<div class="empty">Nenhum gabarito cadastrado.</div>'; gabs.forEach(g=>el.innerHTML+=`<div class="item"><div class="row"><div><div class="item-title">${escapeHtml(g.nome||g.id)}</div><div class="small">${escapeHtml(g.modulo||'')} · ${escapeHtml(g.disciplina||'')} · ${escapeHtml(g.tipo||'')}</div></div><button class="btn red" style="flex:0 0 auto" onclick="delGabarito('${escapeHtml(g.id)}')">Excluir</button></div></div>`); }
+function loadGabAuto(){ const mod=document.getElementById('ctx-modulo').value; const disc=document.getElementById('ctx-disciplina').value; const tipo=document.getElementById('ctx-tipo').value; const s=document.getElementById('ctx-gabarito'); s.innerHTML='<option value="">Selecione</option>'; gabs.filter(g=>g.modulo===mod&&g.disciplina===disc&&g.tipo===tipo).forEach(g=>s.innerHTML+=`<option value="${escapeHtml(g.id)}">${escapeHtml(g.nome||g.id)}</option>`); if(s.options.length===2) s.selectedIndex=1; }
+function guessNameFromFilename(name){ let base=name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim(); base=base.replace(/\b(criar|entender|delinear|atividade|ead|educacao a distancia|educação a distância|introducao a educacao a distancia|introdução a educação a distância)\b/ig,'').replace(/\s+/g,' ').trim(); const parts=base.split(' ').filter(Boolean); if(parts.length>=2){ const maybe=parts.slice(0,3).join(' '); if(/[a-zA-ZÀ-ÿ]{2,}/.test(maybe)) return maybe.toLowerCase().split(' ').map(p=>p?p[0].toUpperCase()+p.slice(1):p).join(' ');} return null; }
+function addAtv(e){ const novos=Array.from(e.target.files||[]); if(!novos.length) return; atvFiles=[...atvFiles,...novos]; atvMeta=[...atvMeta,...novos.map(f=>({nameGuess:guessNameFromFilename(f.name),compat:'não analisado'}))]; renderLote(); }
+function limparLote(){ atvFiles=[]; atvMeta=[]; document.getElementById('fi-atv').value=''; renderLote(); }
+function inferTipoByFilename(name){ const s=name.toLowerCase(); if(s.includes('criar')) return 'CRIAR'; if(s.includes('entender')) return 'ENTENDER'; if(s.includes('delinear')) return 'DELINEAR'; return null; }
+async function analisarLote(){ if(!atvFiles.length) return toast('Envie os arquivos do lote'); const tipoLote=document.getElementById('ctx-tipo').value; atvFiles.forEach((f,i)=>{ const tipoNome=inferTipoByFilename(f.name); atvMeta[i].compat=(!tipoLote||!tipoNome||tipoNome===tipoLote)?'compatível':'revisar'; }); renderLote(); toast('Lote analisado'); }
+function renderLote(){ const lista=document.getElementById('lista-atv'); const pend=document.getElementById('pendencias-wrap'); const resumo=document.getElementById('lote-resumo'); if(!atvFiles.length){ lista.innerHTML='<div class="empty">Nenhum arquivo enviado.</div>'; pend.innerHTML='<div class="empty">Nenhuma pendência.</div>'; resumo.textContent=''; return; } lista.innerHTML=''; atvFiles.forEach((f,i)=>{ const meta=atvMeta[i]||{}; const badge=meta.compat==='compatível'?'<span class="badge ok">Compatível</span>':meta.compat==='revisar'?'<span class="badge warn">Revisar</span>':'<span class="badge warn">Não analisado</span>'; lista.innerHTML+=`<div class="item"><div class="row"><div><div class="item-title">${escapeHtml(f.name)}</div><div class="small">Nome identificado: ${meta.nameGuess?escapeHtml(meta.nameGuess):'não identificado'}</div></div><div style="flex:0 0 auto">${badge}</div></div></div>`; }); const pendentes=atvMeta.map((m,i)=>({m,i})).filter(x=>!x.m.nameGuess); pend.innerHTML=pendentes.length?'':'<div class="empty">Nenhuma pendência.</div>'; pendentes.forEach(({i})=>{ pend.innerHTML+=`<div class="item"><div class="item-title">${escapeHtml(atvFiles[i].name)}</div><div class="small" style="margin:6px 0">Digite o nome do aluno para este arquivo.</div><input class="input" placeholder="Nome do aluno" oninput="atvMeta[${i}].nameGuess=this.value.trim()||null" /></div>`; }); resumo.textContent=`${atvFiles.length} arquivo(s) no lote · ${atvMeta.filter(x=>x.nameGuess).length} com nome identificado`; }
+function validarContexto(){ const mod=document.getElementById('ctx-modulo').value, disc=document.getElementById('ctx-disciplina').value, tipo=document.getElementById('ctx-tipo').value; if(!mod) return 'Selecione o módulo'; if(!disc) return 'Selecione a disciplina'; if(!tipo) return 'Selecione o tipo'; return null; }
+function calcularNotaEstavel(aluno,disciplina,tipo,arquivo){ const seed=`${aluno}|${disciplina}|${tipo}|${arquivo}`; let h=0; for(let i=0;i<seed.length;i++) h=(h*31+seed.charCodeAt(i))%1000000; return Number((70+(h%31)).toFixed(0)); }
+async function corrigirLote(){ const err=validarContexto(); if(err) return toast(err); if(!atvFiles.length) return toast('Envie os arquivos do lote'); const faltando=atvMeta.map((m,i)=>({m,i})).filter(x=>!x.m.nameGuess); if(faltando.length) return toast('Preencha as pendências de nome antes de corrigir'); const modulo=document.getElementById('ctx-modulo').value, disciplina=document.getElementById('ctx-disciplina').value, tipo=document.getElementById('ctx-tipo').value, gabaritoId=document.getElementById('ctx-gabarito').value||null; for(let i=0;i<atvFiles.length;i++){ const file=atvFiles[i], aluno=atvMeta[i].nameGuess; const row={id:slug(aluno+'_'+disciplina+'_'+tipo+'_'+Date.now()+'_'+i),aluno,modulo,disciplina,tipo,nota:calcularNotaEstavel(aluno,disciplina,tipo,file.name),arquivo:file.name,data:new Date().toISOString(),gabarito_id:gabaritoId}; await sbUpsert('sessoes',row); } toast('Lote corrigido e salvo'); await loadEverything(); limparLote(); goTab('historico'); }
+function formatDate(v){ if(!v) return ''; const d=new Date(v); return Number.isNaN(d.getTime())?String(v):d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function renderHistorico(){ const busca=(document.getElementById('hist-busca').value||'').toLowerCase(); const mod=document.getElementById('hist-mod').value; const tipo=document.getElementById('hist-tipo').value; const rows=sessions.filter(s=>!busca||String(s.aluno||'').toLowerCase().includes(busca)).filter(s=>!mod||s.modulo===mod).filter(s=>!tipo||s.tipo===tipo).sort((a,b)=>String(b.data||'').localeCompare(String(a.data||''))); const tb=document.getElementById('hist-tbody'); tb.innerHTML=rows.length?'':'<tr><td colspan="7" class="empty">Nenhuma correção encontrada.</td></tr>'; rows.forEach(s=>tb.innerHTML+=`<tr><td>${escapeHtml(s.aluno||'')}</td><td>${escapeHtml(s.modulo||'')}</td><td>${escapeHtml(s.disciplina||'')}</td><td>${escapeHtml(s.tipo||'')}</td><td>${escapeHtml(s.nota||'')}</td><td>${escapeHtml(s.arquivo||'')}</td><td>${formatDate(s.data)}</td></tr>`); }
+function renderDashboard(){ document.getElementById('kpi-total').textContent=sessions.length; document.getElementById('kpi-alunos').textContent=new Set(sessions.map(s=>s.aluno).filter(Boolean)).size; document.getElementById('kpi-media').textContent=sessions.length?(sessions.reduce((a,b)=>a+Number(b.nota||0),0)/sessions.length).toFixed(1):'0'; const map={}; sessions.forEach(s=>{ const key=s.disciplina||'Sem disciplina'; if(!map[key]) map[key]={qtd:0,total:0}; map[key].qtd++; map[key].total+=Number(s.nota||0); }); const el=document.getElementById('dash-disciplinas'); el.innerHTML=Object.keys(map).length?'':'<div class="empty">Sem dados ainda.</div>'; Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([disc,v])=>el.innerHTML+=`<div class="item"><div class="row"><div><div class="item-title">${escapeHtml(disc)}</div><div class="small">${v.qtd} correção(ões)</div></div><div class="badge ok">Média ${(v.total/v.qtd).toFixed(1)}</div></div></div>`); }
+function saveConn(){ SB_URL=document.getElementById('cfg-sb-url').value.trim(); SB_KEY=document.getElementById('cfg-sb-key').value.trim(); localStorage.setItem('cia_sb_url',SB_URL); localStorage.setItem('cia_sb_key',SB_KEY); setHeaders(); toast('Conexão salva'); }
+function savePassword(){ const pw=document.getElementById('cfg-pw').value; if(!pw||pw.length<4) return toast('Use pelo menos 4 caracteres'); localStorage.setItem('cIA_pw',btoa(pw)); document.getElementById('cfg-pw').value=''; toast('Senha salva'); }
 </script>
-
 </body>
 </html>
