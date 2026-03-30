@@ -275,8 +275,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .toast.ok{border-color:rgba(34,197,94,0.4);}.toast.err{border-color:rgba(239,68,68,0.4);}
 .api-row{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
 .api-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
-.api-row input:focus{border-color:var(--accent);}
-            <div id="turma-msg" style="font-size:12px;min-height:16px;margin-top:8px;"></div>
+.api-row input:focus{border-color:var(--accent);}            <div id="turma-msg" style="font-size:12px;min-height:16px;margin-top:8px;"></div>
           </div>
         </div>
         <div class="fcard">
@@ -725,8 +724,7 @@ function recalcularNotaEstruturada(payload,modelo){
   });
   payload.criterios=criteriosNormalizados;
   payload.escala_maxima=parseFloat(modelo.peso_total)||10;
-  if(somaPeso>0){
-      const notaNumerica=(somaNota/somaPeso)*payload.escala_maxima;
+  if(somaPeso>0){    const notaNumerica=(somaNota/somaPeso)*payload.escala_maxima;
     payload.nota_numerica=parseFloat(notaNumerica.toFixed(1));
     payload.nota_final=String(payload.nota_numerica.toFixed(1)).replace('.',',')+'/'+payload.escala_maxima;
     payload.memoria_calculo=`${somaNota.toFixed(2)} / ${somaPeso.toFixed(2)} × ${payload.escala_maxima} = ${payload.nota_numerica.toFixed(1)}`;
@@ -1175,8 +1173,7 @@ function onDiscSelChange(){
 }
 async function salvarDisc(){
   var idx=_editDiscIdx;if(idx===null||idx===undefined)return;
-  var sel=document.getElementById('disc-edit-sel');
-    var inp=document.getElementById('disc-edit-inp');
+  var sel=document.getElementById('disc-edit-sel');  var inp=document.getElementById('disc-edit-inp');
   var novo=(sel&&sel.value!=='__novo__')?(sel.value):(inp?inp.value.trim():'');
   if(!novo){toast('Informe a disciplina.','err');return;}
   var rows=_resFiltered();var r=rows[idx];if(!r||!_curSess)return;
