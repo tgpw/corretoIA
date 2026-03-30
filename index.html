@@ -275,7 +275,194 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .toast.ok{border-color:rgba(34,197,94,0.4);}.toast.err{border-color:rgba(239,68,68,0.4);}
 .api-row{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
 .api-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
-.api-row input:focus{border-color:var(--accent);}            <div id="turma-msg" style="font-size:12px;min-height:16px;margin-top:8px;"></div>
+.api-row input:focus{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div id="login-screen">
+  <div class="lbox">
+    <div class="llogo"><div class="ldot"></div>CorretoIA</div>
+    <div class="lsub">Correção inteligente de atividades universitárias</div>
+    <label class="llabel" for="pw">Senha de acesso</label>
+    <input class="linput" type="password" id="pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button class="lbtn" onclick="login()">Entrar</button>
+    <div class="lerr" id="lerr"></div>
+    <div class="linfo" id="linfo"></div>
+  </div>
+</div>
+<div id="app">
+  <header>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="hlogo"><div class="ldot"></div>CorretoIA</div>
+      <span class="cloud-badge">☁ nuvem</span>
+    </div>
+    <div class="tnav">
+      <button class="tbtn active" onclick="goTab('nova')">Nova Correção</button>
+      <button class="tbtn" onclick="goTab('modelos')">Modelos</button>
+      <button class="tbtn" onclick="goTab('turmas')">Turmas</button>
+      <button class="tbtn" onclick="goTab('dashboard')">Dashboard</button>
+      <button class="tbtn" onclick="goTab('gabaritos')">Gabaritos</button>
+      <button class="tbtn" onclick="goTab('historico')">Histórico</button>
+      <button class="tbtn" onclick="goTab('config')">Config</button>
+    </div>
+    <button class="ghost" onclick="logout()">Sair</button>
+  </header>
+  <div class="abody">
+    <div class="sidebar">
+      <div class="sb-sec">Correções salvas</div>
+      <div class="sb-body" id="sb-body"><div class="sb-empty">Carregando...</div></div>
+    </div>
+    <div class="panels">
+      <div class="panel active" id="panel-nova">
+        <div class="ptitle">Nova Correção</div>
+        <p class="psub">Informe o módulo, carregue ou suba gabaritos e adicione as atividades dos alunos.</p>
+        <div class="api-row">
+          <span style="font-size:11px;font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);white-space:nowrap;">Chave API</span>
+          <input type="password" id="apikey" placeholder="sk-ant-api... (carregando da nuvem)" oninput="checkReady()">
+          <button class="btn-o" style="font-size:11px;padding:5px 10px;white-space:nowrap;" onclick="saveApiKeyCloud()">Salvar</button>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">📦 Módulo</div>
+          <div class="row-fields" style="margin-bottom:0;">
+            <span class="flabel">Módulo</span>
+            <input class="finput mod" type="text" id="modulo" placeholder="Ex: I" oninput="checkReady();loadGabFromCloud();renderModeloSelect()">
+            <span style="font-size:12px;color:var(--muted);">Informe o módulo para carregar gabaritos salvos automaticamente.</span>
+          </div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">🧠 Atividade-modelo</div>
+          <div class="fcard-desc">Selecione o modelo ativo que define critérios, pesos e modo de avaliação.</div>
+          <div class="row-fields">
+            <span class="flabel">Disciplina</span>
+            <input class="finput disc" type="text" id="modelo-disciplina" placeholder="Filtrar disciplina" oninput="renderModeloSelect()">
+            <span class="flabel">Tipo</span>
+            <select class="finput" id="modelo-tipo" onchange="renderModeloSelect()" style="font-size:12px;padding:7px 10px;width:160px;">
+              <option value="">Todos</option>
+              <option value="criar">Criar</option>
+              <option value="delinear">Delinear</option>
+              <option value="entender">Entender</option>
+            </select>
+          </div>
+          <div class="row-fields" style="align-items:flex-start;">
+            <select class="finput wide" id="modelo-select" onchange="onModeloSelecionado()" style="min-width:260px;">
+              <option value="">Selecione um modelo ativo...</option>
+            </select>
+            <button class="btn-sm accent" onclick="goTab('modelos')">Gerenciar modelos</button>
+          </div>
+          <div id="modelo-resumo" style="font-size:12px;color:var(--muted2);line-height:1.6;font-family:'DM Mono',monospace;min-height:18px;">Nenhum modelo selecionado.</div>
+          <div id="compat-status" style="font-size:12px;min-height:16px;margin-top:8px;font-family:'DM Mono',monospace;"></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">📋 Gabaritos</div>
+          <div class="fcard-desc">Gabaritos são gerenciados na aba <b>Gabaritos</b>. Ao informar o módulo acima eles carregam automaticamente. Você também pode adicionar arquivos avulsos abaixo.</div>
+          <div id="cloud-gab-status" style="font-size:12px;color:var(--muted2);margin-bottom:10px;font-family:'DM Mono',monospace;min-height:18px;"></div>
+          <div class="dz" id="dz-gab">
+            <input type="file" id="fi-gab" accept=".pdf,.docx,.doc" multiple onchange="addGab(event)">
+            <div class="dz-icon">📄</div>
+            <div class="dz-text">Adicionar gabaritos avulsos (opcional) ou <b>clique para selecionar</b></div>
+          </div>
+          <div class="chips" id="ch-gab"></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">👨‍🎓 Atividades dos Alunos</div>
+          <div class="fcard-desc">PDF, DOCX ou imagem. O nome do aluno deve estar escrito dentro do arquivo.</div>
+          <div class="dz" id="dz-atv">
+            <input type="file" id="fi-atv" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp" multiple onchange="addAtv(event)">
+            <div class="dz-icon">📚</div>
+            <div class="dz-text">Arraste as atividades aqui ou <b>clique para selecionar</b><br>Múltiplos alunos e disciplinas</div>
+          </div>
+          <div class="chips" id="ch-atv"></div>
+        </div>
+        <div class="match-box" id="match-box">
+          <div class="match-hdr" id="match-hdr"><span class="mspin"></span> Detectando correspondências...</div>
+          <div id="match-wrap"></div>
+        </div>
+        <div id="cost-box">
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2);margin-bottom:10px;">💰 Estimativa de Custo</div>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">
+            <div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)" id="est-usd">—</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">USD</div></div>
+            <div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--green)" id="est-brl">—</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">BRL aprox.</div></div>
+            <div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;" id="est-qtd">—</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Atividades</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);" id="est-detail"></div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);">Sonnet · $3/MTok entrada · $15/MTok saída · Câmbio ~R$5,80</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+          <button class="btn" id="btn-corrigir" onclick="iniciarCorrecao()" disabled>✦ Corrigir Tudo</button>
+          <span id="cnt-lbl" style="font-size:12px;color:var(--muted2);"></span>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-modelos">
+        <div class="ptitle">Modelos de Atividade</div>
+        <p class="psub">Cadastre a estrutura de correção por módulo, disciplina, tipo e modo de avaliação.</p>
+        <div class="fcard">
+          <div class="fcard-title">➕ Novo / Editar Modelo</div>
+          <div class="fcard-desc">Use esta área para cadastrar critérios, questões ou aspectos orientadores da atividade.</div>
+          <div class="row-fields">
+            <span class="flabel">Módulo</span>
+            <input class="finput mod" type="text" id="m-modulo" placeholder="Ex: I">
+            <span class="flabel">Disciplina</span>
+            <input class="finput disc" type="text" id="m-disciplina" placeholder="Ex: Introdução a EaD">
+            <span class="flabel">Tipo</span>
+            <select class="finput" id="m-tipo" style="font-size:12px;padding:7px 10px;width:150px;">
+              <option value="">Selecione</option>
+              <option value="criar">Criar</option>
+              <option value="delinear">Delinear</option>
+              <option value="entender">Entender</option>
+            </select>
+          </div>
+          <div class="row-fields">
+            <span class="flabel">Título</span>
+            <input class="finput wide" type="text" id="m-titulo" placeholder="Ex: Introdução a EaD — Entender">
+            <span class="flabel">Modo</span>
+            <select class="finput" id="m-modo" onchange="renderEstruturaEditor()" style="font-size:12px;padding:7px 10px;width:220px;">
+              <option value="rubrica_criterios">Rubrica por critérios</option>
+              <option value="questoes_respostas">Questões e respostas</option>
+              <option value="avaliacao_orientada">Avaliação orientada</option>
+            </select>
+            <span class="flabel">Peso total</span>
+            <input class="finput mod" type="number" id="m-peso" value="10" min="0" step="0.1">
+          </div>
+          <div class="sfield">
+            <label>Instruções adicionais</label>
+            <input type="text" id="m-instrucoes" placeholder="Observações opcionais para a IA" />
+          </div>
+          <div id="m-estrutura"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <button class="btn" onclick="salvarAtividadeModelo()">Salvar modelo</button>
+            <button class="btn-o" onclick="limparFormularioModelo()">Limpar</button>
+          </div>
+          <div id="m-msg" style="font-size:12px;min-height:16px;margin-top:8px;"></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">📚 Modelos Cadastrados</div>
+          <div id="modelos-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-turmas">
+        <div class="ptitle">Turmas</div>
+        <p class="psub">Cadastre os alunos por módulo e disciplina. A lista é usada no Dashboard e no controle de pendentes.</p>
+        <div class="fcard">
+          <div class="fcard-title">➕ Nova Turma</div>
+          <div class="fcard-desc">Informe o módulo e a disciplina para criar ou editar a lista de alunos.</div>
+          <div class="row-fields">
+            <span class="flabel">Módulo</span>
+            <input class="finput mod" type="text" id="t-modulo" placeholder="Ex: I">
+            <span class="flabel">Disciplina</span>
+            <input class="finput disc" type="text" id="t-disciplina" placeholder="Ex: Cálculo III">
+            <button class="btn" onclick="criarOuCarregarTurma()">Carregar / Criar</button>
+          </div>
+          <div id="turma-editor" style="display:none;">
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;font-family:'DM Mono',monospace;" id="turma-editor-label"></div>
+            <div class="aluno-list" id="aluno-list"></div>
+            <div class="add-aluno-row">
+              <input class="add-aluno-input" type="text" id="novo-aluno" placeholder="Nome do aluno" onkeydown="if(event.key==='Enter')addAluno()">
+              <button class="btn-sm accent" onclick="addAluno()">+ Adicionar</button>
+              <button class="btn-sm green" onclick="salvarTurma()">💾 Salvar turma</button>
+            </div>
+            <div id="turma-msg" style="font-size:12px;min-height:16px;margin-top:8px;"></div>
           </div>
         </div>
         <div class="fcard">
@@ -395,6 +582,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 <div id="loading"><div class="lbox2"><div class="spin"></div><div class="ltitle">Corrigindo atividades...</div><div class="lmsg" id="lmsg">Preparando</div><div class="lpbar"><div class="lbar" id="lbar"></div></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
+
 const SB_URL='https://hvxwbbsozhwsxrnpfedb.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eHdiYnNvemh3c3hybnBmZWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzA2NTksImV4cCI6MjA4OTYwNjY1OX0.uCJk8HgnrkOkQHk4onA2WZRT42uqcrrU_LGM3j3QOtU';
 const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
@@ -453,6 +641,10 @@ async function loadCloud(pw){
   gabListCache=await sbGetAllSafe('gabaritos');
   await loadAtividadesModelo(true);
   renderSidebar();
+  renderTurmasList();
+  renderGabList();
+  renderModeloSelect();
+  renderModelosList();
 }
 function logout(){currentPw='';sessionStorage.removeItem('cIA5_logged');localStorage.removeItem('cIA5_pw_plain');document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('apikey').value='';}
 function alterarSenha(){
@@ -1282,9 +1474,19 @@ function exportAlunoExcel(i){
 }
 function exportAlunoPDF(i){
   const rows=_resFiltered();const r=rows[i];if(!r)return;
-  const critRows=(r.criterios||[]).map(c=>'<tr><td><b>'+(c.label||'')+'</b></td><td style="color:#555;">'+(c.esperado||'—')+'</td><td>'+(c.entregue||'—')+'</td><td>'+(c.peso||'—')+'</td><td style="color:'+(c.desconto?'#c0392b':'#27ae60')+';">'+(c.desconto||'✓')+' '+(c.motivo?'('+c.motivo+')':'')+'</td></tr>').join('');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;margin:30px;color:#222;}h1{font-size:16px;margin-bottom:4px;}h2{font-size:13px;color:#555;margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top;}.nota{font-size:20px;font-weight:bold;color:'+(r.nota_numerica>=7?'#27ae60':r.nota_numerica>=5?'#e67e22':'#c0392b')+'}.mc{background:#f8f9fa;padding:10px;border-left:3px solid #4f7cff;font-size:11px;margin-bottom:12px;}.feed{background:#f8f9fa;padding:10px;font-size:11px;}</style></head><body><h1>'+(r.nome_aluno||'Aluno')+'</h1><h2>'+r._disc+' · '+r._tKey+' · Módulo '+(_curSess?.modulo||'')+'</h2><p>Nota: <span class="nota">'+(r.nota_final||'—')+'</span></p><h3>Critérios de Avaliação</h3><table><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table><h3>Memória de Cálculo</h3><div class="mc">'+(r.memoria_calculo||'—')+'</div><h3>Feedback</h3><div class="feed">'+(r.feedback||'—')+'</div></body></html>';
-  const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();
+  const esc=function(v){return String(v==null?'':v).replace(/[&<>"]/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]);});};
+  const critRows=(r.criterios||[]).map(function(c){
+    return `<tr><td><b>${esc(c.label||'')}</b></td><td style="color:#555;">${esc(c.esperado||'—')}</td><td>${esc(c.entregue||'—')}</td><td>${esc(c.peso_max ?? c.peso ?? '—')}</td><td style="color:${c.desconto?'#c0392b':'#27ae60'};">${esc(c.desconto||'✓')} ${c.motivo?'('+esc(c.motivo)+')':''}</td></tr>`;
+  }).join('');
+  const notaCor=(r.nota_numerica>=7?'#27ae60':r.nota_numerica>=5?'#e67e22':'#c0392b');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resultado - ${esc(r.nome_aluno||'Aluno')}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:30px;color:#222;}h1{font-size:16px;margin-bottom:4px;}h2{font-size:13px;color:#555;margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top;}.nota{font-size:20px;font-weight:bold;color:${notaCor}}.mc{background:#f8f9fa;padding:10px;border-left:3px solid #4f7cff;font-size:11px;margin-bottom:12px;}.feed{background:#f8f9fa;padding:10px;font-size:11px;}</style></head><body><h1>${esc(r.nome_aluno||'Aluno')}</h1><h2>${esc(r._disc)} · ${esc(r._tKey)} · Módulo ${esc(_curSess?.modulo||'')}</h2><p>Nota: <span class="nota">${esc(r.nota_final||'—')}</span></p><h3>Critérios de Avaliação</h3><table><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>${critRows}</tbody></table><h3>Memória de Cálculo</h3><div class="mc">${esc(r.memoria_calculo||'—')}</div><h3>Feedback</h3><div class="feed">${esc(r.feedback||'—')}</div></body></html>`;
+  const w=window.open('','_blank');
+  if(!w){toast('Permita pop-ups para exportar o PDF.','err');return;}
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  w.print();
 }
 function exportTurmaExcel(){
   if(!_curSess){toast('Sem sessão.','err');return;}
@@ -1601,6 +1803,7 @@ function forceCheckReady(){
   if(btn)btn.disabled=!(hasAtv&&hasKey&&hasMod&&hasModelo);
 }
 setInterval(forceCheckReady,500);
+
 </script>
 </body>
 </html>
