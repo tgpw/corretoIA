@@ -1540,7 +1540,7 @@ function renderTurmasList(){
   const el=document.getElementById('turmas-list');
   if(!turmas.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhuma turma cadastrada ainda.</div>';return;}
   const byMod={};turmas.forEach(t=>{if(!byMod[t.modulo])byMod[t.modulo]=[];byMod[t.modulo].push(t);});
-  el.innerHTML=Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<div class="turma-card"><div class="turma-hdr"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="editTurma('${t.id.replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="delTurma('${t.id.replace(/'/g,"\\'")}')">Excluir</button></div></div><div class="aluno-list" style="margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div><div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;">${t.alunos.length} aluno(s) cadastrado(s)</div></div>`).join('')}</div>`).join('');
+  el.innerHTML=Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<div class="turma-card"><div class="turma-hdr"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="editTurma('${String(t.id).replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="delTurma('${String(t.id).replace(/'/g,"\\'")}')">Excluir</button></div></div><div class="aluno-list" style="margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div><div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;">${t.alunos.length} aluno(s) cadastrado(s)</div></div>`).join('')}</div>`).join('');
 }
 function editTurma(id){
   const t=turmas.find(x=>x.id===id);if(!t)return;
@@ -1688,15 +1688,20 @@ async function uploadGabaritos(e){
 function renderGabList(){
   const el=document.getElementById('gab-list');if(!el)return;
   const filter=document.getElementById('gab-filter')?document.getElementById('gab-filter').value.trim().toLowerCase():'';
-  const list=filter?gabListCache.filter(g=>g.modulo.toLowerCase().includes(filter)):gabListCache;
+  const list=filter?gabListCache.filter(g=>String(g.modulo||'').toLowerCase().includes(filter)):gabListCache;
   if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum gabarito salvo ainda.</div>';return;}
-  const byMod={};list.forEach(g=>{if(!byMod[g.modulo])byMod[g.modulo]=[];byMod[g.modulo].push(g);});
-  el.innerHTML=Object.entries(byMod).sort().map(([mod,gs])=>`<div style="margin-bottom:14px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:7px;">Módulo ${mod}</div>${gs.map(g=>`<div class="gab-row"><span>${g.tipo_mime==='application/pdf'?'📄':'📝'}</span><span class="gab-row-name" title="${g.nome}">${g.nome}</span><span class="gab-row-mod">Mod. ${g.modulo}</span><span class="gab-row-size">${(g.tamanho/1024).toFixed(0)}kb</span><button class="btn-sm red" onclick="delGab('${g.id.replace(/'/g,"\\'")}','${g.nome.replace(/'/g,"\\'")}')">✕</button></div>`).join('')}</div>`).join('');
+  const byMod={};
+  list.forEach(g=>{
+    const mod=String(g.modulo||'');
+    if(!byMod[mod])byMod[mod]=[];
+    byMod[mod].push(g);
+  });
+  el.innerHTML=Object.entries(byMod).sort().map(([mod,gs])=>`<div style="margin-bottom:14px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:7px;">Módulo ${mod}</div>${gs.map(g=>{const gid=String(g.id??'');const gnome=String(g.nome??'');const gtipo=String(g.tipo_mime??'');const gtam=Number(g.tamanho??0);return `<div class="gab-row"><span>${gtipo==='application/pdf'?'📄':'📝'}</span><span class="gab-row-name" title="${gnome}">${gnome}</span><span class="gab-row-mod">Mod. ${mod}</span><span class="gab-row-size">${(gtam/1024).toFixed(0)}kb</span><button class="btn-sm red" onclick="delGab('${gid.replace(/'/g,"\\'")}','${gnome.replace(/'/g,"\\'")}')">✕</button></div>`;}).join('')}</div>`).join('');
 }
 async function delGab(path,nome){
   if(!confirm(`Excluir "${nome}"?`))return;
   await stDelete(path);await sbDelete('gabaritos',path);
-  gabListCache=gabListCache.filter(g=>g.id!==path);renderGabList();toast('Gabarito excluído.','ok');
+  gabListCache=gabListCache.filter(g=>String(g.id)!==String(path));renderGabList();toast('Gabarito excluído.','ok');
 }
 function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo!==mod)return;safeGroups(s).forEach(g=>{if(g.disciplina!==disc)return;safeAtividades(g,tipo).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
 function exportMesclado(mod,disc,tipo){
