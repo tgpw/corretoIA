@@ -331,10 +331,11 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">🎯 Critérios Fixos da Correção</div>
-          <div class="fcard-desc">Selecione a disciplina e o tipo da atividade. Se houver critérios cadastrados, eles serão usados como fonte principal da correção para reduzir tokens e manter o mesmo padrão entre envios.</div>
+          <div class="fcard-desc">Selecione a disciplina e o tipo da atividade. Se houver critérios cadastrados, eles serão usados como fonte principal da correção para reduzir tokens e manter o mesmo padrão entre envios. O campo disciplina agora aceita digitação com filtro automático.</div>
           <div class="row-fields">
             <span class="flabel">Disciplina</span>
-            <select class="finput disc" id="nova-disciplina" onchange="syncNovaCriteriaContext();checkReady()"><option value="">Selecione</option></select>
+            <input class="finput disc" id="nova-disciplina" list="nova-disciplinas-list" placeholder="Digite para filtrar a disciplina" oninput="syncNovaCriteriaContext();checkReady()">
+            <datalist id="nova-disciplinas-list"></datalist>
             <span class="flabel">Tipo</span>
             <select class="finput mod" id="nova-tipo" onchange="syncNovaCriteriaContext();checkReady()" style="width:140px;text-align:left;">
               <option value="">Selecione</option>
@@ -347,7 +348,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">📋 Gabaritos</div>
-          <div class="fcard-desc">Gabaritos são gerenciados na aba <b>Gabaritos</b>. Ao informar o módulo acima eles carregam automaticamente. Você também pode adicionar arquivos avulsos abaixo.</div>
+          <div class="fcard-desc">Gabaritos são opcionais quando já existir critério fixo para a combinação módulo + disciplina + tipo. Se não houver critério fixo, o sistema pode usar os gabaritos anexados como apoio.</div>
           <div id="cloud-gab-status" style="font-size:12px;color:var(--muted2);margin-bottom:10px;font-family:'DM Mono',monospace;min-height:18px;"></div>
           <div class="dz" id="dz-gab">
             <input type="file" id="fi-gab" accept=".pdf,.docx,.doc" multiple onchange="addGab(event)">
@@ -358,7 +359,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">👨‍🎓 Atividades dos Alunos</div>
-          <div class="fcard-desc">PDF, DOCX ou imagem. O nome do aluno deve estar escrito dentro do arquivo.</div>
+          <div class="fcard-desc">PDF, DOCX ou imagem. Envie várias atividades de vários alunos para a mesma disciplina/tipo selecionados. O sistema fará uma triagem inteligente e separará arquivos incompatíveis antes da correção.</div>
           <div class="dz" id="dz-atv">
             <input type="file" id="fi-atv" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp" multiple onchange="addAtv(event)">
             <div class="dz-icon">📚</div>
@@ -591,16 +592,28 @@ function displayTipo(t){const v=normPlain(t);if(v==='criar')return 'Criar';if(v=
 function criterioId(modulo,disciplina,tipo){return `${safeText(modulo)}||${safeText(disciplina)}||${normPlain(tipo)}`;}
 function getCriterioSelecionadoNova(){
   const mod=getMod();
-  const disc=document.getElementById('nova-disciplina')?.value||'';
+  const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
   const tipo=document.getElementById('nova-tipo')?.value||'';
   return criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,disc,tipo))||null;
 }
+function getDisciplinasCatalogo(mod=''){
+  const itens=[];
+  criteriosFixos.forEach(c=>{if(!mod||normPlain(c.modulo)===normPlain(mod)) itens.push(c.disciplina);});
+  turmas.forEach(t=>{if(!mod||normPlain(t.modulo)===normPlain(mod)) itens.push(t.disciplina);});
+  gabListCache.forEach(g=>{if(!mod||normPlain(g.modulo)===normPlain(mod)) itens.push((g.disciplina||'').trim());});
+  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ (Array.isArray(s.groups)?s.groups:[]).forEach(g=>itens.push(g.disciplina)); } });
+  return [...new Set(itens.map(safeText).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
 function syncNovaDisciplinaOptions(){
-  const sel=document.getElementById('nova-disciplina'); if(!sel) return;
-  const mod=getMod(); const atual=sel.value;
-  const opts=[...new Set(criteriosFixos.filter(c=>!mod||normPlain(c.modulo)===normPlain(mod)).map(c=>c.disciplina).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  sel.innerHTML='<option value="">Selecione</option>'+opts.map(d=>`<option>${d}</option>`).join('');
-  if(opts.includes(atual)) sel.value=atual;
+  const inp=document.getElementById('nova-disciplina'); if(!inp) return;
+  const dl=document.getElementById('nova-disciplinas-list'); if(!dl) return;
+  const mod=getMod(); const atual=(inp.value||'').trim();
+  const opts=getDisciplinasCatalogo(mod);
+  dl.innerHTML=opts.map(d=>`<option value="${d}"></option>`).join('');
+  if(atual && !opts.some(d=>normPlain(d)===normPlain(atual))){
+    const filtradas=opts.filter(d=>normPlain(d).includes(normPlain(atual)));
+    if(filtradas.length===1) inp.value=filtradas[0];
+  }
 }
 function syncNovaCriteriaContext(){
   syncNovaDisciplinaOptions();
@@ -612,7 +625,7 @@ function syncNovaCriteriaContext(){
     box.textContent=`✓ Critério fixo carregado: ${safeText(crit.disciplina)} · ${displayTipo(crit.tipo)}${resumo?` · ${resumo.substring(0,140)}`:''}`;
   }else{
     box.style.color='var(--muted2)';
-    box.textContent='Nenhum critério fixo encontrado para esta combinação. O sistema usará os gabaritos anexados.';
+    box.textContent='Nenhum critério fixo encontrado para esta combinação. Você pode anexar gabaritos gerais ou cadastrar o critério fixo na aba Critérios.';
   }
 }
 function prefillIntroEadCriterios(){
@@ -713,7 +726,7 @@ function checkReady(){
   if(hasCriterio) base.push('critério fixo');
   if(gabFiles.length) base.push(`${gabFiles.length} gabarito(s)`);
   if(qtd) base.push(`${qtd} atividade(s)`);
-  document.getElementById('cnt-lbl').textContent=base.join(' · ');
+  document.getElementById('cnt-lbl').textContent=base.join(' · ')+(qtd&&document.getElementById('nova-tipo')?.value?' · mesmo contexto para vários alunos':'');
   renderCost(qtd);
 }
 function renderCost(qtd){
@@ -729,9 +742,15 @@ function renderCost(qtd){
 }
 async function loadGabFromCloud(){
   const mod=getMod();if(!mod)return;
-  const list=gabListCache.filter(g=>g.modulo===mod);
+  const criterioSelecionado=getCriterioSelecionadoNova();
   const statusEl=document.getElementById('cloud-gab-status');
-  if(!list.length){statusEl.textContent='Nenhum gabarito salvo para o Módulo '+mod+'. Use a aba Gabaritos para enviar.';return;}
+  if(criterioSelecionado){
+    statusEl.textContent='Critério fixo encontrado para esta atividade. Anexar gabarito geral é opcional.';
+    statusEl.style.color='var(--green)';
+    return;
+  }
+  const list=gabListCache.filter(g=>g.modulo===mod);
+  if(!list.length){statusEl.textContent='Nenhum gabarito salvo para o Módulo '+mod+'. Use a aba Gabaritos para enviar, ou cadastre um critério fixo na aba Critérios.';return;}
   statusEl.textContent=`Carregando ${list.length} gabarito(s) do Módulo ${mod}...`;
   const loaded=[];
   for(const g of list){
@@ -743,13 +762,31 @@ async function loadGabFromCloud(){
   statusEl.style.color='var(--green)';document.getElementById('btn-corrigir').disabled=false;
   statusEl.textContent=`✓ ${loaded.length} gabarito(s) do Módulo ${mod} carregado(s) automaticamente.`;
 }
-function schedMatch(){clearTimeout(matchT);if(!gabFiles.length||!atvFiles.length){document.getElementById('match-box').style.display='none';return;}matchT=setTimeout(doMatch,600);}
+function schedMatch(){
+  clearTimeout(matchT);
+  if(!atvFiles.length){document.getElementById('match-box').style.display='none';return;}
+  matchT=setTimeout(doMatch,400);
+}
 function doMatch(){
-  document.getElementById('match-box').style.display='block';
-  document.getElementById('match-hdr').innerHTML='<span class="mspin"></span> Detectando correspondências...';
+  const box=document.getElementById('match-box');
+  const hdr=document.getElementById('match-hdr');
+  const wrap=document.getElementById('match-wrap');
+  box.style.display='block';
+  const criterio=getCriterioSelecionadoNova();
+  if(criterio){
+    hdr.innerHTML='✦ Triagem da atividade selecionada';
+    wrap.innerHTML=`<table class="mtable"><thead><tr><th>Arquivo</th><th>Atividade alvo</th><th>Status</th></tr></thead><tbody>${atvFiles.map(f=>`<tr><td>${fi(f.name)} ${f.name}</td><td>${safeText(criterio.disciplina)} · ${displayTipo(criterio.tipo)}</td><td><span class="mbadge ok">triagem inteligente ativa</span></td></tr>`).join('')}</tbody></table><div style="margin-top:8px;font-size:11px;color:var(--muted2);">Arquivos com baixa compatibilidade serão separados e não serão corrigidos.</div>`;
+    return;
+  }
+  if(!gabFiles.length){
+    hdr.innerHTML='✦ Triagem da atividade selecionada';
+    wrap.innerHTML='<div style="font-size:12px;color:var(--yellow);">Sem critério fixo e sem gabarito anexado. Adicione um dos dois para corrigir.</div>';
+    return;
+  }
+  hdr.innerHTML='<span class="mspin"></span> Detectando correspondências...';
   const m=atvFiles.map(af=>{let best=gabFiles[0],bs=0;gabFiles.forEach(gf=>{const s=sim(norm(gf.name),norm(af.name));if(s>bs){bs=s;best=gf;}});return{af,gf:best,s:bs};});
-  document.getElementById('match-wrap').innerHTML=`<table class="mtable"><thead><tr><th>Atividade</th><th>Gabarito</th><th>Status</th></tr></thead><tbody>${m.map(x=>`<tr><td>${fi(x.af.name)} ${x.af.name}</td><td>${fi(x.gf.name)} ${x.gf.name}</td><td><span class="mbadge ${x.s>0.15?'ok':'warn'}">${x.s>0.15?'✓ ok':'⚠ estimado'}</span></td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('match-hdr').innerHTML='✦ Correspondências detectadas';
+  wrap.innerHTML=`<table class="mtable"><thead><tr><th>Atividade</th><th>Gabarito</th><th>Status</th></tr></thead><tbody>${m.map(x=>`<tr><td>${fi(x.af.name)} ${x.af.name}</td><td>${fi(x.gf.name)} ${x.gf.name}</td><td><span class="mbadge ${x.s>0.15?'ok':'warn'}">${x.s>0.15?'✓ ok':'⚠ estimado'}</span></td></tr>`).join('')}</tbody></table>`;
+  hdr.innerHTML='✦ Correspondências detectadas';
 }
 function norm(s){return s.toLowerCase().replace(/\.[^.]+$/,'').replace(/[^a-z0-9]/g,' ').trim();}
 function sim(a,b){const wA=new Set(a.split(' ').filter(w=>w.length>2)),wB=new Set(b.split(' ').filter(w=>w.length>2));let c=0;wA.forEach(w=>{if(wB.has(w))c++;});return c/Math.max(wA.size+wB.size-c,1);}
@@ -827,6 +864,49 @@ async function extrairArquivo(file){
   return{tipo:'text',texto:'[formato não suportado: '+file.name+']'};
 }
 
+
+function textoCompatibilidadeFonte(conteudo){
+  if(!conteudo) return '';
+  if(conteudo.tipo==='text') return safeText(conteudo.texto||'');
+  return '';
+}
+function extrairKeywordsCritico(txt){
+  const stop=new Set(['para','com','sem','das','dos','que','uma','como','entre','sobre','mais','muito','muitos','muitas','esta','esse','essa','atividade','disciplina','aluno','grupo','texto','mapa','conceitual','proposta','publica','publico','municipio','gestao','administração','administracao','educacao','distancia']);
+  return [...new Set(normPlain(txt).split(/\s+/).filter(w=>w.length>=5&&!stop.has(w)).slice(0,30))];
+}
+function validarArquivoParaContexto(file,conteudo,criterioFixo){
+  const nome=safeText(file.name);
+  const nomeNorm=normPlain(nome);
+  const texto=textoCompatibilidadeFonte(conteudo);
+  const base=normPlain(texto);
+  const alvoTipo=normPlain(document.getElementById('nova-tipo')?.value||'');
+  const disciplina=(document.getElementById('nova-disciplina')?.value||'').trim();
+  let score=0, motivos=[];
+  if(alvoTipo){
+    const tipos=['criar','entender','delinear'];
+    const outros=tipos.filter(t=>t!==alvoTipo && (nomeNorm.includes(t)||base.includes(t)));
+    if(outros.length){score-=3; motivos.push('indícios de outro tipo de atividade: '+outros.join(', '));}
+    if(nomeNorm.includes(alvoTipo)||base.includes(alvoTipo)) score+=2;
+  }
+  if(disciplina){
+    const discWords=extrairKeywordsCritico(disciplina);
+    const hit=discWords.filter(w=>nomeNorm.includes(w)||base.includes(w)).length;
+    if(hit) score+=Math.min(2,hit);
+  }
+  if(criterioFixo && criterioFixo.texto){
+    const kws=extrairKeywordsCritico(criterioFixo.texto);
+    const hit=kws.filter(w=>base.includes(w)||nomeNorm.includes(w)).length;
+    score += hit>=4 ? 4 : hit>=2 ? 2 : hit>=1 ? 1 : -1;
+    if(hit<1 && texto) motivos.push('baixo alinhamento com palavras-chave do critério');
+  }
+  if(conteudo.tipo==='text'){
+    const len=(texto||'').trim().length;
+    if(len<80){score-=3; motivos.push('conteúdo textual muito curto');}
+  }
+  const status=score>=1?'ok':'separar';
+  return {status,score,motivos:motivos.join('; ')|| (status==='ok'?'compatível com o contexto selecionado':'compatibilidade insuficiente')};
+}
+
 async function iniciarCorrecao(){
   if(!getKey()){toast('Informe a chave API.','err');return;}
   const modulo=getMod();if(!modulo){toast('Informe o módulo.','err');return;}
@@ -837,13 +917,26 @@ async function iniciarCorrecao(){
       return{name:f.name,conteudo};
     }));
     const criterioSelecionado=getCriterioSelecionadoNova();
-    const all=[];
+    const avaliados=[];
     for(let i=0;i<atvFiles.length;i++){
       const af=atvFiles[i];
-      setLoad(`Corrigindo ${i+1}/${atvFiles.length}: ${af.name.substring(0,24)}...`,Math.round(((i+1)/atvFiles.length)*80)+10);
+      setLoad(`Validando ${i+1}/${atvFiles.length}: ${af.name.substring(0,24)}...`,Math.round(((i+1)/atvFiles.length)*25)+5);
       const atvConteudo=await extrairArquivo(af);
       const nomeManual=atvNomes[i]?.trim()||'';
-      const r=await corrigirComVisao(gabData,af.name,atvConteudo,getKey(),modulo,nomeManual,criterioSelecionado);
+      const triagem=validarArquivoParaContexto(af,atvConteudo,criterioSelecionado);
+      avaliados.push({af,atvConteudo,nomeManual,triagem});
+    }
+    const aptos=avaliados.filter(x=>x.triagem.status==='ok');
+    const separados=avaliados.filter(x=>x.triagem.status!=='ok');
+    document.getElementById('match-box').style.display='block';
+    document.getElementById('match-hdr').innerHTML='✦ Resultado da triagem inteligente';
+    document.getElementById('match-wrap').innerHTML=`<table class="mtable"><thead><tr><th>Arquivo</th><th>Status</th><th>Observação</th></tr></thead><tbody>${avaliados.map(x=>`<tr><td>${fi(x.af.name)} ${x.af.name}</td><td><span class="mbadge ${x.triagem.status==='ok'?'ok':'warn'}">${x.triagem.status==='ok'?'apto para corrigir':'separado'}</span></td><td>${safeText(x.triagem.motivos)}</td></tr>`).join('')}</tbody></table>`;
+    if(!aptos.length){showLoad(false);toast('Nenhum arquivo passou na triagem. Revise disciplina/tipo ou os arquivos enviados.','err');return;}
+    const all=[];
+    for(let i=0;i<aptos.length;i++){
+      const item=aptos[i];
+      setLoad(`Corrigindo ${i+1}/${aptos.length}: ${item.af.name.substring(0,24)}...`,30+Math.round(((i+1)/aptos.length)*55));
+      const r=await corrigirComVisao(gabData,item.af.name,item.atvConteudo,getKey(),modulo,item.nomeManual,criterioSelecionado);
       all.push(r);
     }
     setLoad('Salvando na nuvem...',92);
@@ -858,7 +951,7 @@ async function iniciarCorrecao(){
     sessions.push(session);cur=session;
     setLoad('Pronto!',100);await sleep(300);showLoad(false);
     renderResults(session);renderSidebar();goTab('resultados');
-    toast(`✓ ${all.length} atividade(s) corrigida(s)!`,'ok');
+    toast(`✓ ${all.length} atividade(s) corrigida(s)${separados.length?` · ${separados.length} separada(s) na triagem`:''}!`,'ok');
   }catch(e){showLoad(false);console.error(e);toast('Erro: '+e.message,'err');}
 }
 function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
