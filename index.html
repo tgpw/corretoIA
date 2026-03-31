@@ -1004,6 +1004,49 @@ function normalizeCriteriosPontuacao(p){
   }
   return p;
 }
+function synthesizeFeedbackFields(p){
+  if(!p) return p;
+  const criterios = Array.isArray(p.criterios) ? p.criterios : [];
+  const cleanedPos = (Array.isArray(p.pontos_positivos)?p.pontos_positivos:[]).map(x=>String(x||'').trim()).filter(Boolean).filter(x=>x!=='—'&&x!=='-');
+  const cleanedNeg = (Array.isArray(p.pontos_negativos)?p.pontos_negativos:[]).map(x=>String(x||'').trim()).filter(Boolean).filter(x=>x!=='—'&&x!=='-');
+
+  if(!cleanedPos.length && criterios.length){
+    const positivos = criterios
+      .filter(c => (parseFloat(c.desconto)||0)===0 || ((parseFloat(c.nota_crit)||0) >= (parseFloat(c.peso_max)||0)*0.8))
+      .slice(0,3)
+      .map(c => `Bom desempenho em ${c.label}.`);
+    p.pontos_positivos = positivos.length ? positivos : ['Atendeu parcialmente aos critérios propostos.'];
+  }else{
+    p.pontos_positivos = cleanedPos;
+  }
+
+  if(!cleanedNeg.length && criterios.length){
+    const negativos = criterios
+      .filter(c => (parseFloat(c.desconto)||0) > 0)
+      .slice(0,3)
+      .map(c => c.motivo ? `${c.label}: ${c.motivo}` : `Reforçar ${c.label}.`);
+    p.pontos_negativos = negativos.length ? negativos : ['Sem pontos críticos relevantes além dos ajustes finos.'];
+  }else{
+    p.pontos_negativos = cleanedNeg;
+  }
+
+  const feedbackAtual = String(p.feedback||'').trim();
+  if(!feedbackAtual || feedbackAtual==='—' || feedbackAtual==='-'){
+    const nota = Number.isFinite(p.nota_numerica) ? p.nota_numerica : null;
+    if(nota===null){
+      p.feedback = 'Correção concluída, mas sem nota consolidada suficiente para gerar feedback automático.';
+    }else if(nota >= 8){
+      p.feedback = `Bom desempenho geral. ${p.pontos_positivos[0]||''} ${p.pontos_negativos[0] && !String(p.pontos_negativos[0]).startsWith('Sem pontos críticos') ? 'Para avançar ainda mais, ajuste: '+p.pontos_negativos[0] : ''}`.trim();
+    }else if(nota >= 6){
+      p.feedback = `Desempenho satisfatório, com pontos de acerto e aspectos a desenvolver. ${p.pontos_negativos[0] ? 'Priorize: '+p.pontos_negativos[0] : ''}`.trim();
+    }else{
+      p.feedback = `Há necessidade de aprofundar a atividade para atender melhor aos critérios. ${p.pontos_negativos[0] ? 'Principal ponto de atenção: '+p.pontos_negativos[0] : ''}`.trim();
+    }
+  }else{
+    p.feedback = feedbackAtual;
+  }
+  return p;
+}
 
 function adicionarConteudoAoArray(content, label, conteudo){
   content.push({type:'text',text:label});
@@ -1089,6 +1132,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     if(typeof p.feedback!=='string')p.feedback='';
     if(typeof p.memoria_calculo!=='string')p.memoria_calculo='';
     normalizeCriteriosPontuacao(p);
+    synthesizeFeedbackFields(p);
     return p;
   }catch(ex){
     console.error('Falha ao interpretar resposta da IA:', ex, txt);
