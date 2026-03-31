@@ -1645,9 +1645,34 @@ function renderSidebar(){
     if(!byMod[mod])byMod[mod]=[];
     byMod[mod].push({...s,groups:safeArray(s.groups)});
   });
-  el.innerHTML=Object.entries(byMod).map(([mod,ss])=>`<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span class="sb-mod-badge">${ss.reduce((a,s)=>a+(Number(s.total)||0),0)}</span></div><div class="sb-disc-list" style="display:block;">${ss.map(s=>{const groups=safeArray(s.groups);if(!groups.length){return `<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" onclick="loadSess(${s.id})" title="Sessão sem grupos"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sessão sem grupos</span><span style="font-size:9px;color:var(--muted);margin-left:auto;">✎</span></div>`;}return groups.map(g=>`<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" onclick="loadSess(${s.id})" title="Clique para editar esta sessão"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeText(g?.disciplina,'Sem disciplina')}</span><span style="font-size:9px;color:var(--muted);margin-left:auto;">✎</span></div>`).join('');}).join('')}</div></div>`).join('');
+  el.innerHTML=Object.entries(byMod).map(([mod,ss])=>`<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${ss.reduce((a,s)=>a+(Number(s.total)||0),0)}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:block;">${ss.map(s=>{const groups=safeArray(s.groups);if(!groups.length){return `<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" title="Sessão sem grupos" style="justify-content:space-between;gap:6px;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${s.id})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sessão sem grupos</span></div><span style="display:flex;align-items:center;gap:6px;"><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir esta correção" onclick="event.stopPropagation();delSess(${s.id})">✕</button></span></div>`;}return groups.map(g=>`<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" title="Clique para abrir" style="justify-content:space-between;gap:6px;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${s.id})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeText(g?.disciplina,'Sem disciplina')}</span></div><span style="display:flex;align-items:center;gap:6px;"><span style="font-size:9px;color:var(--muted);">✎</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir esta correção" onclick="event.stopPropagation();delSess(${s.id})">✕</button></span></div>`).join('');}).join('')}</div></div>`).join('');
 }
 function loadSess(id){const s=sessions.find(x=>x.id===id);if(!s)return;cur={...s,groups:safeArray(s.groups)};renderResults(cur);renderSidebar();goTab('resultados');}
+async function delSess(id){
+  const s=sessions.find(x=>x.id===id); if(!s)return;
+  const label=(safeArray(s.groups).map(g=>g?.disciplina).filter(Boolean)[0])||'esta correção';
+  if(!confirm('Excluir '+label+'?'))return;
+  await sbDelete('sessoes',id);
+  sessions=sessions.filter(x=>x.id!==id);
+  if(cur&&cur.id===id)cur=null;
+  renderSidebar();
+  renderHistory();
+  if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
+  if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
+  toast('Correção excluída.','ok');
+}
+async function delModulo(mod){
+  if(!confirm('Excluir todas as correções do Módulo '+mod+'?'))return;
+  const toDelete=sessions.filter(s=>String(s.modulo)===String(mod));
+  for(const s of toDelete) await sbDelete('sessoes',s.id);
+  sessions=sessions.filter(s=>String(s.modulo)!==String(mod));
+  if(cur&&String(cur.modulo)===String(mod))cur=null;
+  renderSidebar();
+  renderHistory();
+  if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
+  if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
+  toast('Módulo excluído.','ok');
+}
 function renderHistory(){
   const el=document.getElementById('hist-body');
   if(!sessions.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Histórico vazio</div></div>`;return;}
