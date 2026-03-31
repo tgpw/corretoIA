@@ -301,6 +301,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
       <button class="tbtn" onclick="goTab('turmas')">Turmas</button>
       <button class="tbtn" onclick="goTab('dashboard')">Dashboard</button>
       <button class="tbtn" onclick="goTab('gabaritos')">Gabaritos</button>
+      <button class="tbtn" onclick="goTab('criterios')">Critérios</button>
       <button class="tbtn" onclick="goTab('historico')">Histórico</button>
       <button class="tbtn" onclick="goTab('config')">Config</button>
     </div>
@@ -324,9 +325,25 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div class="fcard-title">📦 Módulo</div>
           <div class="row-fields" style="margin-bottom:0;">
             <span class="flabel">Módulo</span>
-            <input class="finput mod" type="text" id="modulo" placeholder="Ex: I" oninput="checkReady();loadGabFromCloud()">
+            <input class="finput mod" type="text" id="modulo" placeholder="Ex: I" oninput="checkReady();loadGabFromCloud();syncNovaCriteriaContext()">
             <span style="font-size:12px;color:var(--muted);">Informe o módulo para carregar gabaritos salvos automaticamente.</span>
           </div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">🎯 Critérios Fixos da Correção</div>
+          <div class="fcard-desc">Selecione a disciplina e o tipo da atividade. Se houver critérios cadastrados, eles serão usados como fonte principal da correção para reduzir tokens e manter o mesmo padrão entre envios.</div>
+          <div class="row-fields">
+            <span class="flabel">Disciplina</span>
+            <select class="finput disc" id="nova-disciplina" onchange="syncNovaCriteriaContext();checkReady()"><option value="">Selecione</option></select>
+            <span class="flabel">Tipo</span>
+            <select class="finput mod" id="nova-tipo" onchange="syncNovaCriteriaContext();checkReady()" style="width:140px;text-align:left;">
+              <option value="">Selecione</option>
+              <option value="entender">Entender</option>
+              <option value="delinear">Delinear</option>
+              <option value="criar">Criar</option>
+            </select>
+          </div>
+          <div id="nova-criterio-status" style="font-size:12px;color:var(--muted2);font-family:'DM Mono',monospace;min-height:18px;">Selecione disciplina e tipo para verificar critérios fixos.</div>
         </div>
         <div class="fcard">
           <div class="fcard-title">📋 Gabaritos</div>
@@ -434,6 +451,48 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div id="gab-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
         </div>
       </div>
+
+      <div class="panel" id="panel-criterios">
+        <div class="ptitle">Critérios Fixos</div>
+        <p class="psub">Cadastre os critérios e pontuações por módulo, disciplina e tipo de atividade. Quando cadastrados, eles passam a ser a referência principal da correção, reduzindo uso de tokens e mantendo padronização entre alunos. Os critérios de Introdução a EaD usam pesos como Profundidade da reflexão 25, Clareza/coesão 15, Relevância das perguntas 10, Completude do mapa 25, Integração texto-mapa 15 e Criatividade/apresentação 10 no bloco ENTENDER; DELINEAR e CRIAR também possuem pesos fixos conforme o PDF da disciplina. fileciteturn2file4</p>
+        <div class="fcard">
+          <div class="fcard-title">➕ Novo critério</div>
+          <div class="row-fields">
+            <span class="flabel">Módulo</span>
+            <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I">
+            <span class="flabel">Disciplina</span>
+            <input class="finput disc" type="text" id="crit-disciplina" placeholder="Ex: Introdução a EaD">
+            <span class="flabel">Tipo</span>
+            <select class="finput mod" id="crit-tipo" style="width:140px;text-align:left;">
+              <option value="entender">Entender</option>
+              <option value="delinear">Delinear</option>
+              <option value="criar">Criar</option>
+              <option value="complementar">Complementar</option>
+            </select>
+          </div>
+          <div class="row-fields" style="align-items:flex-start;">
+            <span class="flabel">Critérios e pesos</span>
+            <textarea id="crit-texto" class="finput wide" style="min-height:220px;font-family:'DM Mono',monospace;line-height:1.5;" placeholder="Cole aqui os critérios, pesos e descrições exatamente como definidos no gabarito. Exemplo:
+Profundidade da reflexão — 25 pontos — descrição...
+Clareza, organização e coesão do texto — 15 pontos — descrição..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" onclick="saveCriterioFixo()">Salvar critério</button>
+            <button class="btn-o" onclick="prefillIntroEadCriterios()">Preencher exemplo Introdução a EaD</button>
+          </div>
+          <div id="crit-msg" style="font-size:12px;min-height:16px;margin-top:10px;"></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">📋 Critérios salvos</div>
+          <div class="row-fields">
+            <span class="flabel">Filtro módulo</span>
+            <input class="finput mod" type="text" id="crit-filter-mod" placeholder="Todos" oninput="renderCriteriosList()">
+            <span class="flabel">Filtro disciplina</span>
+            <input class="finput disc" type="text" id="crit-filter-disc" placeholder="Todas" oninput="renderCriteriosList()">
+          </div>
+          <div id="criterios-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
+        </div>
+      </div>
       <div class="panel" id="panel-historico">
         <div class="ptitle">Histórico</div>
         <p class="psub">Correções consolidadas por módulo e disciplina.</p>
@@ -522,10 +581,67 @@ async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/g
 function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
 function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
 const ATV_TYPES=['criar','delinear','entender'];
-let gabFiles=[],atvFiles=[],atvNomes=[],sessions=[],turmas=[],gabListCache=[],cur=null,matchT=null,currentPw='',editingTurma=null;
+let gabFiles=[],atvFiles=[],atvNomes=[],sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null;
 function safeArray(v){return Array.isArray(v)?v:[];}
 function safeText(v,fallback=''){return v==null?fallback:String(v);}
 function sessionFromRow(r){return {id:r.id,modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups)};}
+function normPlain(s){return safeText(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();}
+function criterioKey(modulo,disciplina,tipo){return `${normPlain(modulo)}||${normPlain(disciplina)}||${normPlain(tipo)}`;}
+function displayTipo(t){const v=normPlain(t);if(v==='criar')return 'Criar';if(v==='delinear')return 'Delinear';if(v==='entender')return 'Entender';if(v==='complementar')return 'Complementar';return safeText(t);}
+function criterioId(modulo,disciplina,tipo){return `${safeText(modulo)}||${safeText(disciplina)}||${normPlain(tipo)}`;}
+function getCriterioSelecionadoNova(){
+  const mod=getMod();
+  const disc=document.getElementById('nova-disciplina')?.value||'';
+  const tipo=document.getElementById('nova-tipo')?.value||'';
+  return criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,disc,tipo))||null;
+}
+function syncNovaDisciplinaOptions(){
+  const sel=document.getElementById('nova-disciplina'); if(!sel) return;
+  const mod=getMod(); const atual=sel.value;
+  const opts=[...new Set(criteriosFixos.filter(c=>!mod||normPlain(c.modulo)===normPlain(mod)).map(c=>c.disciplina).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML='<option value="">Selecione</option>'+opts.map(d=>`<option>${d}</option>`).join('');
+  if(opts.includes(atual)) sel.value=atual;
+}
+function syncNovaCriteriaContext(){
+  syncNovaDisciplinaOptions();
+  const box=document.getElementById('nova-criterio-status'); if(!box) return;
+  const crit=getCriterioSelecionadoNova();
+  if(crit){
+    const resumo=safeText(crit.texto).split('\n').filter(Boolean).slice(0,2).join(' | ');
+    box.style.color='var(--green)';
+    box.textContent=`✓ Critério fixo carregado: ${safeText(crit.disciplina)} · ${displayTipo(crit.tipo)}${resumo?` · ${resumo.substring(0,140)}`:''}`;
+  }else{
+    box.style.color='var(--muted2)';
+    box.textContent='Nenhum critério fixo encontrado para esta combinação. O sistema usará os gabaritos anexados.';
+  }
+}
+function prefillIntroEadCriterios(){
+  document.getElementById('crit-disciplina').value='Introdução a EaD';
+  document.getElementById('crit-modulo').value=document.getElementById('crit-modulo').value||'I';
+  const tipo=document.getElementById('crit-tipo').value;
+  const presets={
+    entender:`Profundidade da reflexão — 25 pontos — O aluno demonstra análise crítica das próprias experiências, articula vivência com os temas da disciplina e apresenta posicionamento fundamentado.
+Clareza, organização e coesão do texto — 15 pontos — O texto segue uma estrutura lógica, com linguagem adequada, fluidez e respeito ao número de palavras proposto.
+Relevância das perguntas levantadas — 10 pontos — As perguntas formuladas são pertinentes, mostram curiosidade e servem como ponto de partida para aprofundar os estudos.
+Completude e coerência do mapa conceitual — 25 pontos — O mapa contém os principais conceitos abordados, mostra conexões claras entre eles e está visualmente organizado.
+Integração entre o mapa e o relato — 15 pontos — Há uma relação clara entre o conteúdo do texto e o que é representado visualmente no mapa, demonstrando ressignificação do conhecimento.
+Criatividade e apresentação visual — 10 pontos — O aluno apresenta o conteúdo de forma criativa, original e com cuidado visual.`,
+    delinear:`Clareza na identificação e contextualização do problema — 15 pontos — O grupo descreve de forma clara, objetiva e relevante o problema a ser solucionado.
+Qualidade e viabilidade da solução apresentada — 25 pontos — A proposta é bem estruturada, coerente, exequível e alinhada com os objetivos da disciplina.
+Integração dos conteúdos estudados — 20 pontos — O plano demonstra domínio conceitual, com aplicação correta e articulada dos temas da EaD.
+Colaboração e construção coletiva — 15 pontos — O grupo demonstrou participação conjunta, troca de ideias e aproveitamento das orientações.
+Criatividade e inovação na proposta — 10 pontos — A solução apresenta elementos criativos, diferentes abordagens ou ideias originais.
+Formatação e organização do documento — 10 pontos — O trabalho segue as orientações de formatação e apresenta boa organização visual e textual.
+Referências e escrita acadêmica — 5 pontos — Uso adequado de linguagem acadêmica e, se aplicável, inclusão correta de fontes e autores.`,
+    criar:`Aplicação prática dos conteúdos estudados — 20 pontos — O guia apresenta conteúdos relevantes e corretamente aplicados às práticas da EaD.
+Clareza, objetividade e didática da linguagem — 15 pontos — As orientações são claras, acessíveis e bem organizadas para o público-alvo.
+Criatividade e apelo visual — 10 pontos — O material apresenta boa diagramação, uso de recursos gráficos e criatividade na apresentação.
+Conexão com os objetivos da disciplina — 10 pontos — O guia reflete de forma coerente os principais temas trabalhados ao longo da disciplina.
+Formatação e entrega conforme orientações — 5 pontos — O arquivo está formatado e enviado conforme as especificações solicitadas.`
+  };
+  document.getElementById('crit-texto').value=presets[tipo]||presets.entender;
+}
+
 function getHash(){return localStorage.getItem('cIA5_pw')||btoa('corretoIA2024');}
 async function login(){
   const pw=document.getElementById('pw').value;
@@ -551,7 +667,10 @@ async function loadCloud(pw){
   const trows=await sbGetAll('turmas');
   turmas=trows.map(r=>({id:r.id,modulo:r.modulo,disciplina:r.disciplina,alunos:r.alunos||[]}));
   gabListCache=await sbGetAll('gabaritos');
+  try{criteriosFixos=await sbGetAll('criterios_fixos');}catch(_e){criteriosFixos=[];}
   renderSidebar();
+  renderCriteriosList();
+  syncNovaCriteriaContext();
 }
 function logout(){currentPw='';sessionStorage.removeItem('cIA5_logged');localStorage.removeItem('cIA5_pw_plain');document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('apikey').value='';}
 function alterarSenha(){
@@ -583,17 +702,25 @@ function renderChips(id,files,fn){
 }
 function fi(n){if(/\.(jpg|jpeg|png|webp)$/i.test(n))return'🖼';if(/\.pdf$/i.test(n))return'📄';if(/\.(docx|doc)$/i.test(n))return'📝';return'📁';}
 function checkReady(){
-  const ok=gabFiles.length>0&&atvFiles.length>0&&(getKey()||localStorage.getItem('cIA5_apikey_plain'))&&getMod();
+  const hasKey=!!(getKey()||localStorage.getItem('cIA5_apikey_plain'));
+  const hasMod=!!getMod();
+  const hasAtv=atvFiles.length>0;
+  const hasCriterio=!!getCriterioSelecionadoNova();
+  const ok=(hasCriterio||gabFiles.length>0)&&hasAtv&&hasKey&&hasMod;
   document.getElementById('btn-corrigir').disabled=!ok;
   const qtd=atvFiles.length;
-  document.getElementById('cnt-lbl').textContent=(gabFiles.length&&qtd)?`${gabFiles.length} gabarito(s) · ${qtd} atividade(s)`:'';
+  const base=[];
+  if(hasCriterio) base.push('critério fixo');
+  if(gabFiles.length) base.push(`${gabFiles.length} gabarito(s)`);
+  if(qtd) base.push(`${qtd} atividade(s)`);
+  document.getElementById('cnt-lbl').textContent=base.join(' · ');
   renderCost(qtd);
 }
 function renderCost(qtd){
   const box=document.getElementById('cost-box');
   if(!qtd){box.style.display='none';return;}
   box.style.display='block';
-  const inp=2500+(gabFiles.length*800),out=1400,tI=qtd*inp,tO=qtd*out;
+  const hasCriterio=!!getCriterioSelecionadoNova(); const inp=(hasCriterio?1200:2500)+(gabFiles.length*800),out=1400,tI=qtd*inp,tO=qtd*out;
   const usd=(tI/1e6*3)+(tO/1e6*15);
   document.getElementById('est-usd').textContent='$'+usd.toFixed(3);
   document.getElementById('est-brl').textContent='R$'+(usd*5.80).toFixed(2);
@@ -709,13 +836,14 @@ async function iniciarCorrecao(){
       const conteudo=await extrairArquivo(f);
       return{name:f.name,conteudo};
     }));
+    const criterioSelecionado=getCriterioSelecionadoNova();
     const all=[];
     for(let i=0;i<atvFiles.length;i++){
       const af=atvFiles[i];
       setLoad(`Corrigindo ${i+1}/${atvFiles.length}: ${af.name.substring(0,24)}...`,Math.round(((i+1)/atvFiles.length)*80)+10);
       const atvConteudo=await extrairArquivo(af);
       const nomeManual=atvNomes[i]?.trim()||'';
-      const r=await corrigirComVisao(gabData,af.name,atvConteudo,getKey(),modulo,nomeManual);
+      const r=await corrigirComVisao(gabData,af.name,atvConteudo,getKey(),modulo,nomeManual,criterioSelecionado);
       all.push(r);
     }
     setLoad('Salvando na nuvem...',92);
@@ -756,23 +884,24 @@ function tryParseJSONObject(raw){
   }
   throw new Error('JSON não encontrado na resposta');
 }
-async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo,nomeManual=''){
+async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo,nomeManual='',criterioFixo=null){
   const content=[];
   gabData.forEach((g,i)=>{
     adicionarConteudoAoArray(content,`GABARITO ${i+1} (${g.name}):`,g.conteudo);
   });
+  if(criterioFixo&&criterioFixo.texto){content.push({type:'text',text:`CRITÉRIO FIXO CADASTRADO PARA USO OBRIGATÓRIO\nMódulo: ${criterioFixo.modulo}\nDisciplina: ${criterioFixo.disciplina}\nTipo: ${displayTipo(criterioFixo.tipo)}\nCritérios e pesos:\n${criterioFixo.texto}`});}
   adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
   content.push({type:'text',text:`\nInstruções: Você é professor universitário corrigindo atividade do Módulo ${modulo}.
 REGRAS OBRIGATÓRIAS — siga à risca:
 1. Identifique o nome do aluno no documento (cabeçalho ou corpo do texto).
-2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender) com base no gabarito.
-3. Extraia do gabarito EXATAMENTE os critérios de avaliação com seus pesos/pontos — NÃO invente critérios nem pesos. Use os mesmos rótulos e valores que constam no gabarito.
+2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender). Se houver CRITÉRIO FIXO CADASTRADO, use exatamente a disciplina e o tipo informados nele.
+3. Se houver CRITÉRIO FIXO CADASTRADO, ele é a fonte principal e obrigatória dos critérios e pesos. Só use gabaritos anexados como apoio contextual. Se não houver critério fixo, extraia do gabarito EXATAMENTE os critérios de avaliação com seus pesos/pontos — NÃO invente critérios nem pesos. Use os mesmos rótulos e valores que constam no gabarito.
 4. Para cada critério: descreva em linguagem simples o que era esperado e o que o aluno entregou. Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
 5. CÁLCULO DA NOTA: some todas as nota_crit, divida pelo total de peso_max e multiplique por escala_maxima. Exemplo: se soma_nota_crit=38 e soma_peso_max=50 e escala=10, nota_numerica=7.6. NUNCA retorne nota_numerica igual a 0 a menos que a atividade esteja completamente em branco.
 6. nota_final deve ser formatado como "X,X/10" (use vírgula, não ponto).
 7. Responda APENAS com JSON válido sem markdown, sem texto antes ou depois:
 {"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
-  const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico seguindo EXATAMENTE os critérios e pesos do gabarito fornecido. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
+  const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico seguindo EXATAMENTE os critérios e pesos fornecidos. Quando houver critério fixo cadastrado, ele é a única referência de pesos e critérios. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
@@ -787,6 +916,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     p._tokOut=tokOut;
     p.status_correcao=p.status_correcao||'ok';
     if(nomeManual)p.nome_aluno=nomeManual;
+    if(criterioFixo){ if(!p.disciplina||normPlain(p.disciplina)!==normPlain(criterioFixo.disciplina)) p.disciplina=criterioFixo.disciplina; if(!p.tipo_atividade||normPlain(p.tipo_atividade)!==normPlain(criterioFixo.tipo)) p.tipo_atividade=displayTipo(criterioFixo.tipo); p.gabarito_usado=p.gabarito_usado||`Critério fixo: ${criterioFixo.disciplina} - ${displayTipo(criterioFixo.tipo)}`; p._disc=criterioFixo.disciplina; p._tipo=criterioFixo.tipo; }
     if(!Array.isArray(p.criterios))p.criterios=[];
     if(!Array.isArray(p.pontos_positivos))p.pontos_positivos=[];
     if(!Array.isArray(p.pontos_negativos))p.pontos_negativos=[];
@@ -1354,6 +1484,37 @@ async function delGab(path,nome){
   await stDelete(path);await sbDelete('gabaritos',path);
   gabListCache=gabListCache.filter(g=>g.id!==path);renderGabList();toast('Gabarito excluído.','ok');
 }
+
+async function saveCriterioFixo(){
+  const modulo=document.getElementById('crit-modulo').value.trim();
+  const disciplina=document.getElementById('crit-disciplina').value.trim();
+  const tipo=document.getElementById('crit-tipo').value.trim();
+  const texto=document.getElementById('crit-texto').value.trim();
+  const msg=document.getElementById('crit-msg');
+  if(!modulo||!disciplina||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha módulo, disciplina, tipo e critérios.';return;}
+  const row={id:criterioId(modulo,disciplina,tipo),modulo,disciplina,tipo,texto,updated_at:new Date().toISOString()};
+  try{
+    await sbUpsert('criterios_fixos',row);
+    const idx=criteriosFixos.findIndex(c=>c.id===row.id);
+    if(idx>=0)criteriosFixos[idx]=row; else criteriosFixos.push(row);
+    msg.style.color='var(--green)';msg.textContent='✓ Critério salvo com sucesso.';
+    renderCriteriosList();syncNovaCriteriaContext();checkReady();
+  }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
+}
+async function delCriterioFixo(id){
+  if(!confirm('Excluir este critério fixo?')) return;
+  await sbDelete('criterios_fixos',id);
+  criteriosFixos=criteriosFixos.filter(c=>c.id!==id);
+  renderCriteriosList();syncNovaCriteriaContext();checkReady();toast('Critério excluído.','ok');
+}
+function renderCriteriosList(){
+  const el=document.getElementById('criterios-list'); if(!el) return;
+  const fmod=normPlain(document.getElementById('crit-filter-mod')?.value||'');
+  const fdisc=normPlain(document.getElementById('crit-filter-disc')?.value||'');
+  const list=criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo).includes(fmod))&&(!fdisc||normPlain(c.disciplina).includes(fdisc))).sort((a,b)=>`${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
+  if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum critério salvo ainda.</div>';return;}
+  el.innerHTML=list.map(c=>`<div class="gab-row" style="align-items:flex-start;gap:10px;"><div style="flex:1;min-width:0;"><div class="gab-row-name" style="white-space:normal;font-size:13px;font-family:'Syne',sans-serif;">${c.disciplina}</div><div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:4px;">Módulo ${c.modulo} · ${displayTipo(c.tipo)}</div><div style="font-size:11px;color:var(--text);font-family:'DM Mono',monospace;line-height:1.5;margin-top:8px;white-space:pre-wrap;max-height:160px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px;">${c.texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div><button class="btn-sm red" onclick="delCriterioFixo('${c.id.replace(/'/g,"\'")}')">✕</button></div>`).join('');
+}
 function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo!==mod)return;safeArray(s.groups).forEach(g=>{if(g.disciplina!==disc)return;safeArray(g?.atividades?.[tipo]).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
 function exportMesclado(mod,disc,tipo){
   const rs=getMesclado(mod,disc,tipo);if(!rs.length){toast('Sem dados.','err');return;}
@@ -1402,11 +1563,12 @@ function goTab(tab){
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   const panelId=tab==='resultados'?'results':tab;
   document.getElementById('panel-'+panelId).classList.add('active');
-  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,historico:4,config:5}[tab];
+  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,criterios:4,historico:5,config:6}[tab];
   if(idx>=0)document.querySelectorAll('.tbtn')[idx].classList.add('active');
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
   if(tab==='gabaritos')renderGabList();
+  if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();}
   if(tab==='turmas')renderTurmasList();
 }
 function limparArquivosNova(){
@@ -1416,8 +1578,11 @@ function limparArquivosNova(){
   document.getElementById('match-box').style.display='none';
   document.getElementById('cloud-gab-status').textContent='';
   document.getElementById('modulo').value='';
+  var nd=document.getElementById('nova-disciplina'); if(nd) nd.innerHTML='<option value="">Selecione</option>';
+  var nt=document.getElementById('nova-tipo'); if(nt) nt.value='';
   var fiGab=document.getElementById('fi-gab');if(fiGab)fiGab.value='';
   var fiAtv=document.getElementById('fi-atv');if(fiAtv)fiAtv.value='';
+  syncNovaCriteriaContext();
   checkReady();
 }
 function showLoad(on){document.getElementById('loading').classList.toggle('on',on);if(!on)document.getElementById('lbar').style.width='0%';}
