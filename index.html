@@ -576,7 +576,7 @@ async function sbGet(table,id){const r=await fetch(`${SB_URL}/rest/v1/${table}?i
 async function sbUpsert(table,data){const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});if(!r.ok){const t=await r.text();throw new Error(`Falha ao salvar em ${table}: ${r.status} ${t}`);}}
 async function sbDelete(table,id){const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao excluir em ${table}: ${r.status} ${t}`);}}
 async function sbGetAll(table,filter=''){const r=await fetch(`${SB_URL}/rest/v1/${table}?order=id.asc${filter}`,{headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao listar ${table}: ${r.status} ${t}`);}const data=await r.json();if(!Array.isArray(data))throw new Error(`Resposta inválida ao listar ${table}`);return data;}
-async function stUpload(path,file){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'POST',headers:{...H,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});if(!r.ok)throw new Error('Upload falhou');}
+async function stUpload(path,file){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'POST',headers:{...H,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});if(!r.ok){const t=await r.text();throw new Error(`Upload falhou: ${r.status} ${t}`);} }
 async function stDownload(path){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{headers:H});if(!r.ok)throw new Error('Download falhou');return await r.blob();}
 async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'DELETE',headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao excluir arquivo: ${r.status} ${t}`);}}
 function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
@@ -955,6 +955,34 @@ async function iniciarCorrecao(){
   }catch(e){showLoad(false);console.error(e);toast('Erro: '+e.message,'err');}
 }
 function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
+
+function normalizeCriteriosPontuacao(p){
+  if(!p||!Array.isArray(p.criterios)) return p;
+  p.criterios = p.criterios.map(c=>{
+    const peso = parseFloat(c?.peso_max)||0;
+    let desconto = parseFloat(c?.desconto);
+    let nota = parseFloat(c?.nota_crit);
+    if(Number.isNaN(desconto) || desconto<0) desconto = Math.max(0, peso - (Number.isNaN(nota)?peso:nota));
+    if(Number.isNaN(nota)) nota = Math.max(0, peso - desconto);
+    if(nota > peso) nota = peso;
+    if(desconto > peso) desconto = peso;
+    nota = Math.max(0, parseFloat(nota.toFixed(2)));
+    desconto = Math.max(0, parseFloat((peso - nota).toFixed(2)));
+    return {...c, peso_max:peso, desconto, nota_crit:nota};
+  });
+  const totalPeso = p.criterios.reduce((a,c)=>a+(parseFloat(c.peso_max)||0),0);
+  const totalNota = p.criterios.reduce((a,c)=>a+(parseFloat(c.nota_crit)||0),0);
+  const escala = parseFloat(p.escala_maxima)||10;
+  p._totalPeso = totalPeso;
+  p._totalNota = totalNota;
+  if(totalPeso>0){
+    p.nota_numerica = parseFloat((totalNota/totalPeso*escala).toFixed(1));
+    p.nota_final = String(p.nota_numerica).replace('.',',')+'/'+escala;
+    p.memoria_calculo = `${totalNota.toFixed(1)} / ${totalPeso.toFixed(1)} × ${escala} = ${p.nota_numerica.toFixed(1)}/${escala}`;
+  }
+  return p;
+}
+
 function adicionarConteudoAoArray(content, label, conteudo){
   content.push({type:'text',text:label});
   if(conteudo.tipo==='text'){
@@ -989,13 +1017,13 @@ REGRAS OBRIGATÓRIAS — siga à risca:
 1. Identifique o nome do aluno no documento (cabeçalho ou corpo do texto).
 2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender). Se houver CRITÉRIO FIXO CADASTRADO, use exatamente a disciplina e o tipo informados nele.
 3. Se houver CRITÉRIO FIXO CADASTRADO, ele é a fonte principal e obrigatória dos critérios e pesos. Só use gabaritos anexados como apoio contextual. Se não houver critério fixo, extraia do gabarito EXATAMENTE os critérios de avaliação com seus pesos/pontos — NÃO invente critérios nem pesos. Use os mesmos rótulos e valores que constam no gabarito.
-4. Para cada critério: descreva em linguagem simples o que era esperado e o que o aluno entregou. Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
+4. Para cada critério: descreva em linguagem simples e curta (máximo 18 palavras em 'esperado', 22 em 'entregue' e 18 em 'motivo'). Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
 5. CÁLCULO DA NOTA: some todas as nota_crit, divida pelo total de peso_max e multiplique por escala_maxima. Exemplo: se soma_nota_crit=38 e soma_peso_max=50 e escala=10, nota_numerica=7.6. NUNCA retorne nota_numerica igual a 0 a menos que a atividade esteja completamente em branco.
 6. nota_final deve ser formatado como "X,X/10" (use vírgula, não ponto).
 7. Responda APENAS com JSON válido sem markdown, sem texto antes ou depois:
 {"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
-  const sys=`Você é um professor universitário experiente. Corrija a atividade com rigor acadêmico seguindo EXATAMENTE os critérios e pesos fornecidos. Quando houver critério fixo cadastrado, ele é a única referência de pesos e critérios. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda APENAS com JSON válido, sem markdown, sem texto adicional.`;
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2800,temperature:0,system:sys,messages:[{role:'user',content}]})});
+  const sys=`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
@@ -1015,15 +1043,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     if(!Array.isArray(p.pontos_negativos))p.pontos_negativos=[];
     if(typeof p.feedback!=='string')p.feedback='';
     if(typeof p.memoria_calculo!=='string')p.memoria_calculo='';
-    if((!p.nota_numerica||p.nota_numerica===0)&&p.criterios&&p.criterios.length){
-      const totalPeso=p.criterios.reduce((a,c)=>a+(parseFloat(c.peso_max)||0),0);
-      const totalNota=p.criterios.reduce((a,c)=>{const pm=parseFloat(c.peso_max)||0;const dc=parseFloat(c.desconto)||0;const nc=parseFloat(c.nota_crit);return a+(isNaN(nc)?pm-dc:nc);},0);
-      const escala=p.escala_maxima||10;
-      if(totalPeso>0){
-        p.nota_numerica=parseFloat((totalNota/totalPeso*escala).toFixed(1));
-        p.nota_final=String(p.nota_numerica).replace('.',',')+'/'+escala;
-      }
-    }
+    normalizeCriteriosPontuacao(p);
     return p;
   }catch(ex){
     console.error('Falha ao interpretar resposta da IA:', ex, txt);
@@ -1193,7 +1213,7 @@ function mcTabela(r){
       +'<td class="r"><span class="mc-nc '+cls+'">'+nc+' pts</span></td>'
       +'</tr>';
   }).join('');
-  var notaF=r.nota_numerica!=null?r.nota_numerica:parseFloat((totalNota/totalPeso*escala).toFixed(1));
+  var notaF=Number.isFinite(r.nota_numerica)?r.nota_numerica:parseFloat((totalNota/totalPeso*escala).toFixed(1));
   var pf=escala>0?notaF/escala:0;
   var clsF=pf>=0.7?'a':pf>=0.5?'m':'b';
   var footer='<tr class="trow">'
@@ -1559,7 +1579,19 @@ async function uploadGabaritos(e){
   const files=Array.from(e.target.files);const prog=document.getElementById('upload-gab-progress');prog.style.color='var(--muted2)';
   let ok=0;
   for(const f of files){
-    try{const path=`${modulo}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;await stUpload(path,f);await sbUpsert('gabaritos',{id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'});gabListCache.push({id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'});ok++;prog.textContent=`Enviando ${ok}/${files.length}... ✓ ${f.name}`;}catch(err){toast('Erro: '+f.name,'err');}
+    try{
+      const path=`${modulo}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+      await stUpload(path,f);
+      await sbUpsert('gabaritos',{id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'});
+      gabListCache.push({id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'});
+      ok++;
+      prog.textContent=`Enviando ${ok}/${files.length}... ✓ ${f.name}`;
+    }catch(err){
+      console.error('Falha ao salvar gabarito', f.name, err);
+      prog.style.color='var(--red)';
+      prog.textContent=`Erro ao salvar ${f.name}: ${err.message||err}`;
+      toast('Erro ao salvar '+f.name,'err');
+    }
   }
   prog.style.color='var(--green)';prog.textContent=`✓ ${ok} arquivo(s) enviado(s)!`;
   e.target.value='';renderGabList();
