@@ -594,7 +594,16 @@ function getCriterioSelecionadoNova(){
   const mod=getMod();
   const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
   const tipo=document.getElementById('nova-tipo')?.value||'';
-  return criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,disc,tipo))||null;
+  const exact=criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,disc,tipo))||null;
+  if(exact) return exact;
+  const nd=normPlain(disc);
+  const nt=normPlain(tipo);
+  const candidatos=criteriosFixos.filter(c=>normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
+  const aproximados=candidatos.filter(c=>{
+    const cd=normPlain(c.disciplina);
+    return !!nd && (cd===nd || cd.includes(nd) || nd.includes(cd));
+  });
+  return aproximados.length===1 ? aproximados[0] : null;
 }
 function getDisciplinasCatalogo(mod=''){
   const itens=[];
@@ -718,8 +727,10 @@ function checkReady(){
   const hasKey=!!(getKey()||localStorage.getItem('cIA5_apikey_plain'));
   const hasMod=!!getMod();
   const hasAtv=atvFiles.length>0;
+  const hasDisc=!!((document.getElementById('nova-disciplina')?.value||'').trim());
+  const hasTipo=!!(document.getElementById('nova-tipo')?.value||'');
   const hasCriterio=!!getCriterioSelecionadoNova();
-  const ok=(hasCriterio||gabFiles.length>0)&&hasAtv&&hasKey&&hasMod;
+  const ok=(hasCriterio||gabFiles.length>0)&&hasAtv&&hasKey&&hasMod&&hasDisc&&hasTipo;
   document.getElementById('btn-corrigir').disabled=!ok;
   const qtd=atvFiles.length;
   const base=[];
@@ -994,14 +1005,37 @@ function adicionarConteudoAoArray(content, label, conteudo){
   }
 }
 
+function balanceJsonBrackets(s){
+  let inString=false, escape=false;
+  const stack=[];
+  for(let i=0;i<s.length;i++){
+    const ch=s[i];
+    if(escape){escape=false;continue;}
+    if(ch==='\\'){escape=true;continue;}
+    if(ch==='"'){inString=!inString;continue;}
+    if(inString) continue;
+    if(ch==='{'||ch==='[') stack.push(ch);
+    else if(ch==='}' && stack[stack.length-1]==='{') stack.pop();
+    else if(ch===']' && stack[stack.length-1]==='[') stack.pop();
+  }
+  let suffix='';
+  while(stack.length){
+    const ch=stack.pop();
+    suffix += ch==='{' ? '}' : ']';
+  }
+  return s + suffix;
+}
 function tryParseJSONObject(raw){
   if(!raw)throw new Error('Resposta vazia');
-  const cleaned=String(raw).replace(/```json/gi,'').replace(/```/g,'').trim();
+  let cleaned=String(raw).replace(/```json/gi,'').replace(/```/g,'').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").trim();
   try{return JSON.parse(cleaned);}catch(_e){}
   const start=cleaned.indexOf('{');
   const end=cleaned.lastIndexOf('}');
-  if(start>=0&&end>start){
-    return JSON.parse(cleaned.slice(start,end+1));
+  if(start>=0){
+    let candidate=(end>start?cleaned.slice(start,end+1):cleaned.slice(start)).trim();
+    candidate=candidate.replace(/,\s*([}\]])/g,'$1');
+    try{return JSON.parse(candidate);}catch(_e){}
+    try{return JSON.parse(balanceJsonBrackets(candidate));}catch(_e){}
   }
   throw new Error('JSON não encontrado na resposta');
 }
@@ -1577,7 +1611,7 @@ async function uploadGabaritos(e){
   const modulo=document.getElementById('gab-modulo').value.trim();
   if(!modulo){toast('Informe o módulo.','err');e.target.value='';return;}
   const files=Array.from(e.target.files);const prog=document.getElementById('upload-gab-progress');prog.style.color='var(--muted2)';
-  let ok=0;
+  let ok=0, falhas=[];
   for(const f of files){
     try{
       const path=`${modulo}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
@@ -1588,12 +1622,19 @@ async function uploadGabaritos(e){
       prog.textContent=`Enviando ${ok}/${files.length}... ✓ ${f.name}`;
     }catch(err){
       console.error('Falha ao salvar gabarito', f.name, err);
+      falhas.push(`${f.name}: ${err.message||err}`);
       prog.style.color='var(--red)';
       prog.textContent=`Erro ao salvar ${f.name}: ${err.message||err}`;
       toast('Erro ao salvar '+f.name,'err');
     }
   }
-  prog.style.color='var(--green)';prog.textContent=`✓ ${ok} arquivo(s) enviado(s)!`;
+  if(falhas.length){
+    prog.style.color = ok ? 'var(--yellow)' : 'var(--red)';
+    prog.textContent = ok ? `✓ ${ok} arquivo(s) enviado(s), ${falhas.length} com erro.` : `Nenhum arquivo salvo. ${falhas[0]}`;
+  }else{
+    prog.style.color='var(--green)';
+    prog.textContent=`✓ ${ok} arquivo(s) enviado(s)!`;
+  }
   e.target.value='';renderGabList();
 }
 function renderGabList(){
