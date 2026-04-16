@@ -905,6 +905,7 @@ function validarArquivoParaContexto(file,conteudo,criterioFixo){
   const alvoTipo=normPlain(document.getElementById('nova-tipo')?.value||'');
   const disciplina=(document.getElementById('nova-disciplina')?.value||'').trim();
   let score=0, motivos=[];
+  let bloqueioClaro=false;
   if(alvoTipo){
     const tipos=['criar','entender','delinear'];
     const outros=tipos.filter(t=>t!==alvoTipo && (nomeNorm.includes(t)||base.includes(t)));
@@ -925,9 +926,62 @@ function validarArquivoParaContexto(file,conteudo,criterioFixo){
   if(conteudo.tipo==='text'){
     const len=(texto||'').trim().length;
     if(len<80){score-=3; motivos.push('conteúdo textual muito curto');}
+    if(len<20){bloqueioClaro=true; motivos.push('arquivo praticamente sem conteúdo');}
   }
-  const status=score>=1?'ok':'separar';
-  return {status,score,motivos:motivos.join('; ')|| (status==='ok'?'compatível com o contexto selecionado':'compatibilidade insuficiente')};
+  if(texto && alvoTipo){
+    const tipos=['criar','entender','delinear'];
+    const outros=tipos.filter(t=>t!==alvoTipo && base.includes(t));
+    if(outros.length>=2){bloqueioClaro=true; motivos.push('conteúdo indica fortemente outro tipo de atividade');}
+  }
+  let status='ok';
+  if(bloqueioClaro) status='separar';
+  else if(score<1) status=(criterioFixo?'alerta':'separar');
+  const msg = status==='ok' ? 'compatível com o contexto selecionado' : status==='alerta' ? 'compatibilidade baixa, mas será corrigido com aviso' : 'compatibilidade insuficiente';
+  return {status,score,motivos:motivos.join('; ')|| msg};
+}
+function triageRowHTML(x,idx){
+  const st=x.triagem.status;
+  const badge=st==='ok'?'apto para corrigir':st==='alerta'?'corrigido com alerta':'separado';
+  const cls=st==='ok'?'ok':'warn';
+  const action=st==='separar'?`<button class="btn-sm accent" onclick="corrigirMesmoAssimTriagem(${idx})">Corrigir mesmo assim</button>`:'—';
+  return `<tr id="triage-row-${idx}"><td>${fi(x.af.name)} ${x.af.name}</td><td><span class="mbadge ${cls}">${badge}</span></td><td>${safeText(x.triagem.motivos)}</td><td>${action}</td></tr>`;
+}
+function renderTriagemResultado(avaliados){
+  document.getElementById('match-box').style.display='block';
+  document.getElementById('match-hdr').innerHTML='✦ Resultado da triagem inteligente';
+  document.getElementById('match-wrap').innerHTML=`<table class="mtable"><thead><tr><th>Arquivo</th><th>Status</th><th>Observação</th><th>Ação</th></tr></thead><tbody>${avaliados.map((x,idx)=>triageRowHTML(x,idx)).join('')}</tbody></table><div style="margin-top:8px;font-size:11px;color:var(--muted2);">Arquivos em <b>alerta</b> serão corrigidos normalmente. Os itens <b>separados</b> podem ser revisados por você e corrigidos manualmente no botão <b>Corrigir mesmo assim</b>.</div>`;
+}
+async function appendResultadoToSession(r,modulo){
+  let session=cur && cur.modulo===modulo ? cur : null;
+  if(!session){
+    session={id:Date.now(),modulo,data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),groups:[],total:0};
+    sessions.push(session);
+  }
+  let grp=session.groups.find(g=>g.disciplina===r._disc);
+  if(!grp){grp={disciplina:r._disc,modulo,atividades:{criar:[],delinear:[],entender:[]}};session.groups.push(grp);}
+  const tipo=normTipo(r._tipo);
+  (grp.atividades[tipo]||(grp.atividades['entender'])).push(r);
+  session.total=session.groups.flatMap(g=>Object.values(g.atividades).flat()).length;
+  await sbUpsert('sessoes',{id:session.id,modulo:session.modulo,data:session.data,hora:session.hora,total:session.total,groups:session.groups});
+  cur=session;
+  renderResults(session);renderSidebar();
+}
+async function corrigirMesmoAssimTriagem(idx){
+  if(!triageCtx||!triageCtx.avaliados||!triageCtx.avaliados[idx]){toast('Triagem indisponível. Reenvie os arquivos.','err');return;}
+  const item=triageCtx.avaliados[idx];
+  const btn=document.querySelector(`#triage-row-${idx} .btn-sm`);
+  if(btn){btn.disabled=true;btn.textContent='Corrigindo...';}
+  try{
+    showLoad(true);setLoad(`Corrigindo manualmente: ${item.af.name.substring(0,24)}...`,65);
+    const r=await corrigirComVisao(triageCtx.gabData,item.af.name,item.atvConteudo,getKey(),triageCtx.modulo,item.nomeManual,triageCtx.criterioSelecionado);
+    await appendResultadoToSession(r,triageCtx.modulo);
+    item.triagem.status='alerta';
+    item.triagem.motivos=(item.triagem.motivos?item.triagem.motivos+'; ':'')+'correção manual autorizada pelo usuário';
+    renderTriagemResultado(triageCtx.avaliados);
+    showLoad(false);
+    toast('✓ Arquivo corrigido manualmente e incluído nos resultados.','ok');
+    goTab('resultados');
+  }catch(e){showLoad(false);console.error(e);toast('Erro ao corrigir manualmente: '+e.message,'err'); if(btn){btn.disabled=false;btn.textContent='Corrigir mesmo assim';}}
 }
 
 async function iniciarCorrecao(){
@@ -949,12 +1003,11 @@ async function iniciarCorrecao(){
       const triagem=validarArquivoParaContexto(af,atvConteudo,criterioSelecionado);
       avaliados.push({af,atvConteudo,nomeManual,triagem});
     }
-    const aptos=avaliados.filter(x=>x.triagem.status==='ok');
-    const separados=avaliados.filter(x=>x.triagem.status!=='ok');
-    document.getElementById('match-box').style.display='block';
-    document.getElementById('match-hdr').innerHTML='✦ Resultado da triagem inteligente';
-    document.getElementById('match-wrap').innerHTML=`<table class="mtable"><thead><tr><th>Arquivo</th><th>Status</th><th>Observação</th></tr></thead><tbody>${avaliados.map(x=>`<tr><td>${fi(x.af.name)} ${x.af.name}</td><td><span class="mbadge ${x.triagem.status==='ok'?'ok':'warn'}">${x.triagem.status==='ok'?'apto para corrigir':'separado'}</span></td><td>${safeText(x.triagem.motivos)}</td></tr>`).join('')}</tbody></table>`;
-    if(!aptos.length){showLoad(false);toast('Nenhum arquivo passou na triagem. Revise disciplina/tipo ou os arquivos enviados.','err');return;}
+    const aptos=avaliados.filter(x=>x.triagem.status==='ok' || x.triagem.status==='alerta');
+    const separados=avaliados.filter(x=>x.triagem.status==='separar');
+    triageCtx={avaliados,gabData,criterioSelecionado,modulo};
+    renderTriagemResultado(avaliados);
+    if(!aptos.length){showLoad(false);toast('Nenhum arquivo foi aprovado automaticamente. Revise a triagem e use “Corrigir mesmo assim” nos compatíveis.','err');return;}
     const all=[];
     for(let i=0;i<aptos.length;i++){
       const item=aptos[i];
@@ -974,7 +1027,8 @@ async function iniciarCorrecao(){
     sessions.push(session);cur=session;
     setLoad('Pronto!',100);await sleep(300);showLoad(false);
     renderResults(session);renderSidebar();goTab('resultados');
-    toast(`✓ ${all.length} atividade(s) corrigida(s)${separados.length?` · ${separados.length} separada(s) na triagem`:''}!`,'ok');
+    const alertas=avaliados.filter(x=>x.triagem.status==='alerta').length;
+    toast(`✓ ${all.length} atividade(s) corrigida(s)${alertas?` · ${alertas} com alerta`:''}${separados.length?` · ${separados.length} separada(s) na triagem`:''}!`,'ok');
   }catch(e){showLoad(false);console.error(e);toast('Erro: '+e.message,'err');}
 }
 function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
