@@ -722,16 +722,54 @@ async function saveApiKeyCloud(){const k=document.getElementById('apikey').value
 async function saveApiKeyFromConfig(){const k=document.getElementById('cfg-apikey').value.trim();if(!k)return;document.getElementById('apikey').value=k;await sbUpsert('config',{id:'apikey',valor:enc(k,currentPw)});const m=document.getElementById('cfg-api-msg');m.style.color='var(--green)';m.textContent='✓ Salva! Disponível em qualquer computador.';checkReady();}
 function getKey(){const v=document.getElementById('apikey').value.trim();if(v)localStorage.setItem('cIA5_apikey_plain',v);return v||localStorage.getItem('cIA5_apikey_plain')||'';}
 function getMod(){return document.getElementById('modulo').value.trim();}
+function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+function namesMatch(a,b){const na=normalizeName(a), nb=normalizeName(b); if(!na||!nb) return false; return na===nb || na.includes(nb) || nb.includes(na);}
+function getTurmaAtualNova(){
+  const mod=getMod();
+  const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
+  if(!mod||!disc) return null;
+  return turmas.find(t=>String(t.modulo||'')===String(mod) && namesMatch(t.disciplina,disc))||null;
+}
+function getAlunosTurmaAtualNova(){const t=getTurmaAtualNova(); return t&&Array.isArray(t.alunos)?t.alunos:[];}
+function sugerirAlunoPorArquivo(nomeArquivo){
+  const alunos=getAlunosTurmaAtualNova();
+  if(!alunos.length) return '';
+  const nf=normalizeName(nomeArquivo).replace(/\b(corretoia|atividade|avaliativa|criar|delinear|entender|instituicoes|direito|publico|privado|matematica|ead|pdf|docx|doc)\b/g,' ').replace(/\s+/g,' ').trim();
+  let best='', score=0;
+  for(const a of alunos){
+    const na=normalizeName(a);
+    let s=0;
+    na.split(' ').filter(w=>w.length>2).forEach(w=>{ if(nf.includes(w)) s++; });
+    if(s>score){score=s; best=a;}
+  }
+  return score>0?best:'';
+}
 function addGab(e){gabFiles=[...gabFiles,...Array.from(e.target.files)];e.target.value='';renderChips('ch-gab',gabFiles,'rmGab');schedMatch();checkReady();}
-function addAtv(e){const novos=Array.from(e.target.files);atvFiles=[...atvFiles,...novos];atvNomes=[...atvNomes,...novos.map(()=>'')];e.target.value='';renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();}
+function addAtv(e){
+  const novos=Array.from(e.target.files);
+  atvFiles=[...atvFiles,...novos];
+  atvNomes=[...atvNomes,...novos.map(f=>sugerirAlunoPorArquivo(f.name)||'')];
+  e.target.value='';
+  renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();
+}
 function rmGab(i){gabFiles.splice(i,1);renderChips('ch-gab',gabFiles,'rmGab');schedMatch();checkReady();}
 function rmAtv(i){atvFiles.splice(i,1);atvNomes.splice(i,1);renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();}
+function updateAtvNome(i,val){atvNomes[i]=val; checkReady();}
 function renderChips(id,files,fn){
+  const alunosNova=getAlunosTurmaAtualNova();
   document.getElementById(id).innerHTML=files.map((f,i)=>{
     const isAtv=(id==='ch-atv');
     const nome=(atvNomes[i]||'').replace(/"/g,'&quot;');
-    const nomeField=isAtv?'<input class="finput" type="text" placeholder="Nome do aluno" value="'+nome+'" oninput="atvNomes['+i+']=this.value" style="font-size:11px;padding:4px 8px;width:150px;margin:0 4px;">':'';
-    return'<div class="chip" style="max-width:'+(isAtv?'400px':'230px')+';flex-wrap:wrap;gap:4px;padding:5px 8px;align-items:center;"><span>'+fi(f.name)+'</span><span class="chip-name" style="max-width:130px;">'+f.name+'</span>'+nomeField+'<span class="chip-x" onclick="'+fn+'('+i+')">×</span></div>';
+    let nomeField='';
+    if(isAtv){
+      if(alunosNova.length){
+        const opts=['<option value="">Selecionar aluno...</option>'].concat(alunosNova.map(a=>'<option value="'+String(a).replace(/"/g,'&quot;')+'"'+(a===atvNomes[i]?' selected':'')+'>'+a+'</option>')).join('');
+        nomeField='<select class="finput" onchange="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:240px;margin:0 4px;">'+opts+'</select>';
+      }else{
+        nomeField='<input class="finput" type="text" placeholder="Nome do aluno" value="'+nome+'" oninput="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:170px;margin:0 4px;">';
+      }
+    }
+    return'<div class="chip" style="max-width:'+(isAtv?'560px':'230px')+';flex-wrap:wrap;gap:4px;padding:5px 8px;align-items:center;"><span>'+fi(f.name)+'</span><span class="chip-name" style="max-width:180px;">'+f.name+'</span>'+nomeField+'<span class="chip-x" onclick="'+fn+'('+i+')">×</span></div>';
   }).join('');
 }
 function fi(n){if(/\.(jpg|jpeg|png|webp)$/i.test(n))return'🖼';if(/\.pdf$/i.test(n))return'📄';if(/\.(docx|doc)$/i.test(n))return'📝';return'📁';}
@@ -1618,8 +1656,8 @@ function renderDashboard(){
     if(filter&&!safeText(s.modulo).toLowerCase().includes(filter))return;
     safeArray(s.groups).forEach(g=>{
       const key=s.modulo+'||'+g.disciplina;
-      if(!tree[key])tree[key]={mod:s.modulo,disc:g.disciplina,corrigidos:{criar:new Set(),delinear:new Set(),entender:new Set()}};
-      ATV_TYPES.forEach(t=>(g.atividades[t]||[]).forEach(r=>{if(r.nome_aluno&&!r._pendente)tree[key].corrigidos[t].add(r.nome_aluno);}));
+      if(!tree[key])tree[key]={mod:s.modulo,disc:g.disciplina,corrigidos:{criar:[],delinear:[],entender:[]}};
+      ATV_TYPES.forEach(t=>(g.atividades[t]||[]).forEach(r=>{if(r.nome_aluno&&!r._pendente)tree[key].corrigidos[t].push(String(r.nome_aluno));}));
     });
   });
   if(!Object.keys(tree).length){
@@ -1627,18 +1665,20 @@ function renderDashboard(){
     pendEl.innerHTML='';return;
   }
   const CORES={criar:'#22c55e',delinear:'#4f7cff',entender:'#f59e0b'};
+  function turmaByKey(mod,disc){
+    return turmas.find(function(t){
+      if(t.id===mod+'||'+disc)return true;
+      if(String(t.modulo)!==String(mod))return false;
+      return namesMatch(t.disciplina,disc);
+    });
+  }
+  function isCorrigido(list,nome){return list.some(n=>namesMatch(n,nome));}
   gridEl.innerHTML=Object.entries(tree).map(([key,d])=>{
     const [dMod,dDisc]=key.split('||');
-    const turma=turmas.find(function(t){
-      if(t.id===key)return true;
-      if(t.modulo!==dMod)return false;
-      var a=t.disciplina.toLowerCase().replace(/[^a-z0-9]/g,'');
-      var b=dDisc.toLowerCase().replace(/[^a-z0-9]/g,'');
-      return a===b||a.includes(b)||b.includes(a);
-    });
+    const turma=turmaByKey(dMod,dDisc);
     const total=turma?turma.alunos.length:null;
     const bars=ATV_TYPES.map(t=>{
-      const n=d.corrigidos[t].size;
+      const n=turma?turma.alunos.filter(a=>isCorrigido(d.corrigidos[t],a)).length:d.corrigidos[t].length;
       const pct=total?Math.round(n/total*100):null;
       const pctVal=pct!==null?pct:Math.min(n*20,100);
       return'<div class="prog-row">'+
@@ -1652,23 +1692,17 @@ function renderDashboard(){
   }).join('');
   pendEl.innerHTML=Object.entries(tree).map(([key,d])=>{
     const [pMod,pDisc]=key.split('||');
-    const turma=turmas.find(function(t){
-      if(t.id===key)return true;
-      if(t.modulo!==pMod)return false;
-      var a=t.disciplina.toLowerCase().replace(/[^a-z0-9]/g,'');
-      var b=pDisc.toLowerCase().replace(/[^a-z0-9]/g,'');
-      return a===b||a.includes(b)||b.includes(a);
-    });
+    const turma=turmaByKey(pMod,pDisc);
     if(!turma||!turma.alunos.length){
       return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">Módulo '+d.mod+'</span></div>'+
         '<div style="font-size:12px;color:var(--muted);">Cadastre a turma para ver pendentes por aluno.</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+
-          ATV_TYPES.map(t=>{const ns=[...d.corrigidos[t]];return ns.length?'<div style="margin-bottom:8px;width:100%;"><div style="font-size:11px;color:'+CORES[t]+';font-weight:600;margin-bottom:5px;">'+t.charAt(0).toUpperCase()+t.slice(1)+' ('+ns.length+')</div><div class="pend-list">'+ns.map(n=>'<div class="pend-chip ok">✓ '+n+'</div>').join('')+'</div></div>':'';}).join('')+
+          ATV_TYPES.map(t=>{const ns=[...new Set(d.corrigidos[t])];return ns.length?'<div style="margin-bottom:8px;width:100%;"><div style="font-size:11px;color:'+CORES[t]+';font-weight:600;margin-bottom:5px;">'+t.charAt(0).toUpperCase()+t.slice(1)+' ('+ns.length+')</div><div class="pend-list">'+ns.map(n=>'<div class="pend-chip ok">✓ '+n+'</div>').join('')+'</div></div>':'';}).join('')+
         '</div></div>';
     }
     const panes=ATV_TYPES.map((t,ti)=>{
-      const pendentes=turma.alunos.filter(a=>!d.corrigidos[t].has(a));
-      const enviados=turma.alunos.filter(a=>d.corrigidos[t].has(a));
+      const pendentes=turma.alunos.filter(a=>!isCorrigido(d.corrigidos[t],a));
+      const enviados=turma.alunos.filter(a=>isCorrigido(d.corrigidos[t],a));
       const kkey=key.replace(/\W/g,'_');
       return'<div id="pend-'+kkey+'-'+t+'" style="display:'+(ti===0?'block':'none')+';">'+
         (pendentes.length?'<div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px;">⚠ Não enviaram ('+pendentes.length+')</div><div class="pend-list">'+pendentes.map(a=>'<div class="pend-chip missing">✗ '+a+'</div>').join('')+'</div></div>':'<div style="font-size:12px;color:var(--green);margin-bottom:10px;">✓ Todos enviaram!</div>')+
@@ -1676,7 +1710,7 @@ function renderDashboard(){
         '</div>';
     }).join('');
     const tabBtns=ATV_TYPES.map((t,ti)=>{
-      const pendCnt=turma.alunos.filter(a=>!d.corrigidos[t].has(a)).length;
+      const pendCnt=turma.alunos.filter(a=>!isCorrigido(d.corrigidos[t],a)).length;
       const kkey=key.replace(/\W/g,'_');
       return'<button class="pend-tab '+t+' '+(ti===0?'active':'')+'" onclick="switchPendTab(\''+kkey+'\','+JSON.stringify(ATV_TYPES)+',\''+t+'\',this)">'+t.charAt(0).toUpperCase()+t.slice(1)+(pendCnt>0?' <span style="background:rgba(239,68,68,0.2);color:var(--red);padding:1px 5px;border-radius:4px;font-size:10px;">'+pendCnt+'</span>':'')+'</button>';
     }).join('');
