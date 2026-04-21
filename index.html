@@ -331,17 +331,19 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">🎯 Critérios Fixos da Correção</div>
-          <div class="fcard-desc">Selecione a disciplina e o tipo da atividade. Se houver critérios cadastrados, eles serão usados como fonte principal da correção para reduzir tokens e manter o mesmo padrão entre envios. O campo disciplina agora aceita digitação com filtro automático.</div>
+          <div class="fcard-desc">Selecione a disciplina e o tipo da atividade. Se houver critérios cadastrados, eles serão usados como fonte principal da correção para reduzir tokens e manter o mesmo padrão entre envios. A disciplina agora é escolhida em lista suspensa com base no módulo selecionado.</div>
           <div class="row-fields">
             <span class="flabel">Disciplina</span>
-            <input class="finput disc" id="nova-disciplina" list="nova-disciplinas-list" placeholder="Digite para filtrar a disciplina" oninput="syncNovaCriteriaContext();checkReady()">
-            <datalist id="nova-disciplinas-list"></datalist>
+            <select class="finput disc" id="nova-disciplina" onchange="syncNovaCriteriaContext();checkReady()" style="width:260px;text-align:left;">
+              <option value="">Selecione a disciplina</option>
+            </select>
             <span class="flabel">Tipo</span>
             <select class="finput mod" id="nova-tipo" onchange="syncNovaCriteriaContext();checkReady()" style="width:140px;text-align:left;">
               <option value="">Selecione</option>
               <option value="entender">Entender</option>
               <option value="delinear">Delinear</option>
               <option value="criar">Criar</option>
+              <option value="complementar">Complementar</option>
             </select>
           </div>
           <div id="nova-criterio-status" style="font-size:12px;color:var(--muted2);font-family:'DM Mono',monospace;min-height:18px;">Selecione disciplina e tipo para verificar critérios fixos.</div>
@@ -488,10 +490,22 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <div class="fcard-title">📋 Critérios salvos</div>
           <div class="row-fields">
             <span class="flabel">Filtro módulo</span>
-            <input class="finput mod" type="text" id="crit-filter-mod" placeholder="Todos" oninput="renderCriteriosList()">
-            <span class="flabel">Filtro disciplina</span>
-            <input class="finput disc" type="text" id="crit-filter-disc" placeholder="Todas" oninput="renderCriteriosList()">
+            <select class="finput mod" id="crit-filter-mod" onchange="renderCriteriosList()">
+              <option value="">Todos</option>
+            </select>
+            <span class="flabel">Filtro tipo</span>
+            <select class="finput mod" id="crit-filter-tipo" onchange="renderCriteriosList()" style="width:150px;text-align:left;">
+              <option value="">Todos</option>
+              <option value="entender">Entender</option>
+              <option value="delinear">Delinear</option>
+              <option value="criar">Criar</option>
+              <option value="complementar">Complementar</option>
+            </select>
+            <span class="flabel">Buscar disciplina</span>
+            <input class="finput disc" type="text" id="crit-filter-disc" placeholder="Digite parte do nome" oninput="renderCriteriosList()">
+            <button class="btn-o" onclick="clearCriteriosFilters()">Limpar filtros</button>
           </div>
+          <div id="crit-list-summary" style="font-size:12px;color:var(--muted2);margin-bottom:10px;"></div>
           <div id="criterios-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
         </div>
       </div>
@@ -514,7 +528,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
             <input class="finput wide" type="text" id="res-busca" placeholder="Buscar aluno..." oninput="renderResLista()" style="max-width:200px;">
             <select class="finput" id="res-fdisc" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
-            <select class="finput" id="res-ftipo" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option></select>
+            <select class="finput" id="res-ftipo" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option><option>Complementar</option></select>
           </div>
           <div class="res-split">
             <div class="res-lista"><div class="res-lista-hdr" id="res-lista-count">—</div><div class="res-lista-body" id="res-lista-body"></div></div>
@@ -524,7 +538,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
         <div class="res-view" id="res-view-turma">
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
             <select class="finput" id="res-tdisc" onchange="renderResTurma()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
-            <select class="finput" id="res-ttipo" onchange="renderResTurma()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option></select>
+            <select class="finput" id="res-ttipo" onchange="renderResTurma()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option><option>Complementar</option></select>
             <button class="btn-sm green" onclick="exportTurmaExcel()">↓ Excel turma</button>
           </div>
           <div id="res-turma-body"></div>
@@ -582,7 +596,7 @@ async function stDownload(path){const r=await fetch(`${SB_URL}/storage/v1/object
 async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'DELETE',headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao excluir arquivo: ${r.status} ${t}`);}}
 function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
 function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
-const ATV_TYPES=['criar','delinear','entender'];
+const ATV_TYPES=['criar','delinear','entender','complementar'];
 let gabFiles=[],atvFiles=[],atvNomes=[],sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
 function safeArray(v){return Array.isArray(v)?v:[];}
 function safeText(v,fallback=''){return v==null?fallback:String(v);}
@@ -625,15 +639,11 @@ function getDisciplinasCatalogo(mod=''){
   return [...new Set(itens.map(safeText).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
 function syncNovaDisciplinaOptions(){
-  const inp=document.getElementById('nova-disciplina'); if(!inp) return;
-  const dl=document.getElementById('nova-disciplinas-list'); if(!dl) return;
-  const mod=getMod(); const atual=(inp.value||'').trim();
+  const sel=document.getElementById('nova-disciplina'); if(!sel) return;
+  const mod=getMod(); const atual=(sel.value||'').trim();
   const opts=getDisciplinasCatalogo(mod);
-  dl.innerHTML=opts.map(d=>`<option value="${d}"></option>`).join('');
-  if(atual && !opts.some(d=>normPlain(d)===normPlain(atual))){
-    const filtradas=opts.filter(d=>normPlain(d).includes(normPlain(atual)));
-    if(filtradas.length===1) inp.value=filtradas[0];
-  }
+  sel.innerHTML='<option value="">Selecione a disciplina</option>'+opts.map(d=>`<option value="${d.replace(/"/g,'&quot;')}"${normPlain(d)===normPlain(atual)?' selected':''}>${d}</option>`).join('');
+  if(atual && !opts.some(d=>normPlain(d)===normPlain(atual))) sel.value='';
 }
 function syncNovaCriteriaContext(){
   syncNovaDisciplinaOptions();
@@ -945,7 +955,7 @@ function validarArquivoParaContexto(file,conteudo,criterioFixo){
   let score=0, motivos=[];
   let bloqueioClaro=false;
   if(alvoTipo){
-    const tipos=['criar','entender','delinear'];
+    const tipos=['criar','entender','delinear','complementar'];
     const outros=tipos.filter(t=>t!==alvoTipo && (nomeNorm.includes(t)||base.includes(t)));
     if(outros.length){score-=3; motivos.push('indícios de outro tipo de atividade: '+outros.join(', '));}
     if(nomeNorm.includes(alvoTipo)||base.includes(alvoTipo)) score+=2;
@@ -967,7 +977,7 @@ function validarArquivoParaContexto(file,conteudo,criterioFixo){
     if(len<20){bloqueioClaro=true; motivos.push('arquivo praticamente sem conteúdo');}
   }
   if(texto && alvoTipo){
-    const tipos=['criar','entender','delinear'];
+    const tipos=['criar','entender','delinear','complementar'];
     const outros=tipos.filter(t=>t!==alvoTipo && base.includes(t));
     if(outros.length>=2){bloqueioClaro=true; motivos.push('conteúdo indica fortemente outro tipo de atividade');}
   }
@@ -1069,7 +1079,7 @@ async function iniciarCorrecao(){
     toast(`✓ ${all.length} atividade(s) corrigida(s)${alertas?` · ${alertas} com alerta`:''}${separados.length?` · ${separados.length} separada(s) na triagem`:''}!`,'ok');
   }catch(e){showLoad(false);console.error(e);toast('Erro: '+e.message,'err');}
 }
-function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
+function normTipo(t){if(!t)return'entender';const tl=t.toLowerCase();if(tl.includes('comp'))return'complementar';if(tl.includes('criar'))return'criar';if(tl.includes('delin'))return'delinear';return'entender';}
 
 function normalizeCriteriosPontuacao(p){
   if(!p||!Array.isArray(p.criterios)) return p;
@@ -1205,7 +1215,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
 5. CÁLCULO DA NOTA: some todas as nota_crit, divida pelo total de peso_max e multiplique por escala_maxima. Exemplo: se soma_nota_crit=38 e soma_peso_max=50 e escala=10, nota_numerica=7.6. NUNCA retorne nota_numerica igual a 0 a menos que a atividade esteja completamente em branco.
 6. nota_final deve ser formatado como "X,X/10" (use vírgula, não ponto).
 7. Responda APENAS com JSON válido sem markdown, sem texto antes ou depois:
-{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
+{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender|Complementar","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
   const sys=`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`;
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
@@ -1860,6 +1870,12 @@ function clearCriterioForm(){
   const tipo=document.getElementById('crit-tipo'); if(tipo) tipo.value='entender';
   const msg=document.getElementById('crit-msg'); if(msg){ msg.style.color='var(--muted2)'; msg.textContent='Formulário limpo.'; }
 }
+function clearCriteriosFilters(){
+  const a=document.getElementById('crit-filter-mod'); if(a) a.value='';
+  const b=document.getElementById('crit-filter-disc'); if(b) b.value='';
+  const c=document.getElementById('crit-filter-tipo'); if(c) c.value='';
+  renderCriteriosList();
+}
 function loadCriterioFixo(id){
   const c=criteriosFixos.find(x=>x.id===id); if(!c) return;
   editingCriterioId=id;
@@ -1878,12 +1894,16 @@ async function saveCriterioFixo(){
   const texto=document.getElementById('crit-texto').value.trim();
   const msg=document.getElementById('crit-msg');
   if(!modulo||!disciplina||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha módulo, disciplina, tipo e critérios.';return;}
-  const row={id:editingCriterioId||criterioId(modulo,disciplina,tipo),modulo,disciplina,tipo,texto,updated_at:new Date().toISOString()};
+  const newId=criterioId(modulo,disciplina,tipo);
+  const oldId=editingCriterioId;
+  const row={id:newId,modulo,disciplina,tipo,texto,updated_at:new Date().toISOString()};
   try{
     await sbUpsert('criterios_fixos',row);
     const idx=criteriosFixos.findIndex(c=>c.id===row.id);
-    if(idx>=0)criteriosFixos[idx]=row; else criteriosFixos.push(row);
-    editingCriterioId=row.id; msg.style.color='var(--green)';msg.textContent='✓ Critério salvo com sucesso.';
+    if(idx>=0) criteriosFixos[idx]=row; else criteriosFixos.push(row);
+    editingCriterioId=row.id;
+    msg.style.color='var(--green)';
+    msg.textContent=(oldId&&oldId!==newId)?'✓ Critério salvo como novo tipo sem sobrescrever o anterior.':'✓ Critério salvo com sucesso.';
     renderCriteriosList();syncNovaCriteriaContext();checkReady();
   }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
 }
@@ -1895,11 +1915,66 @@ async function delCriterioFixo(id){
 }
 function renderCriteriosList(){
   const el=document.getElementById('criterios-list'); if(!el) return;
-  const fmod=normPlain(document.getElementById('crit-filter-mod')?.value||'');
-  const fdisc=normPlain(document.getElementById('crit-filter-disc')?.value||'');
-  const list=criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo).includes(fmod))&&(!fdisc||normPlain(c.disciplina).includes(fdisc))).sort((a,b)=>`${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
+  const modSel=document.getElementById('crit-filter-mod');
+  const tipoSel=document.getElementById('crit-filter-tipo');
+  const discInp=document.getElementById('crit-filter-disc');
+  const summary=document.getElementById('crit-list-summary');
+
+  const currentMod=modSel?.value||'';
+  const mods=[...new Set(criteriosFixos.map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  if(modSel){
+    modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
+  }
+
+  const fmod=normPlain(modSel?.value||'');
+  const fdisc=normPlain(discInp?.value||'');
+  const ftipo=normPlain(tipoSel?.value||'');
+
+  const list=criteriosFixos
+    .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina).includes(fdisc))&&(!ftipo||normPlain(c.tipo)===ftipo))
+    .sort((a,b)=>`${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
+
+  if(summary){
+    summary.textContent=list.length?`${list.length} critério(s) encontrado(s).`:'Nenhum critério encontrado com os filtros atuais.';
+  }
   if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum critério salvo ainda.</div>';return;}
-  el.innerHTML=list.map(c=>`<div class="gab-row" style="align-items:flex-start;gap:10px;"><div style="flex:1;min-width:0;"><div class="gab-row-name" style="white-space:normal;font-size:13px;font-family:'Syne',sans-serif;">${c.disciplina}</div><div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:4px;">Módulo ${c.modulo} · ${displayTipo(c.tipo)}</div><div style="font-size:11px;color:var(--text);font-family:'DM Mono',monospace;line-height:1.5;margin-top:8px;white-space:pre-wrap;max-height:160px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px;">${c.texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div><div style="display:flex;flex-direction:column;gap:6px;"><button class="btn-sm accent" onclick="loadCriterioFixo('${c.id.replace(/'/g,"\'")}')">Editar</button><button class="btn-sm red" onclick="delCriterioFixo('${c.id.replace(/'/g,"\'")}')">✕</button></div></div>`).join('');
+
+  const grouped={};
+  list.forEach(c=>{
+    const mk=String(c.modulo||'—');
+    const dk=String(c.disciplina||'Sem disciplina');
+    if(!grouped[mk]) grouped[mk]={};
+    if(!grouped[mk][dk]) grouped[mk][dk]=[];
+    grouped[mk][dk].push(c);
+  });
+
+  el.innerHTML=Object.entries(grouped).map(([mod,discs])=>{
+    return `<div style="margin-bottom:18px;">
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;">Módulo ${mod}</div>
+      ${Object.entries(discs).map(([disc,items])=>`
+        <div class="fcard" style="padding:14px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">${disc}</div>
+            <div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${items.length} tipo(s) cadastrado(s)</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            ${items.map(c=>`<div class="gab-row" style="align-items:flex-start;gap:10px;padding:10px 12px;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                  <span class="gab-row-mod">${displayTipo(c.tipo)}</span>
+                  <span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">ID ${c.id}</span>
+                </div>
+                <div style="font-size:11px;color:var(--text);font-family:'DM Mono',monospace;line-height:1.5;white-space:pre-wrap;max-height:180px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px;">${safeText(c.texto).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <button class="btn-sm accent" onclick="loadCriterioFixo('${c.id.replace(/'/g,"\\'")}')">Editar</button>
+                <button class="btn-sm red" onclick="delCriterioFixo('${c.id.replace(/'/g,"\\'")}')">✕</button>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
 }
 function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo!==mod)return;safeArray(s.groups).forEach(g=>{if(g.disciplina!==disc)return;safeArray(g?.atividades?.[tipo]).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
 function exportMesclado(mod,disc,tipo){
@@ -1964,7 +2039,7 @@ function limparArquivosNova(){
   document.getElementById('match-box').style.display='none';
   document.getElementById('cloud-gab-status').textContent='';
   document.getElementById('modulo').value='';
-  var nd=document.getElementById('nova-disciplina'); if(nd) nd.innerHTML='<option value="">Selecione</option>';
+  var nd=document.getElementById('nova-disciplina'); if(nd){ nd.innerHTML='<option value="">Selecione a disciplina</option>'; nd.value=''; }
   var nt=document.getElementById('nova-tipo'); if(nt) nt.value='';
   var fiGab=document.getElementById('fi-gab');if(fiGab)fiGab.value='';
   var fiAtv=document.getElementById('fi-atv');if(fiAtv)fiAtv.value='';
