@@ -1866,20 +1866,53 @@ function renderSidebar(){
       ['entender','delinear','criar','complementar'].forEach(tipo=>{
         safeArray(atividades[tipo]).forEach(r=>{
           const key=`${disc}||${tipo}`;
-          if(!byMod[mod].items[key]) byMod[mod].items[key]={disc,tipo,rows:[]};
-          byMod[mod].items[key].rows.push({sid:s.id,data:s.data,hora:s.hora,nome:r.nome_aluno||'Aluno',arquivo:r._arquivo||'',nota:r.nota_final||r.nota_numerica||'—'});
+          if(!byMod[mod].items[key]) byMod[mod].items[key]={disc,tipo,rows:[],latestSid:0,latestData:'',latestHora:''};
+          byMod[mod].items[key].rows.push({...r,_sessaoData:s.data,_sessaoHora:s.hora,_sessaoId:s.id,_disc:disc,_tKey:tipo});
+          if((s.id||0) >= (byMod[mod].items[key].latestSid||0)){
+            byMod[mod].items[key].latestSid=s.id||0;
+            byMod[mod].items[key].latestData=s.data||'';
+            byMod[mod].items[key].latestHora=s.hora||'';
+          }
         });
       });
     });
   });
   el.innerHTML=Object.entries(byMod).map(([mod,pack])=>{
-    const cards=Object.values(pack.items).sort((a,b)=>a.disc.localeCompare(b.disc,'pt-BR')||a.tipo.localeCompare(b.tipo)).map(item=>{
-      const rows=item.rows.sort((a,b)=>(b.sid||0)-(a.sid||0));
-      const body=rows.map(r=>`<div class="sb-disc" style="justify-content:space-between;gap:6px;cursor:default;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${r.sid})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeText(r.nome)} <span style="color:var(--muted);font-size:10px;">· ${safeText(r.data)}${safeText(r.hora)?` ${safeText(r.hora)}`:''}</span></span></div><span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;white-space:nowrap;">${safeText(r.nota)}</span></div>`).join('');
-      return `<div class="sb-mod" style="margin-top:6px;"><div class="sb-mod-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.disc} · ${displayTipo(item.tipo)}</span><span class="sb-mod-badge">${rows.length}</span></div><div class="sb-disc-list" style="display:none;">${body}</div></div>`;
-    }).join('');
+    const cards=Object.values(pack.items)
+      .sort((a,b)=>a.disc.localeCompare(b.disc,'pt-BR')||a.tipo.localeCompare(b.tipo))
+      .map(item=>{
+        const rows=item.rows.sort((a,b)=>(b._sessaoId||0)-(a._sessaoId||0));
+        const tooltip=`${item.disc} · ${displayTipo(item.tipo)} · ${rows.length} correção(ões) · última: ${item.latestData}${item.latestHora?' '+item.latestHora:''}`;
+        return `<div class="sb-disc ${cur&&cur._groupKey===`${mod}||${item.disc}||${item.tipo}`?'active':''}" title="${safeText(tooltip)}" onclick="loadGroupedActivity('${String(mod).replace(/'/g,"\'")}','${String(item.disc).replace(/'/g,"\'")}','${String(item.tipo).replace(/'/g,"\'")}')"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${item.disc} · ${displayTipo(item.tipo)}</span><span class="sb-mod-badge">${rows.length}</span></div>`;
+      }).join('');
     return `<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${pack.total}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:block;">${cards||'<div class="sb-empty">Sem correções listáveis.</div>'}</div></div>`;
   }).join('');
+}
+function loadGroupedActivity(mod,disc,tipo){
+  const rows=[];
+  let latestSid=0, latestData='', latestHora='';
+  sessions.forEach(s=>{
+    if(safeText(s.modulo,'')!==safeText(mod,'')) return;
+    safeArray(s.groups).forEach(g=>{
+      const gDisc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'));
+      if(gDisc!==disc) return;
+      safeArray(g?.atividades?.[tipo]).forEach(r=>rows.push({...r,_sessaoData:s.data,_sessaoHora:s.hora,_sessaoId:s.id,_disc:disc,_tKey:tipo}));
+      if(s.id>latestSid){latestSid=s.id;latestData=s.data||'';latestHora=s.hora||'';}
+    });
+  });
+  const pseudo={
+    id:`group:${mod}||${disc}||${tipo}`,
+    _groupKey:`${mod}||${disc}||${tipo}`,
+    modulo:mod,
+    data:latestData||new Date().toLocaleDateString('pt-BR'),
+    hora:latestHora||'',
+    total:rows.length,
+    groups:[{disciplina:disc,atividades:{entender:[],delinear:[],criar:[],complementar:[],[tipo]:rows}}]
+  };
+  cur=pseudo;
+  renderResults(pseudo);
+  renderSidebar();
+  goTab('resultados');
 }
 function loadSess(id){const s=sessions.find(x=>x.id===id);if(!s)return;cur={...s,groups:safeArray(s.groups)};renderResults(cur);renderSidebar();goTab('resultados');}
 async function delSess(id){
