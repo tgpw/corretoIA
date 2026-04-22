@@ -383,8 +383,9 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div style="font-size:11px;color:var(--muted);" id="est-detail"></div>
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);">Sonnet · $3/MTok entrada · $15/MTok saída · Câmbio ~R$5,80</div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+        <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
           <button class="btn" id="btn-corrigir" onclick="iniciarCorrecao()" disabled>✦ Corrigir Tudo</button>
+          <button class="btn-o" onclick="limparNovaCorrecaoCompleta()">Limpar tudo</button>
           <span id="cnt-lbl" style="font-size:12px;color:var(--muted2);"></span>
         </div>
       </div>
@@ -612,13 +613,41 @@ function similarityDisc(a,b){
   let inter=0; A.forEach(w=>{if(B.has(w)) inter++;});
   return inter/Math.max(A.size,B.size);
 }
+function mergeCanonicalNames(list){
+  const groups=[];
+  (list||[]).map(safeText).map(s=>s.trim()).filter(Boolean).forEach(name=>{
+    const n=normPlain(name);
+    let grp=groups.find(g=>g.norm===n || g.norm.includes(n) || n.includes(g.norm) || similarityDisc(g.label,name)>=0.72);
+    if(!grp){grp={norm:n,label:name,count:0};groups.push(grp);} 
+    grp.count++;
+    if(name.length>grp.label.length) grp.label=name;
+  });
+  return groups.map(g=>g.label).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+function canonicalDiscLabel(mod,disc){
+  const alvo=safeText(disc).trim();
+  if(!alvo) return '';
+  const todos=[];
+  criteriosFixos.forEach(c=>{if(!mod||normPlain(c.modulo)===normPlain(mod)) todos.push(c.disciplina);});
+  turmas.forEach(t=>{if(!mod||normPlain(t.modulo)===normPlain(mod)) todos.push(t.disciplina);});
+  gabListCache.forEach(g=>{if(!mod||normPlain(g.modulo)===normPlain(mod)) todos.push((g.disciplina||'').trim());});
+  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ safeArray(s.groups).forEach(g=>todos.push(g.disciplina)); } });
+  const canon=mergeCanonicalNames(todos);
+  let best=alvo,bestScore=0;
+  canon.forEach(c=>{
+    const score = normPlain(c)===normPlain(alvo)?1:(normPlain(c).includes(normPlain(alvo))||normPlain(alvo).includes(normPlain(c))?0.96:similarityDisc(c,alvo));
+    if(score>bestScore){bestScore=score;best=c;}
+  });
+  return bestScore>=0.45?best:alvo;
+}
 function getCriterioSelecionadoNova(){
   const mod=getMod();
   const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
   const tipo=document.getElementById('nova-tipo')?.value||'';
-  const exact=criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,disc,tipo))||null;
+  const canonDisc=canonicalDiscLabel(mod,disc);
+  const exact=criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,canonDisc,tipo))||null;
   if(exact) return exact;
-  const nd=normPlain(disc);
+  const nd=normPlain(canonDisc||disc);
   const nt=normPlain(tipo);
   const candidatos=criteriosFixos.filter(c=>normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
   if(candidatos.length===1) return candidatos[0];
@@ -635,28 +664,34 @@ function getDisciplinasCatalogo(mod=''){
   criteriosFixos.forEach(c=>{if(!mod||normPlain(c.modulo)===normPlain(mod)) itens.push(c.disciplina);});
   turmas.forEach(t=>{if(!mod||normPlain(t.modulo)===normPlain(mod)) itens.push(t.disciplina);});
   gabListCache.forEach(g=>{if(!mod||normPlain(g.modulo)===normPlain(mod)) itens.push((g.disciplina||'').trim());});
-  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ (Array.isArray(s.groups)?s.groups:[]).forEach(g=>itens.push(g.disciplina)); } });
-  return [...new Set(itens.map(safeText).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ safeArray(s.groups).forEach(g=>itens.push(g.disciplina)); } });
+  return mergeCanonicalNames(itens);
 }
 function syncNovaDisciplinaOptions(){
   const sel=document.getElementById('nova-disciplina'); if(!sel) return;
   const mod=getMod(); const atual=(sel.value||'').trim();
   const opts=getDisciplinasCatalogo(mod);
-  sel.innerHTML='<option value="">Selecione a disciplina</option>'+opts.map(d=>`<option value="${d.replace(/"/g,'&quot;')}"${normPlain(d)===normPlain(atual)?' selected':''}>${d}</option>`).join('');
-  if(atual && !opts.some(d=>normPlain(d)===normPlain(atual))) sel.value='';
+  sel.innerHTML='<option value="">Selecione a disciplina</option>'+opts.map(d=>`<option value="${d.replace(/"/g,'&quot;')}"${normPlain(d)===normPlain(canonicalDiscLabel(mod,atual))?' selected':''}>${d}</option>`).join('');
+  if(atual && !opts.some(d=>normPlain(d)===normPlain(canonicalDiscLabel(mod,atual)))) sel.value='';
 }
 function syncNovaCriteriaContext(){
   syncNovaDisciplinaOptions();
+  const sel=document.getElementById('nova-disciplina');
+  if(sel && sel.value) sel.value=canonicalDiscLabel(getMod(),sel.value);
   const box=document.getElementById('nova-criterio-status'); if(!box) return;
   const crit=getCriterioSelecionadoNova();
   if(crit){
-    const resumo=safeText(crit.texto).split('\n').filter(Boolean).slice(0,2).join(' | ');
+    const resumo=safeText(crit.texto).split('
+').filter(Boolean).slice(0,2).join(' | ');
     box.style.color='var(--green)';
     box.textContent=`✓ Critério fixo carregado: ${safeText(crit.disciplina)} · ${displayTipo(crit.tipo)}${resumo?` · ${resumo.substring(0,140)}`:''}`;
   }else{
     box.style.color='var(--muted2)';
     box.textContent='Nenhum critério fixo encontrado para esta combinação. Você pode anexar gabaritos gerais ou cadastrar o critério fixo na aba Critérios.';
   }
+  if(atvFiles.length) renderChips('ch-atv',atvFiles,'rmAtv');
+  loadGabFromCloud();
+  checkReady();
 }
 function prefillIntroEadCriterios(){
   document.getElementById('crit-disciplina').value='Introdução a EaD';
@@ -708,7 +743,7 @@ async function loadCloud(pw){
   const rows=await sbGetAll('sessoes');
   sessions=rows.map(sessionFromRow);
   const trows=await sbGetAll('turmas');
-  turmas=trows.map(r=>({id:r.id,modulo:r.modulo,disciplina:r.disciplina,alunos:r.alunos||[]}));
+  turmas=trows.map(r=>({id:r.id,modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina),alunos:r.alunos||[]}));
   gabListCache=await sbGetAll('gabaritos');
   try{criteriosFixos=await sbGetAll('criterios_fixos');}catch(_e){criteriosFixos=[];}
   renderSidebar();
@@ -736,9 +771,15 @@ function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300
 function namesMatch(a,b){const na=normalizeName(a), nb=normalizeName(b); if(!na||!nb) return false; return na===nb || na.includes(nb) || nb.includes(na);}
 function getTurmaAtualNova(){
   const mod=getMod();
-  const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
+  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim());
   if(!mod||!disc) return null;
-  return turmas.find(t=>String(t.modulo||'')===String(mod) && namesMatch(t.disciplina,disc))||null;
+  const candidatos=turmas.filter(t=>String(t.modulo||'')===String(mod));
+  let best=null,bestScore=0;
+  candidatos.forEach(t=>{
+    const score = normPlain(t.disciplina)===normPlain(disc)?1:(namesMatch(t.disciplina,disc)?0.95:similarityDisc(t.disciplina,disc));
+    if(score>bestScore){bestScore=score;best=t;}
+  });
+  return bestScore>=0.45?best:null;
 }
 function getAlunosTurmaAtualNova(){const t=getTurmaAtualNova(); return t&&Array.isArray(t.alunos)?t.alunos:[];}
 function sugerirAlunoPorArquivo(nomeArquivo){
@@ -812,17 +853,23 @@ function renderCost(qtd){
   document.getElementById('est-detail').innerHTML=`${qtd} atividade(s) × ~${((inp+out)/1000).toFixed(1)}k tokens = <b>${((tI+tO)/1000).toFixed(0)}k tokens</b>`;
 }
 async function loadGabFromCloud(){
-  const mod=getMod();if(!mod)return;
-  const criterioSelecionado=getCriterioSelecionadoNova();
+  const mod=getMod();
+  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim());
   const statusEl=document.getElementById('cloud-gab-status');
+  if(!mod){ if(statusEl) statusEl.textContent=''; return; }
+  const criterioSelecionado=getCriterioSelecionadoNova();
   if(criterioSelecionado){
     statusEl.textContent='Critério fixo encontrado para esta atividade. Anexar gabarito geral é opcional.';
-    statusEl.style.color='var(--green)';
     return;
   }
-  const list=gabListCache.filter(g=>g.modulo===mod);
-  if(!list.length){statusEl.textContent='Nenhum gabarito salvo para o Módulo '+mod+'. Use a aba Gabaritos para enviar, ou cadastre um critério fixo na aba Critérios.';return;}
-  statusEl.textContent=`Carregando ${list.length} gabarito(s) do Módulo ${mod}...`;
+  let list=gabListCache.filter(g=>normPlain(g.modulo)===normPlain(mod));
+  if(disc){
+    const comDisc=list.filter(g=>safeText(g.disciplina).trim());
+    const filtrados=comDisc.filter(g=>namesMatch(g.disciplina,disc));
+    if(filtrados.length) list=filtrados;
+  }
+  if(!list.length){statusEl.textContent=`Nenhum gabarito salvo encontrado para o Módulo ${mod}${disc?` / ${disc}`:''}.`;return;}
+  statusEl.textContent=`Carregando ${list.length} gabarito(s)${disc?` de ${disc}`:''}...`;
   const loaded=[];
   for(const g of list){
     try{const blob=await stDownload(g.id);const file=new File([blob],g.nome,{type:g.tipo_mime||'application/pdf'});if(!gabFiles.find(f=>f.name===g.nome))loaded.push(file);}catch(e){console.warn('Erro ao carregar',g.nome);}
@@ -830,8 +877,8 @@ async function loadGabFromCloud(){
   gabFiles=[...gabFiles,...loaded];
   renderChips('ch-gab',gabFiles,'rmGab');
   schedMatch();checkReady();
-  statusEl.style.color='var(--green)';document.getElementById('btn-corrigir').disabled=false;
-  statusEl.textContent=`✓ ${loaded.length} gabarito(s) do Módulo ${mod} carregado(s) automaticamente.`;
+  statusEl.style.color='var(--green)';
+  statusEl.textContent=`✓ ${loaded.length} gabarito(s) carregado(s) automaticamente.`;
 }
 function schedMatch(){
   clearTimeout(matchT);
@@ -1740,10 +1787,28 @@ function renderSidebar(){
   const byMod={};
   sessions.slice().reverse().forEach(s=>{
     const mod=safeText(s.modulo,'Sem módulo');
-    if(!byMod[mod])byMod[mod]=[];
-    byMod[mod].push({...s,groups:safeArray(s.groups)});
+    if(!byMod[mod]) byMod[mod]={total:0,items:{}};
+    byMod[mod].total += Number(s.total)||0;
+    safeArray(s.groups).forEach(g=>{
+      const disc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'));
+      const atividades=g?.atividades||{};
+      ['entender','delinear','criar','complementar'].forEach(tipo=>{
+        safeArray(atividades[tipo]).forEach(r=>{
+          const key=`${disc}||${tipo}`;
+          if(!byMod[mod].items[key]) byMod[mod].items[key]={disc,tipo,rows:[]};
+          byMod[mod].items[key].rows.push({sid:s.id,data:s.data,hora:s.hora,nome:r.nome_aluno||'Aluno',arquivo:r._arquivo||'',nota:r.nota_final||r.nota_numerica||'—'});
+        });
+      });
+    });
   });
-  el.innerHTML=Object.entries(byMod).map(([mod,ss])=>`<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${ss.reduce((a,s)=>a+(Number(s.total)||0),0)}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:block;">${ss.map(s=>{const groups=safeArray(s.groups);if(!groups.length){return `<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" title="Sessão sem grupos" style="justify-content:space-between;gap:6px;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${s.id})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sessão sem grupos</span></div><span style="display:flex;align-items:center;gap:6px;"><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir esta correção" onclick="event.stopPropagation();delSess(${s.id})">✕</button></span></div>`;}return groups.map(g=>`<div class="sb-disc ${cur&&cur.id===s.id?'active':''}" title="Clique para abrir" style="justify-content:space-between;gap:6px;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${s.id})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeText(g?.disciplina,'Sem disciplina')}</span></div><span style="display:flex;align-items:center;gap:6px;"><span style="font-size:9px;color:var(--muted);">✎</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir esta correção" onclick="event.stopPropagation();delSess(${s.id})">✕</button></span></div>`).join('');}).join('')}</div></div>`).join('');
+  el.innerHTML=Object.entries(byMod).map(([mod,pack])=>{
+    const cards=Object.values(pack.items).sort((a,b)=>a.disc.localeCompare(b.disc,'pt-BR')||a.tipo.localeCompare(b.tipo)).map(item=>{
+      const rows=item.rows.sort((a,b)=>(b.sid||0)-(a.sid||0));
+      const body=rows.map(r=>`<div class="sb-disc" style="justify-content:space-between;gap:6px;cursor:default;"><div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;cursor:pointer;" onclick="loadSess(${r.sid})"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${safeText(r.nome)} <span style="color:var(--muted);font-size:10px;">· ${safeText(r.data)}${safeText(r.hora)?` ${safeText(r.hora)}`:''}</span></span></div><span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;white-space:nowrap;">${safeText(r.nota)}</span></div>`).join('');
+      return `<div class="sb-mod" style="margin-top:6px;"><div class="sb-mod-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.disc} · ${displayTipo(item.tipo)}</span><span class="sb-mod-badge">${rows.length}</span></div><div class="sb-disc-list" style="display:none;">${body}</div></div>`;
+    }).join('');
+    return `<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${pack.total}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:block;">${cards||'<div class="sb-empty">Sem correções listáveis.</div>'}</div></div>`;
+  }).join('');
 }
 function loadSess(id){const s=sessions.find(x=>x.id===id);if(!s)return;cur={...s,groups:safeArray(s.groups)};renderResults(cur);renderSidebar();goTab('resultados');}
 async function delSess(id){
