@@ -502,8 +502,10 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
               <option value="criar">Criar</option>
               <option value="complementar">Complementar</option>
             </select>
-            <span class="flabel">Buscar disciplina</span>
-            <input class="finput disc" type="text" id="crit-filter-disc" placeholder="Digite parte do nome" oninput="renderCriteriosList()">
+            <span class="flabel">Disciplina</span>
+            <select class="finput disc" id="crit-filter-disc" onchange="renderCriteriosList()" style="width:280px;text-align:left;">
+              <option value="">Todas</option>
+            </select>
             <button class="btn-o" onclick="clearCriteriosFilters()">Limpar filtros</button>
           </div>
           <div id="crit-list-summary" style="font-size:12px;color:var(--muted2);margin-bottom:10px;"></div>
@@ -531,6 +533,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
             <select class="finput" id="res-fdisc" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
             <select class="finput" id="res-ftipo" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option><option>Complementar</option></select>
           </div>
+          <div id="res-atividade-rows" style="margin-bottom:12px;"></div>
           <div class="res-split">
             <div class="res-lista"><div class="res-lista-hdr" id="res-lista-count">—</div><div class="res-lista-body" id="res-lista-body"></div></div>
             <div class="res-det" id="res-det-panel"><div class="empty"><div class="empty-ico">👤</div><div class="empty-t">Selecione um aluno</div><div class="empty-s">Clique em um nome para ver os critérios detalhados.</div></div></div>
@@ -640,6 +643,20 @@ function canonicalDiscLabel(mod,disc){
   });
   return bestScore>=0.45?best:alvo;
 }
+function syncNovaDisciplinas(){
+  const sel=document.getElementById('nova-disciplina');
+  if(!sel) return;
+  const mod=(document.getElementById('modulo')?.value||'').trim();
+  const atual=sel.value||'';
+  const nomes=[];
+  turmas.forEach(function(t){ if(!mod || normPlain(t.modulo)===normPlain(mod)) nomes.push(t.disciplina); });
+  criteriosFixos.forEach(function(c){ if(!mod || normPlain(c.modulo)===normPlain(mod)) nomes.push(c.disciplina); });
+  gabListCache.forEach(function(g){ if(!mod || normPlain(g.modulo)===normPlain(mod)) if(g.disciplina) nomes.push(g.disciplina); });
+  sessions.forEach(function(s){ if(!mod || normPlain(s.modulo)===normPlain(mod)) safeArray(s.groups).forEach(function(g){ if(g.disciplina) nomes.push(g.disciplina); }); });
+  const uniq=[...new Set(nomes.map(function(n){return safeText(n).trim();}).filter(Boolean))].sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+  sel.innerHTML='<option value="">Selecione</option>'+uniq.map(function(d){return '<option value="'+d.replace(/"/g,'&quot;')+'"'+(normPlain(d)===normPlain(atual)?' selected':'')+'>'+d+'</option>';}).join('');
+}
+
 function getCriterioSelecionadoNova(){
   const mod=getMod();
   const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
@@ -823,6 +840,28 @@ function renderChips(id,files,fn){
   }).join('');
 }
 function fi(n){if(/\.(jpg|jpeg|png|webp)$/i.test(n))return'🖼';if(/\.pdf$/i.test(n))return'📄';if(/\.(docx|doc)$/i.test(n))return'📝';return'📁';}
+function limparNovaCorrecaoCompleta(){
+  gabFiles=[];
+  atvFiles=[];
+  atvNomes=[];
+  triageCtx=null;
+  if(document.getElementById('modulo')) document.getElementById('modulo').value='';
+  if(document.getElementById('nova-disciplina')) document.getElementById('nova-disciplina').value='';
+  if(document.getElementById('nova-tipo')) document.getElementById('nova-tipo').value='';
+  if(document.getElementById('fi-gab')) document.getElementById('fi-gab').value='';
+  if(document.getElementById('fi-atv')) document.getElementById('fi-atv').value='';
+  const ids=['ch-gab','ch-atv','cloud-gab-status','nova-criterio-status','cnt-lbl','match-wrap'];
+  ids.forEach(function(id){ const el=document.getElementById(id); if(el) el.innerHTML=''; });
+  const mbox=document.getElementById('match-box'); if(mbox) mbox.style.display='none';
+  const status=document.getElementById('nova-criterio-status'); if(status) status.textContent='Selecione disciplina e tipo para verificar critérios fixos.';
+  renderChips('ch-gab',gabFiles,'rmGab');
+  renderChips('ch-atv',atvFiles,'rmAtv');
+  syncNovaDisciplinas();
+  syncNovaCriteriaContext();
+  checkReady();
+  toast('Nova correção limpa.','ok');
+}
+
 function checkReady(){
   const hasKey=!!(getKey()||localStorage.getItem('cIA5_apikey_plain'));
   const hasMod=!!getMod();
@@ -1333,6 +1372,7 @@ function _resFiltered(){
 function renderResLista(){
   const rows=_resFiltered();
   document.getElementById('res-lista-count').textContent=rows.length+' aluno'+(rows.length!==1?'s':'');
+  renderResAtividadeRows(rows);
   document.getElementById('res-lista-body').innerHTML=rows.map((r,i)=>{
     if(r._pendente)return '<div class="res-li pend" onclick="selResAluno('+i+')"><div><div class="res-li-name">'+r.nome_aluno+'</div><div class="res-li-sub">'+r._disc+' · '+r._tKey.charAt(0).toUpperCase()+r._tKey.slice(1)+'</div></div><span class="pend-tag">pendente</span></div>';
     const emRevisao=(r.status_correcao==='revisao')||!Number.isFinite(r.nota_numerica)||r.nota_final==='Revisão';
@@ -1344,6 +1384,38 @@ function renderResLista(){
   if(_selIdx===null&&rows.length>0)selResAluno(0);
   else if(_selIdx!==null)selResAluno(_selIdx);
 }
+function renderResAtividadeRows(rows){
+  const box=document.getElementById('res-atividade-rows');
+  if(!box) return;
+  if(!rows || !rows.length){
+    box.innerHTML='';
+    return;
+  }
+  const linhas=rows.map((r,i)=>{
+    const nota=(typeof r.nota_numerica==='number' && !Number.isNaN(r.nota_numerica))?r.nota_numerica.toFixed(1):'—';
+    const cor=(typeof r.nota_numerica==='number' && !Number.isNaN(r.nota_numerica))?(r.nota_numerica>=7?'var(--green)':r.nota_numerica>=5?'var(--yellow)':'var(--red)'):'var(--muted2)';
+    const data=r._sessaoData||(_curSess?_curSess.data:'—');
+    return '<tr style="cursor:pointer;" onclick="selResAluno('+i+')">'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600;">'+safeText(r.nome_aluno||'Aluno')+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+safeText(data)+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+safeText(displayTipo(r._tKey))+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;color:'+cor+';font-weight:700;">'+nota+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted2);">'+safeText(r._arquivo||'—')+'</td>'
+      +'</tr>';
+  }).join('');
+  box.innerHTML='<div class="fcard" style="padding:12px 14px;margin-bottom:0;">'
+    +'<div class="fcard-title">📋 Correções desta atividade</div>'
+    +'<div style="overflow:auto;max-height:220px;">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    +'<thead><tr>'
+    +'<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;">Aluno</th>'
+    +'<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;">Data</th>'
+    +'<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;">Tipo</th>'
+    +'<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;">Nota</th>'
+    +'<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);text-transform:uppercase;">Arquivo</th>'
+    +'</tr></thead><tbody>'+linhas+'</tbody></table></div></div>';
+}
+
 function selResAluno(i){
   _selIdx=i;
   const rows=_resFiltered();
@@ -1712,7 +1784,7 @@ function renderDashboard(){
     if(filter&&!safeText(s.modulo).toLowerCase().includes(filter))return;
     safeArray(s.groups).forEach(g=>{
       const key=s.modulo+'||'+g.disciplina;
-      if(!tree[key])tree[key]={mod:s.modulo,disc:g.disciplina,corrigidos:{criar:[],delinear:[],entender:[]}};
+      if(!tree[key]){ const corrigidos={}; ATV_TYPES.forEach(function(t){corrigidos[t]=[];}); tree[key]={mod:s.modulo,disc:g.disciplina,corrigidos}; }
       ATV_TYPES.forEach(t=>(g.atividades[t]||[]).forEach(r=>{if(r.nome_aluno&&!r._pendente)tree[key].corrigidos[t].push(String(r.nome_aluno));}));
     });
   });
@@ -1981,21 +2053,26 @@ function renderCriteriosList(){
   const el=document.getElementById('criterios-list'); if(!el) return;
   const modSel=document.getElementById('crit-filter-mod');
   const tipoSel=document.getElementById('crit-filter-tipo');
-  const discInp=document.getElementById('crit-filter-disc');
+  const discSel=document.getElementById('crit-filter-disc');
   const summary=document.getElementById('crit-list-summary');
 
   const currentMod=modSel?.value||'';
+  const currentDisc=discSel?.value||'';
   const mods=[...new Set(criteriosFixos.map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){
     modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
   }
 
   const fmod=normPlain(modSel?.value||'');
-  const fdisc=normPlain(discInp?.value||'');
   const ftipo=normPlain(tipoSel?.value||'');
+  const discOptions=[...new Set(criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo)===fmod)).map(c=>String(c.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  if(discSel){
+    discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
+  }
+  const fdisc=normPlain(discSel?.value||'');
 
   const list=criteriosFixos
-    .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina).includes(fdisc))&&(!ftipo||normPlain(c.tipo)===ftipo))
+    .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina)===fdisc)&&(!ftipo||normPlain(c.tipo)===ftipo))
     .sort((a,b)=>`${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
 
   if(summary){
