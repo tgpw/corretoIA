@@ -1399,7 +1399,7 @@ function renderResAtividadeRows(rows){
       +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600;">'+safeText(r.nome_aluno||'Aluno')+'</td>'
       +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+safeText(data)+'</td>'
       +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+safeText(displayTipo(r._tKey))+'</td>'
-      +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;color:'+cor+';font-weight:700;">'+nota+'</td>'
+      +"<td style=\"padding:7px 10px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;color:"+cor+";font-weight:700;\">"+nota+"</td>"
       +'<td style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted2);">'+safeText(r._arquivo||'—')+'</td>'
       +'</tr>';
   }).join('');
