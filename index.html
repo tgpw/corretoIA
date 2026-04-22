@@ -681,8 +681,7 @@ function syncNovaCriteriaContext(){
   const box=document.getElementById('nova-criterio-status'); if(!box) return;
   const crit=getCriterioSelecionadoNova();
   if(crit){
-    const resumo=safeText(crit.texto).split('
-').filter(Boolean).slice(0,2).join(' | ');
+    const resumo=safeText(crit.texto).replace(/\r/g,'').split('\n').filter(Boolean).slice(0,2).join(' | ');
     box.style.color='var(--green)';
     box.textContent=`✓ Critério fixo carregado: ${safeText(crit.disciplina)} · ${displayTipo(crit.tipo)}${resumo?` · ${resumo.substring(0,140)}`:''}`;
   }else{
