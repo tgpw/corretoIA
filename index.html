@@ -405,6 +405,20 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div id="turma-editor" style="display:none;">
             <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;font-family:'DM Mono',monospace;" id="turma-editor-label"></div>
             <div class="aluno-list" id="aluno-list"></div>
+            <div class="row-fields" style="margin-top:12px;">
+              <span class="flabel">Copiar de</span>
+              <select class="finput disc" id="turma-copiar-de" style="width:280px;text-align:left;">
+                <option value="">Selecione uma turma...</option>
+              </select>
+              <button class="btn-sm accent" onclick="copiarAlunosDeTurma()">⧉ Copiar alunos</button>
+            </div>
+            <div class="row-fields" style="align-items:flex-start;margin-top:10px;">
+              <span class="flabel">Vários alunos</span>
+              <textarea id="alunos-bulk" class="finput wide" style="min-height:80px;font-family:'DM Mono',monospace;line-height:1.5;" placeholder="Cole vários nomes de uma vez — um por linha, ou separados por vírgula/ponto e vírgula."></textarea>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px;">
+              <button class="btn-sm accent" onclick="addAlunosBulk()">+ Adicionar todos da lista</button>
+            </div>
             <div class="add-aluno-row">
               <input class="add-aluno-input" type="text" id="novo-aluno" placeholder="Nome do aluno" onkeydown="if(event.key==='Enter')addAluno()">
               <button class="btn-sm accent" onclick="addAluno()">+ Adicionar</button>
@@ -415,6 +429,18 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">📋 Turmas Cadastradas</div>
+          <div class="row-fields">
+            <span class="flabel">Filtro módulo</span>
+            <select class="finput mod" id="turma-filter-mod" onchange="renderTurmasList()">
+              <option value="">Todos</option>
+            </select>
+            <span class="flabel">Disciplina</span>
+            <select class="finput disc" id="turma-filter-disc" onchange="renderTurmasList()" style="width:280px;text-align:left;">
+              <option value="">Todas</option>
+            </select>
+            <button class="btn-o" onclick="clearTurmasFilters()">Limpar filtros</button>
+          </div>
+          <div id="turma-list-summary" style="font-size:12px;color:var(--muted2);margin-bottom:10px;"></div>
           <div id="turmas-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
         </div>
       </div>
@@ -515,6 +541,17 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
       <div class="panel" id="panel-historico">
         <div class="ptitle">Histórico</div>
         <p class="psub">Correções consolidadas por módulo e disciplina.</p>
+        <div class="row-fields">
+          <span class="flabel">Filtro módulo</span>
+          <select class="finput mod" id="hist-filter-mod" onchange="renderHistory()">
+            <option value="">Todos</option>
+          </select>
+          <span class="flabel">Disciplina</span>
+          <select class="finput disc" id="hist-filter-disc" onchange="renderHistory()" style="width:280px;text-align:left;">
+            <option value="">Todas</option>
+          </select>
+          <button class="btn-o" onclick="clearHistFiltros()">Limpar filtros</button>
+        </div>
         <div id="hist-body"></div>
       </div>
       <div class="panel" id="panel-results">
@@ -601,7 +638,7 @@ async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/g
 function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
 function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
 const ATV_TYPES=['criar','delinear','entender','complementar'];
-let gabFiles=[],atvFiles=[],atvNomes=[],sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
+let gabFiles=[],atvFiles=[],atvNomes=[],atvManualIdx=new Set(),sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
 function safeArray(v){return Array.isArray(v)?v:[];}
 function safeText(v,fallback=''){return v==null?fallback:String(v);}
 function sessionFromRow(r){return {id:r.id,modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups)};}
@@ -820,8 +857,9 @@ function addAtv(e){
   renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();
 }
 function rmGab(i){gabFiles.splice(i,1);renderChips('ch-gab',gabFiles,'rmGab');schedMatch();checkReady();}
-function rmAtv(i){atvFiles.splice(i,1);atvNomes.splice(i,1);renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();}
+function rmAtv(i){atvFiles.splice(i,1);atvNomes.splice(i,1);const ns=new Set();atvManualIdx.forEach(idx=>{if(idx<i)ns.add(idx);else if(idx>i)ns.add(idx-1);});atvManualIdx=ns;renderChips('ch-atv',atvFiles,'rmAtv');schedMatch();checkReady();}
 function updateAtvNome(i,val){atvNomes[i]=val; checkReady();}
+function toggleAtvManual(i,manual){if(manual)atvManualIdx.add(i);else atvManualIdx.delete(i);renderChips('ch-atv',atvFiles,'rmAtv');}
 function renderChips(id,files,fn){
   const alunosNova=getAlunosTurmaAtualNova();
   document.getElementById(id).innerHTML=files.map((f,i)=>{
@@ -829,11 +867,12 @@ function renderChips(id,files,fn){
     const nome=(atvNomes[i]||'').replace(/"/g,'&quot;');
     let nomeField='';
     if(isAtv){
-      if(alunosNova.length){
-        const opts=['<option value="">Selecionar aluno...</option>'].concat(alunosNova.map(a=>'<option value="'+String(a).replace(/"/g,'&quot;')+'"'+(a===atvNomes[i]?' selected':'')+'>'+a+'</option>')).join('');
-        nomeField='<select class="finput" onchange="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:240px;margin:0 4px;">'+opts+'</select>';
+      if(alunosNova.length && !atvManualIdx.has(i)){
+        const opts=['<option value="">Selecionar aluno...</option>'].concat(alunosNova.map(a=>'<option value="'+String(a).replace(/"/g,'&quot;')+'"'+(a===atvNomes[i]?' selected':'')+'>'+a+'</option>')).concat(['<option value="__outro__">✎ Outro (nome não está na lista)</option>']).join('');
+        nomeField='<select class="finput" onchange="if(this.value===\'__outro__\'){toggleAtvManual('+i+',true);}else{updateAtvNome('+i+',this.value);}" style="font-size:11px;padding:4px 8px;width:240px;margin:0 4px;">'+opts+'</select>';
       }else{
-        nomeField='<input class="finput" type="text" placeholder="Nome do aluno" value="'+nome+'" oninput="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:170px;margin:0 4px;">';
+        const backLink=alunosNova.length?'<span style="font-size:10px;color:var(--accent);cursor:pointer;margin-left:4px;white-space:nowrap;" onclick="toggleAtvManual('+i+',false)">↩ usar lista da turma</span>':'';
+        nomeField='<input class="finput" type="text" placeholder="Nome do aluno" value="'+nome+'" oninput="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:170px;margin:0 4px;">'+backLink;
       }
     }
     return'<div class="chip" style="max-width:'+(isAtv?'560px':'230px')+';flex-wrap:wrap;gap:4px;padding:5px 8px;align-items:center;"><span>'+fi(f.name)+'</span><span class="chip-name" style="max-width:180px;">'+f.name+'</span>'+nomeField+'<span class="chip-x" onclick="'+fn+'('+i+')">×</span></div>';
@@ -844,6 +883,7 @@ function limparNovaCorrecaoCompleta(){
   gabFiles=[];
   atvFiles=[];
   atvNomes=[];
+  atvManualIdx=new Set();
   triageCtx=null;
   if(document.getElementById('modulo')) document.getElementById('modulo').value='';
   if(document.getElementById('nova-disciplina')) document.getElementById('nova-disciplina').value='';
@@ -1286,26 +1326,35 @@ function tryParseJSONObject(raw){
 }
 async function corrigirComVisao(gabData,atvName,atvConteudo,key,modulo,nomeManual='',criterioFixo=null){
   const content=[];
-  gabData.forEach((g,i)=>{
-    adicionarConteudoAoArray(content,`GABARITO ${i+1} (${g.name}):`,g.conteudo);
-  });
-  if(criterioFixo&&criterioFixo.texto){content.push({type:'text',text:`CRITÉRIO FIXO CADASTRADO PARA USO OBRIGATÓRIO\nMódulo: ${criterioFixo.modulo}\nDisciplina: ${criterioFixo.disciplina}\nTipo: ${displayTipo(criterioFixo.tipo)}\nCritérios e pesos:\n${criterioFixo.texto}`});}
-  adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
-  content.push({type:'text',text:`\nInstruções: Você é professor universitário corrigindo atividade do Módulo ${modulo}.
+  // Bloco de instruções fixas — idêntico para todos os alunos da mesma atividade/critério.
+  // Fica no INÍCIO do content[] (junto com gabarito e critério fixo) para formar o prefixo cacheável.
+  content.push({type:'text',text:`Instruções: Você é professor universitário corrigindo atividade do Módulo ${modulo}.
 REGRAS OBRIGATÓRIAS — siga à risca:
 1. Identifique o nome do aluno no documento (cabeçalho ou corpo do texto).
 2. Identifique a disciplina e o tipo de atividade (Criar, Delinear ou Entender). Se houver CRITÉRIO FIXO CADASTRADO, use exatamente a disciplina e o tipo informados nele.
 3. Se houver CRITÉRIO FIXO CADASTRADO, ele é a fonte principal e obrigatória dos critérios e pesos. Só use gabaritos anexados como apoio contextual. Se não houver critério fixo, extraia do gabarito EXATAMENTE os critérios de avaliação com seus pesos/pontos — NÃO invente critérios nem pesos. Use os mesmos rótulos e valores que constam no gabarito.
-4. Para cada critério: descreva em linguagem simples e curta (máximo 18 palavras em 'esperado', 22 em 'entregue' e 18 em 'motivo'). Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
+4. Para cada critério: descreva em linguagem simples e curta (máximo 18 palavras em 'esperado' e 22 em 'entregue'). Calcule desconto (0 se cumpriu plenamente). nota_crit = peso_max - desconto.
+4b. PADRONIZAÇÃO OBRIGATÓRIA ENTRE ALUNOS: se o critério fixo (ou o gabarito) já define níveis fechados de nota (ex.: "Nota 100:", "Nota 75:", "Nota 50:", "Nota 25:", "Nota 0:" ou equivalente), você DEVE escolher EXATAMENTE um desses níveis como nota_crit — é PROIBIDO interpolar ou inventar um valor intermediário que não conste explicitamente no critério. desconto = peso_max - valor do nível escolhido. Isso garante que dois alunos com o mesmo nível de desempenho recebam sempre a mesma nota nesse critério.
+4c. NUANCE NO CAMPO 'motivo': mesmo quando dois alunos ficam no mesmo nível, registre em 'motivo' as diferenças qualitativas específicas do aluno (apresentação, profundidade do desenvolvimento, uso de referências/embasamento, clareza, originalidade) que explicam por que ele se encaixou nesse nível e não no nível adjacente — em até 30 palavras. Isso enriquece o feedback mas NUNCA deve alterar a nota escolhida em 4b.
 5. CÁLCULO DA NOTA: some todas as nota_crit, divida pelo total de peso_max e multiplique por escala_maxima. Exemplo: se soma_nota_crit=38 e soma_peso_max=50 e escala=10, nota_numerica=7.6. NUNCA retorne nota_numerica igual a 0 a menos que a atividade esteja completamente em branco.
 6. nota_final deve ser formatado como "X,X/10" (use vírgula, não ponto).
 7. Responda APENAS com JSON válido sem markdown, sem texto antes ou depois:
-{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender|Complementar","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"motivo do desconto ou vazio se sem desconto","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
-  const sys=`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`;
+{"nome_aluno":"","disciplina":"","tipo_atividade":"Criar|Delinear|Entender|Complementar","gabarito_usado":"nome do gabarito usado","nota_final":"7,6/10","nota_numerica":7.6,"escala_maxima":10,"memoria_calculo":"soma_nota_crit / soma_peso_max × escala = X/10","criterios":[{"label":"nome exato do critério conforme gabarito","esperado":"o que era esperado em linguagem simples","entregue":"o que o aluno entregou em linguagem simples","peso_max":15,"desconto":3,"motivo":"nível escolhido + nuance específica do aluno, ou vazio se nota máxima sem ressalvas","nota_crit":12}],"pontos_positivos":["ponto positivo 1"],"pontos_negativos":["ponto a melhorar 1"],"feedback":"feedback construtivo e personalizado para o aluno"}`});
+  gabData.forEach((g,i)=>{
+    adicionarConteudoAoArray(content,`GABARITO ${i+1} (${g.name}):`,g.conteudo);
+  });
+  if(criterioFixo&&criterioFixo.texto){content.push({type:'text',text:`CRITÉRIO FIXO CADASTRADO PARA USO OBRIGATÓRIO\nMódulo: ${criterioFixo.modulo}\nDisciplina: ${criterioFixo.disciplina}\nTipo: ${displayTipo(criterioFixo.tipo)}\nCritérios e pesos:\n${criterioFixo.texto}`});}
+  // Marca o fim do prefixo cacheável: tudo até aqui (instruções + gabarito + critério fixo) é
+  // idêntico entre todos os alunos da mesma atividade, então cachear reduz custo de input em ~90%
+  // a partir da 2ª chamada do lote. O conteúdo específico do aluno entra DEPOIS, fora do cache.
+  content[content.length-1].cache_control={type:'ephemeral'};
+  adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
+  const sys=[{type:'text',text:`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Se o critério definir níveis fechados de nota, escolha sempre um nível exato — nunca um valor interpolado. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`,cache_control:{type:'ephemeral'}}];
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
+  const tokCacheWrite=data.usage?.cache_creation_input_tokens||0;const tokCacheRead=data.usage?.cache_read_input_tokens||0;
   const txt=data.content.map(c=>c.text||'').join('').trim();
   try{
     const p=tryParseJSONObject(txt);
@@ -1314,6 +1363,8 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     p._tipo=p.tipo_atividade||'entender';
     p._tokIn=tokIn;
     p._tokOut=tokOut;
+    p._tokCacheWrite=tokCacheWrite;
+    p._tokCacheRead=tokCacheRead;
     p.status_correcao=p.status_correcao||'ok';
     if(nomeManual)p.nome_aluno=nomeManual;
     if(criterioFixo){ if(!p.disciplina||normPlain(p.disciplina)!==normPlain(criterioFixo.disciplina)) p.disciplina=criterioFixo.disciplina; if(!p.tipo_atividade||normPlain(p.tipo_atividade)!==normPlain(criterioFixo.tipo)) p.tipo_atividade=displayTipo(criterioFixo.tipo); p.gabarito_usado=p.gabarito_usado||`Critério fixo: ${criterioFixo.disciplina} - ${displayTipo(criterioFixo.tipo)}`; p._disc=criterioFixo.disciplina; p._tipo=criterioFixo.tipo; }
@@ -1327,7 +1378,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     return p;
   }catch(ex){
     console.error('Falha ao interpretar resposta da IA:', ex, txt);
-    return {nome_aluno:nomeManual||atvName.replace(/\.[^.]+$/,''),disciplina:'Revisão',tipo_atividade:'entender',status_correcao:'revisao',nota_final:'Revisão',nota_numerica:NaN,escala_maxima:10,memoria_calculo:txt?txt.substring(0,1000):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento do retorno da IA'],feedback:'Erro ao processar automaticamente. Revisão manual necessária.',_arquivo:atvName,_disc:'Revisão',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut};
+    return {nome_aluno:nomeManual||atvName.replace(/\.[^.]+$/,''),disciplina:'Revisão',tipo_atividade:'entender',status_correcao:'revisao',nota_final:'Revisão',nota_numerica:NaN,escala_maxima:10,memoria_calculo:txt?txt.substring(0,1000):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento do retorno da IA'],feedback:'Erro ao processar automaticamente. Revisão manual necessária.',_arquivo:atvName,_disc:'Revisão',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut,_tokCacheWrite:tokCacheWrite,_tokCacheRead:tokCacheRead};
   }
 }
 let _curSess=null,_selIdx=null;
@@ -1341,9 +1392,17 @@ function renderResults(s){
   document.getElementById('res-stats').innerHTML='<div class="scard"><div class="sval">'+s.total+'</div><div class="slbl">Atividades</div></div><div class="scard"><div class="sval">'+s.groups.length+'</div><div class="slbl">Disciplinas</div></div><div class="scard"><div class="sval" style="color:var(--accent)">'+med+'</div><div class="slbl">Média</div></div><div class="scard"><div class="sval" style="color:var(--green)">'+(allN.length?Math.max(...allN).toFixed(1):'-')+'</div><div class="slbl">Maior</div></div><div class="scard"><div class="sval" style="color:var(--red)">'+(allN.length?Math.min(...allN).toFixed(1):'-')+'</div><div class="slbl">Menor</div></div>';
   const allR=s.groups.flatMap(g=>Object.values(g?.atividades||{}).flat());
   const tI=allR.reduce((a,r)=>a+(r._tokIn||0),0),tO=allR.reduce((a,r)=>a+(r._tokOut||0),0);
+  const tCW=allR.reduce((a,r)=>a+(r._tokCacheWrite||0),0),tCR=allR.reduce((a,r)=>a+(r._tokCacheRead||0),0);
   const custoEl=document.getElementById('res-custo-real');
-  if(tI+tO>0){const usd=(tI/1e6*3)+(tO/1e6*15);custoEl.innerHTML='<span class="custo-real">💰 Custo real: $'+usd.toFixed(4)+' · R$'+(usd*5.80).toFixed(3)+' · '+((tI+tO)/1000).toFixed(1)+'k tokens</span>';}
-  else custoEl.innerHTML='';
+  const tTotal=tI+tO+tCW+tCR;
+  if(tTotal>0){
+    // Preços por milhão de tokens (claude-sonnet-4-5): input $3, output $15, cache write (5min) $3.75 (+25%), cache read $0.30 (-90%)
+    const usd=(tI/1e6*3)+(tO/1e6*15)+(tCW/1e6*3.75)+(tCR/1e6*0.30);
+    const usdSemCache=((tI+tCW+tCR)/1e6*3)+(tO/1e6*15);
+    const economia=usdSemCache>0?(1-usd/usdSemCache)*100:0;
+    const econStr=tCR>0?' · 💾 economia de cache: '+economia.toFixed(0)+'%':'';
+    custoEl.innerHTML='<span class="custo-real">💰 Custo real: $'+usd.toFixed(4)+' · R$'+(usd*5.80).toFixed(3)+' · '+(tTotal/1000).toFixed(1)+'k tokens'+econStr+'</span>';
+  } else custoEl.innerHTML='';
   const discs=[...new Set(s.groups.map(g=>safeText(g?.disciplina,'Sem disciplina')))];
   ['res-fdisc','res-tdisc'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Todas as disciplinas</option>'+discs.map(d=>'<option>'+d+'</option>').join('');});
   renderResLista();renderResTurma();
@@ -1736,6 +1795,7 @@ async function criarOuCarregarTurma(){
   editingTurma=turmas.find(t=>t.id===id)||{id,modulo:mod,disciplina:disc,alunos:[]};
   document.getElementById('turma-editor').style.display='block';
   document.getElementById('turma-editor-label').textContent=`Módulo ${mod} — ${disc} · ${editingTurma.alunos.length} aluno(s)`;
+  populateCopiarDeTurmaSelect();
   renderAlunoList();
 }
 function renderAlunoList(){
@@ -1743,7 +1803,39 @@ function renderAlunoList(){
   document.getElementById('aluno-list').innerHTML=editingTurma.alunos.map((a,i)=>`<div class="aluno-chip">${a}<span class="aluno-x" onclick="rmAluno(${i})">×</span></div>`).join('');
   document.getElementById('turma-editor-label').textContent=`Módulo ${editingTurma.modulo} — ${editingTurma.disciplina} · ${editingTurma.alunos.length} aluno(s)`;
 }
-function addAluno(){const inp=document.getElementById('novo-aluno');const nome=inp.value.trim();if(!nome||!editingTurma)return;if(!editingTurma.alunos.includes(nome))editingTurma.alunos.push(nome);inp.value='';renderAlunoList();}
+function addAluno(){const inp=document.getElementById('novo-aluno');const nome=inp.value.trim();if(!nome||!editingTurma)return;if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(nome)))editingTurma.alunos.push(nome);inp.value='';renderAlunoList();}
+function addAlunosBulk(){
+  if(!editingTurma){toast('Crie ou carregue uma turma primeiro.','err');return;}
+  const ta=document.getElementById('alunos-bulk');
+  const nomes=(ta.value||'').split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!nomes.length){toast('Cole ao menos um nome.','err');return;}
+  let add=0;
+  nomes.forEach(n=>{
+    if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(n))){editingTurma.alunos.push(n);add++;}
+  });
+  ta.value='';
+  renderAlunoList();
+  toast(add?`✓ ${add} aluno(s) adicionado(s) (${nomes.length-add} já estavam na lista).`:'Todos os nomes já estavam cadastrados.',add?'ok':'err');
+}
+function populateCopiarDeTurmaSelect(){
+  const sel=document.getElementById('turma-copiar-de');if(!sel)return;
+  const outras=turmas.filter(t=>!editingTurma||t.id!==editingTurma.id);
+  sel.innerHTML='<option value="">Selecione uma turma...</option>'+outras.map(t=>`<option value="${t.id.replace(/"/g,'&quot;')}">${t.disciplina} — Módulo ${t.modulo} (${t.alunos.length} aluno(s))</option>`).join('');
+}
+function copiarAlunosDeTurma(){
+  if(!editingTurma){toast('Crie ou carregue uma turma primeiro.','err');return;}
+  const sel=document.getElementById('turma-copiar-de');
+  const id=sel?.value;
+  if(!id){toast('Selecione de qual turma copiar os alunos.','err');return;}
+  const origem=turmas.find(t=>t.id===id);
+  if(!origem){toast('Turma de origem não encontrada.','err');return;}
+  let add=0;
+  origem.alunos.forEach(n=>{
+    if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(n))){editingTurma.alunos.push(n);add++;}
+  });
+  renderAlunoList();
+  toast(add?`✓ ${add} aluno(s) copiado(s) de "${origem.disciplina}".`:`Todos os alunos de "${origem.disciplina}" já estavam nesta turma.`,add?'ok':'err');
+}
 function rmAluno(i){if(!editingTurma)return;editingTurma.alunos.splice(i,1);renderAlunoList();}
 async function salvarTurma(){
   if(!editingTurma){toast('Nenhuma turma em edição.','err');return;}
@@ -1753,11 +1845,37 @@ async function salvarTurma(){
   const m=document.getElementById('turma-msg');m.style.color='var(--green)';m.textContent=`✓ Turma salva! ${editingTurma.alunos.length} aluno(s).`;
   renderTurmasList();
 }
+function clearTurmasFilters(){
+  const m=document.getElementById('turma-filter-mod');if(m)m.value='';
+  const d=document.getElementById('turma-filter-disc');if(d)d.value='';
+  renderTurmasList();
+}
 function renderTurmasList(){
   const el=document.getElementById('turmas-list');
-  if(!turmas.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhuma turma cadastrada ainda.</div>';return;}
-  const byMod={};turmas.forEach(t=>{if(!byMod[t.modulo])byMod[t.modulo]=[];byMod[t.modulo].push(t);});
-  el.innerHTML=Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<div class="turma-card"><div class="turma-hdr"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="editTurma('${t.id.replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="delTurma('${t.id.replace(/'/g,"\\'")}')">Excluir</button></div></div><div class="aluno-list" style="margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div><div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace;">${t.alunos.length} aluno(s) cadastrado(s)</div></div>`).join('')}</div>`).join('');
+  const modSel=document.getElementById('turma-filter-mod');
+  const discSel=document.getElementById('turma-filter-disc');
+  const summary=document.getElementById('turma-list-summary');
+  const currentMod=modSel?.value||'';
+  const currentDisc=discSel?.value||'';
+  const mods=[...new Set(turmas.map(t=>String(t.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  if(modSel){
+    modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
+  }
+  const fmod=normPlain(modSel?.value||'');
+  const discOptions=[...new Set(turmas.filter(t=>!fmod||normPlain(t.modulo)===fmod).map(t=>String(t.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  if(discSel){
+    discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
+  }
+  const fdisc=normPlain(discSel?.value||'');
+  const filtered=turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&(!fdisc||normPlain(t.disciplina)===fdisc));
+  if(summary){
+    summary.textContent=filtered.length?`${filtered.length} turma(s) encontrada(s).`:'Nenhuma turma encontrada com os filtros atuais.';
+  }
+  if(!filtered.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhuma turma cadastrada ainda.</div>';return;}
+  // Só abre a lista de alunos automaticamente quando a disciplina é filtrada especificamente.
+  const shouldOpen=!!fdisc;
+  const byMod={};filtered.forEach(t=>{if(!byMod[t.modulo])byMod[t.modulo]=[];byMod[t.modulo].push(t);});
+  el.innerHTML=Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<details class="turma-card" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span> <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">· ${t.alunos.length} aluno(s)</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="event.preventDefault();event.stopPropagation();editTurma('${t.id.replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="event.preventDefault();event.stopPropagation();delTurma('${t.id.replace(/'/g,"\\'")}')">Excluir</button></div></summary><div class="aluno-list" style="margin-top:10px;margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div></details>`).join('')}</div>`).join('');
 }
 function editTurma(id){
   const t=turmas.find(x=>x.id===id);if(!t)return;
@@ -1766,6 +1884,7 @@ function editTurma(id){
   document.getElementById('t-disciplina').value=t.disciplina;
   document.getElementById('turma-editor').style.display='block';
   document.getElementById('turma-msg').textContent='';
+  populateCopiarDeTurmaSelect();
   renderAlunoList();
   document.getElementById('panel-turmas').scrollTo({top:0,behavior:'smooth'});
 }
@@ -1940,18 +2059,40 @@ async function delModulo(mod){
   if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
   toast('Módulo excluído.','ok');
 }
+function clearHistFiltros(){
+  const m=document.getElementById('hist-filter-mod');if(m)m.value='';
+  const d=document.getElementById('hist-filter-disc');if(d)d.value='';
+  renderHistory();
+}
 function renderHistory(){
   const el=document.getElementById('hist-body');
   if(!sessions.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Histórico vazio</div></div>`;return;}
+
+  const modSel=document.getElementById('hist-filter-mod');
+  const discSel=document.getElementById('hist-filter-disc');
+  const currentMod=modSel?.value||'';
+  const currentDisc=discSel?.value||'';
+  const allMods=[...new Set(sessions.map(s=>String(s.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  if(modSel){modSel.innerHTML='<option value="">Todos</option>'+allMods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');}
+  const fmod=normPlain(modSel?.value||'');
+  const allDiscs=[...new Set(sessions.filter(s=>!fmod||normPlain(s.modulo)===fmod).flatMap(s=>safeArray(s.groups).map(g=>g.disciplina)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  if(discSel){discSel.innerHTML='<option value="">Todas</option>'+allDiscs.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');}
+  const fdisc=normPlain(discSel?.value||'');
+
   const tree={};
   sessions.forEach(s=>{
+    if(fmod&&normPlain(s.modulo)!==fmod)return;
     safeArray(s.groups).forEach(g=>{
+      if(fdisc&&normPlain(g.disciplina)!==fdisc)return;
       if(!tree[s.modulo])tree[s.modulo]={};
       if(!tree[s.modulo][g.disciplina])tree[s.modulo][g.disciplina]={criar:{rs:[],sessoes:new Set()},delinear:{rs:[],sessoes:new Set()},entender:{rs:[],sessoes:new Set()},escala:10};
       ATV_TYPES.forEach(t=>{(g.atividades[t]||[]).forEach(r=>{tree[s.modulo][g.disciplina][t].rs.push({...r,_sessaoData:s.data});tree[s.modulo][g.disciplina][t].sessoes.add(s.id);if(r.escala_maxima)tree[s.modulo][g.disciplina].escala=r.escala_maxima;});});
     });
   });
-  el.innerHTML=Object.entries(tree).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<div class="h-disc-block"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s)</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></div><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></div>`;}).join('')}</div>`).join('');
+  if(!Object.keys(tree).length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum resultado encontrado com os filtros atuais.</div>';return;}
+  // Só expande automaticamente o bloco da disciplina quando ela é filtrada especificamente.
+  const shouldOpen=!!fdisc;
+  el.innerHTML=Object.entries(tree).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="event.preventDefault();event.stopPropagation();exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<details class="h-disc-block" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s) · clique para ${shouldOpen?'recolher':'expandir'}</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></summary><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></details>`;}).join('')}</div>`).join('');
 }
 async function delDisc(mod,disc){
   if(!confirm(`Excluir "${disc}" do Módulo ${mod}?`))return;
@@ -2122,31 +2263,36 @@ function renderCriteriosList(){
     grouped[mk][dk].push(c);
   });
 
+  // Só abre automaticamente quando um filtro específico (disciplina ou tipo) restringe a lista.
+  // Sem filtro, tudo fica minimizado para não poluir a tela com o texto completo de cada critério.
+  const discOpen=!!fdisc;
+  const itemOpen=!!(fdisc&&ftipo);
+
   el.innerHTML=Object.entries(grouped).map(([mod,discs])=>{
     return `<div style="margin-bottom:18px;">
       <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;">Módulo ${mod}</div>
       ${Object.entries(discs).map(([disc,items])=>`
-        <div class="fcard" style="padding:14px 16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <details class="fcard" style="padding:14px 16px;" ${discOpen?'open':''}>
+          <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
             <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">${disc}</div>
-            <div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${items.length} tipo(s) cadastrado(s)</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            ${items.map(c=>`<div class="gab-row" style="align-items:flex-start;gap:10px;padding:10px 12px;">
-              <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${items.length} tipo(s) cadastrado(s) · clique para ${discOpen?'recolher':'expandir'}</div>
+          </summary>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            ${items.map(c=>`<details class="gab-row" style="align-items:flex-start;gap:0;padding:0;display:block;" ${itemOpen?'open':''}>
+              <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <span class="gab-row-mod">${displayTipo(c.tipo)}</span>
-                  <span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">ID ${c.id}</span>
+                  <span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">ID ${c.id} · ${safeText(c.texto).length} caractere(s)</span>
                 </div>
-                <div style="font-size:11px;color:var(--text);font-family:'DM Mono',monospace;line-height:1.5;white-space:pre-wrap;max-height:180px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px;">${safeText(c.texto).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <button class="btn-sm accent" onclick="loadCriterioFixo('${c.id.replace(/'/g,"\\'")}')">Editar</button>
-                <button class="btn-sm red" onclick="delCriterioFixo('${c.id.replace(/'/g,"\\'")}')">✕</button>
-              </div>
-            </div>`).join('')}
+                <div style="display:flex;gap:6px;">
+                  <button class="btn-sm accent" onclick="event.preventDefault();event.stopPropagation();loadCriterioFixo('${c.id.replace(/'/g,"\\'")}')">Editar</button>
+                  <button class="btn-sm red" onclick="event.preventDefault();event.stopPropagation();delCriterioFixo('${c.id.replace(/'/g,"\\'")}')">✕</button>
+                </div>
+              </summary>
+              <div style="font-size:11px;color:var(--text);font-family:'DM Mono',monospace;line-height:1.5;white-space:pre-wrap;max-height:180px;overflow:auto;background:var(--bg);padding:10px;border-radius:8px;margin:0 12px 10px;">${safeText(c.texto).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            </details>`).join('')}
           </div>
-        </div>`).join('')}
+        </details>`).join('')}
     </div>`;
   }).join('');
 }
@@ -2207,7 +2353,7 @@ function goTab(tab){
   if(tab==='turmas')renderTurmasList();
 }
 function limparArquivosNova(){
-  gabFiles=[];atvFiles=[];atvNomes=[];
+  gabFiles=[];atvFiles=[];atvNomes=[];atvManualIdx=new Set();
   renderChips('ch-gab',gabFiles,'rmGab');
   renderChips('ch-atv',atvFiles,'rmAtv');
   document.getElementById('match-box').style.display='none';
