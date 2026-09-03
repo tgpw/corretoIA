@@ -304,6 +304,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
       <button class="tbtn" onclick="goTab('criterios')">Critérios</button>
       <button class="tbtn" onclick="goTab('historico')">Histórico</button>
       <button class="tbtn" onclick="goTab('config')">Config</button>
+      <button class="tbtn" id="tbtn-migracao" onclick="goTab('migracao')" style="display:none;">⚠ Migração</button>
     </div>
     <button class="ghost" onclick="logout()">Sair</button>
   </header>
@@ -322,11 +323,19 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <button class="btn-o" style="font-size:11px;padding:5px 10px;white-space:nowrap;" onclick="saveApiKeyCloud()">Salvar</button>
         </div>
         <div class="fcard">
-          <div class="fcard-title">📦 Módulo</div>
+          <div class="fcard-title">📦 Ano e Módulo</div>
           <div class="row-fields" style="margin-bottom:0;">
+            <span class="flabel">Ano</span>
+            <select class="finput mod" id="nova-ano" style="width:120px;" onchange="checkReady();loadGabFromCloud();syncNovaCriteriaContext();syncNovaDisciplinaOptions();">
+              <option value="">Selecione</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="modulo" placeholder="Ex: I" oninput="checkReady();loadGabFromCloud();syncNovaCriteriaContext()">
-            <span style="font-size:12px;color:var(--muted);">Informe o módulo para carregar gabaritos salvos automaticamente.</span>
+            <span style="font-size:12px;color:var(--muted);">Informe Ano e módulo para carregar gabaritos e critérios salvos automaticamente.</span>
           </div>
         </div>
         <div class="fcard">
@@ -396,6 +405,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div class="fcard-title">➕ Nova Turma</div>
           <div class="fcard-desc">Informe o módulo e a disciplina para criar ou editar a lista de alunos.</div>
           <div class="row-fields">
+            <span class="flabel">Ano</span>
+            <select class="finput mod" id="t-ano" style="width:120px;">
+              <option value="">Selecione</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="t-modulo" placeholder="Ex: I">
             <span class="flabel">Disciplina</span>
@@ -430,6 +447,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         <div class="fcard">
           <div class="fcard-title">📋 Turmas Cadastradas</div>
           <div class="row-fields">
+            <span class="flabel">Filtro Ano</span>
+            <select class="finput mod" id="turma-filter-ano" onchange="renderTurmasList()" style="width:120px;">
+              <option value="">Todos</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Filtro módulo</span>
             <select class="finput mod" id="turma-filter-mod" onchange="renderTurmasList()">
               <option value="">Todos</option>
@@ -448,6 +473,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         <div class="ptitle">Dashboard</div>
         <p class="psub">Percentual de envios e controle de pendentes por disciplina e tipo de atividade.</p>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <span class="flabel">Ano:</span>
+          <select class="finput mod" id="dash-filter-ano" onchange="renderDashboard()" style="width:120px;">
+            <option value="">Todos</option>
+            <option value="Ano 1">Ano 1</option>
+            <option value="Ano 2">Ano 2</option>
+            <option value="Ano 3">Ano 3</option>
+            <option value="Ano 4">Ano 4</option>
+          </select>
           <span class="flabel">Filtrar módulo:</span>
           <input class="finput mod" type="text" id="dash-filter" placeholder="Todos" oninput="renderDashboard()">
         </div>
@@ -462,6 +495,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         <div class="fcard">
           <div class="fcard-title">☁ Enviar Gabaritos</div>
           <div class="row-fields">
+            <span class="flabel">Ano</span>
+            <select class="finput mod" id="gab-ano" style="width:120px;">
+              <option value="">Selecione</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="gab-modulo" placeholder="Ex: I">
           </div>
@@ -474,7 +515,15 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         </div>
         <div class="fcard">
           <div class="fcard-title">📋 Gabaritos Salvos</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+            <span class="flabel">Ano</span>
+            <select class="finput mod" id="gab-filter-ano" onchange="renderGabList()" style="width:120px;">
+              <option value="">Todos</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Filtrar:</span>
             <input class="finput mod" type="text" id="gab-filter" placeholder="Módulo" oninput="renderGabList()">
           </div>
@@ -488,6 +537,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
         <div class="fcard">
           <div class="fcard-title">➕ Novo critério</div>
           <div class="row-fields">
+            <span class="flabel">Ano</span>
+            <select class="finput mod" id="crit-ano" style="width:120px;">
+              <option value="">Selecione</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I">
             <span class="flabel">Disciplina</span>
@@ -516,6 +573,14 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
         <div class="fcard">
           <div class="fcard-title">📋 Critérios salvos</div>
           <div class="row-fields">
+            <span class="flabel">Filtro Ano</span>
+            <select class="finput mod" id="crit-filter-ano" onchange="renderCriteriosList()" style="width:120px;">
+              <option value="">Todos</option>
+              <option value="Ano 1">Ano 1</option>
+              <option value="Ano 2">Ano 2</option>
+              <option value="Ano 3">Ano 3</option>
+              <option value="Ano 4">Ano 4</option>
+            </select>
             <span class="flabel">Filtro módulo</span>
             <select class="finput mod" id="crit-filter-mod" onchange="renderCriteriosList()">
               <option value="">Todos</option>
@@ -542,6 +607,14 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
         <div class="ptitle">Histórico</div>
         <p class="psub">Correções consolidadas por módulo e disciplina.</p>
         <div class="row-fields">
+          <span class="flabel">Ano</span>
+          <select class="finput mod" id="hist-filter-ano" onchange="renderHistory()" style="width:120px;">
+            <option value="">Todos</option>
+            <option value="Ano 1">Ano 1</option>
+            <option value="Ano 2">Ano 2</option>
+            <option value="Ano 3">Ano 3</option>
+            <option value="Ano 4">Ano 4</option>
+          </select>
           <span class="flabel">Filtro módulo</span>
           <select class="finput mod" id="hist-filter-mod" onchange="renderHistory()">
             <option value="">Todos</option>
@@ -549,6 +622,14 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <span class="flabel">Disciplina</span>
           <select class="finput disc" id="hist-filter-disc" onchange="renderHistory()" style="width:280px;text-align:left;">
             <option value="">Todas</option>
+          </select>
+          <span class="flabel">Tipo</span>
+          <select class="finput mod" id="hist-filter-tipo" onchange="renderHistory()">
+            <option value="">Todos</option>
+            <option value="entender">Entender</option>
+            <option value="delinear">Delinear</option>
+            <option value="criar">Criar</option>
+            <option value="complementar">Complementar</option>
           </select>
           <button class="btn-o" onclick="clearHistFiltros()">Limpar filtros</button>
         </div>
@@ -619,6 +700,11 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <button class="btn-o" style="border-color:rgba(239,68,68,0.4);color:var(--red);" onclick="limparTudo()">Apagar histórico da nuvem</button>
         </div>
       </div>
+      <div class="panel" id="panel-migracao">
+        <div class="ptitle">⚠ Migração de Ano</div>
+        <p class="psub">Registros cadastrados antes do campo Ano existir aparecem aqui, agrupados por módulo. Escolha o Ano correto de cada grupo e aplique em lote — isso atualiza turmas, critérios, gabaritos e sessões de correção daquele módulo de uma vez, sem duplicar nada.</p>
+        <div id="migracao-body"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -638,10 +724,20 @@ async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/g
 function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
 function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
 const ATV_TYPES=['criar','delinear','entender','complementar'];
+const ANO_OPTIONS=['Ano 1','Ano 2','Ano 3','Ano 4'];
 let gabFiles=[],atvFiles=[],atvNomes=[],atvManualIdx=new Set(),sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
+// Compara Ano entre um registro salvo e um filtro. Se qualquer um dos dois não tiver Ano definido
+// (dado legado, anterior à migração), o registro NÃO é escondido — evita sumir histórico antigo.
+function anoMatches(anoRegistro,anoFiltro){
+  const na=normPlain(anoRegistro||''),nb=normPlain(anoFiltro||'');
+  if(!na||!nb) return true;
+  return na===nb;
+}
+function anoLabel(a){return safeText(a).trim()||'Ano não definido';}
+function getAno(){return (document.getElementById('nova-ano')?.value)||'';}
 function safeArray(v){return Array.isArray(v)?v:[];}
 function safeText(v,fallback=''){return v==null?fallback:String(v);}
-function sessionFromRow(r){return {id:r.id,modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups)};}
+function sessionFromRow(r){return {id:r.id,ano:safeText(r.ano),modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups)};}
 function normPlain(s){return safeText(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();}
 function criterioKey(modulo,disciplina,tipo){return `${normPlain(modulo)}||${normPlain(disciplina)}||${normPlain(tipo)}`;}
 function displayTipo(t){const v=normPlain(t);if(v==='criar')return 'Criar';if(v==='delinear')return 'Delinear';if(v==='entender')return 'Entender';if(v==='complementar')return 'Complementar';return safeText(t);}
@@ -664,14 +760,14 @@ function mergeCanonicalNames(list){
   });
   return groups.map(g=>g.label).sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
-function canonicalDiscLabel(mod,disc){
+function canonicalDiscLabel(mod,disc,ano){
   const alvo=safeText(disc).trim();
   if(!alvo) return '';
   const todos=[];
-  criteriosFixos.forEach(c=>{if(!mod||normPlain(c.modulo)===normPlain(mod)) todos.push(c.disciplina);});
-  turmas.forEach(t=>{if(!mod||normPlain(t.modulo)===normPlain(mod)) todos.push(t.disciplina);});
-  gabListCache.forEach(g=>{if(!mod||normPlain(g.modulo)===normPlain(mod)) todos.push((g.disciplina||'').trim());});
-  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ safeArray(s.groups).forEach(g=>todos.push(g.disciplina)); } });
+  criteriosFixos.forEach(c=>{if((!mod||normPlain(c.modulo)===normPlain(mod))&&anoMatches(c.ano,ano)) todos.push(c.disciplina);});
+  turmas.forEach(t=>{if((!mod||normPlain(t.modulo)===normPlain(mod))&&anoMatches(t.ano,ano)) todos.push(t.disciplina);});
+  gabListCache.forEach(g=>{if((!mod||normPlain(g.modulo)===normPlain(mod))&&anoMatches(g.ano,ano)) todos.push((g.disciplina||'').trim());});
+  sessions.forEach(s=>{ if((!mod||normPlain(s.modulo)===normPlain(mod))&&anoMatches(s.ano,ano)){ safeArray(s.groups).forEach(g=>todos.push(g.disciplina)); } });
   const canon=mergeCanonicalNames(todos);
   let best=alvo,bestScore=0;
   canon.forEach(c=>{
@@ -684,26 +780,28 @@ function syncNovaDisciplinas(){
   const sel=document.getElementById('nova-disciplina');
   if(!sel) return;
   const mod=(document.getElementById('modulo')?.value||'').trim();
+  const ano=getAno();
   const atual=sel.value||'';
   const nomes=[];
-  turmas.forEach(function(t){ if(!mod || normPlain(t.modulo)===normPlain(mod)) nomes.push(t.disciplina); });
-  criteriosFixos.forEach(function(c){ if(!mod || normPlain(c.modulo)===normPlain(mod)) nomes.push(c.disciplina); });
-  gabListCache.forEach(function(g){ if(!mod || normPlain(g.modulo)===normPlain(mod)) if(g.disciplina) nomes.push(g.disciplina); });
-  sessions.forEach(function(s){ if(!mod || normPlain(s.modulo)===normPlain(mod)) safeArray(s.groups).forEach(function(g){ if(g.disciplina) nomes.push(g.disciplina); }); });
+  turmas.forEach(function(t){ if((!mod || normPlain(t.modulo)===normPlain(mod))&&anoMatches(t.ano,ano)) nomes.push(t.disciplina); });
+  criteriosFixos.forEach(function(c){ if((!mod || normPlain(c.modulo)===normPlain(mod))&&anoMatches(c.ano,ano)) nomes.push(c.disciplina); });
+  gabListCache.forEach(function(g){ if((!mod || normPlain(g.modulo)===normPlain(mod))&&anoMatches(g.ano,ano)) if(g.disciplina) nomes.push(g.disciplina); });
+  sessions.forEach(function(s){ if((!mod || normPlain(s.modulo)===normPlain(mod))&&anoMatches(s.ano,ano)) safeArray(s.groups).forEach(function(g){ if(g.disciplina) nomes.push(g.disciplina); }); });
   const uniq=[...new Set(nomes.map(function(n){return safeText(n).trim();}).filter(Boolean))].sort(function(a,b){return a.localeCompare(b,'pt-BR');});
   sel.innerHTML='<option value="">Selecione</option>'+uniq.map(function(d){return '<option value="'+d.replace(/"/g,'&quot;')+'"'+(normPlain(d)===normPlain(atual)?' selected':'')+'>'+d+'</option>';}).join('');
 }
 
 function getCriterioSelecionadoNova(){
   const mod=getMod();
+  const ano=getAno();
   const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
   const tipo=document.getElementById('nova-tipo')?.value||'';
-  const canonDisc=canonicalDiscLabel(mod,disc);
-  const exact=criteriosFixos.find(c=>criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,canonDisc,tipo))||null;
+  const canonDisc=canonicalDiscLabel(mod,disc,ano);
+  const exact=criteriosFixos.find(c=>anoMatches(c.ano,ano)&&criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,canonDisc,tipo))||null;
   if(exact) return exact;
   const nd=normPlain(canonDisc||disc);
   const nt=normPlain(tipo);
-  const candidatos=criteriosFixos.filter(c=>normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
+  const candidatos=criteriosFixos.filter(c=>anoMatches(c.ano,ano) && normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
   if(candidatos.length===1) return candidatos[0];
   let best=null, bestScore=0;
   candidatos.forEach(c=>{
@@ -713,20 +811,20 @@ function getCriterioSelecionadoNova(){
   });
   return bestScore>=0.45 ? best : null;
 }
-function getDisciplinasCatalogo(mod=''){
+function getDisciplinasCatalogo(mod='',ano=''){
   const itens=[];
-  criteriosFixos.forEach(c=>{if(!mod||normPlain(c.modulo)===normPlain(mod)) itens.push(c.disciplina);});
-  turmas.forEach(t=>{if(!mod||normPlain(t.modulo)===normPlain(mod)) itens.push(t.disciplina);});
-  gabListCache.forEach(g=>{if(!mod||normPlain(g.modulo)===normPlain(mod)) itens.push((g.disciplina||'').trim());});
-  sessions.forEach(s=>{ if(!mod||normPlain(s.modulo)===normPlain(mod)){ safeArray(s.groups).forEach(g=>itens.push(g.disciplina)); } });
+  criteriosFixos.forEach(c=>{if((!mod||normPlain(c.modulo)===normPlain(mod))&&anoMatches(c.ano,ano)) itens.push(c.disciplina);});
+  turmas.forEach(t=>{if((!mod||normPlain(t.modulo)===normPlain(mod))&&anoMatches(t.ano,ano)) itens.push(t.disciplina);});
+  gabListCache.forEach(g=>{if((!mod||normPlain(g.modulo)===normPlain(mod))&&anoMatches(g.ano,ano)) itens.push((g.disciplina||'').trim());});
+  sessions.forEach(s=>{ if((!mod||normPlain(s.modulo)===normPlain(mod))&&anoMatches(s.ano,ano)){ safeArray(s.groups).forEach(g=>itens.push(g.disciplina)); } });
   return mergeCanonicalNames(itens);
 }
 function syncNovaDisciplinaOptions(){
   const sel=document.getElementById('nova-disciplina'); if(!sel) return;
-  const mod=getMod(); const atual=(sel.value||'').trim();
-  const opts=getDisciplinasCatalogo(mod);
-  sel.innerHTML='<option value="">Selecione a disciplina</option>'+opts.map(d=>`<option value="${d.replace(/"/g,'&quot;')}"${normPlain(d)===normPlain(canonicalDiscLabel(mod,atual))?' selected':''}>${d}</option>`).join('');
-  if(atual && !opts.some(d=>normPlain(d)===normPlain(canonicalDiscLabel(mod,atual)))) sel.value='';
+  const mod=getMod(); const ano=getAno(); const atual=(sel.value||'').trim();
+  const opts=getDisciplinasCatalogo(mod,ano);
+  sel.innerHTML='<option value="">Selecione a disciplina</option>'+opts.map(d=>`<option value="${d.replace(/"/g,'&quot;')}"${normPlain(d)===normPlain(canonicalDiscLabel(mod,atual,ano))?' selected':''}>${d}</option>`).join('');
+  if(atual && !opts.some(d=>normPlain(d)===normPlain(canonicalDiscLabel(mod,atual,ano)))) sel.value='';
 }
 function syncNovaCriteriaContext(){
   syncNovaDisciplinaOptions();
@@ -796,13 +894,14 @@ async function loadCloud(pw){
   const rows=await sbGetAll('sessoes');
   sessions=rows.map(sessionFromRow);
   const trows=await sbGetAll('turmas');
-  turmas=trows.map(r=>({id:r.id,modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina),alunos:r.alunos||[]}));
+  turmas=trows.map(r=>({id:r.id,ano:r.ano||'',modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina,r.ano),alunos:r.alunos||[]}));
   gabListCache=await sbGetAll('gabaritos');
   try{criteriosFixos=await sbGetAll('criterios_fixos');}catch(_e){criteriosFixos=[];}
   renderSidebar();
   renderCriteriosList();
   syncNovaCriteriaContext();
   checkReady();
+  updateMigracaoTabVisibility();
 }
 function logout(){currentPw='';sessionStorage.removeItem('cIA5_logged');localStorage.removeItem('cIA5_pw_plain');document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('apikey').value='';}
 function alterarSenha(){
@@ -824,9 +923,10 @@ function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300
 function namesMatch(a,b){const na=normalizeName(a), nb=normalizeName(b); if(!na||!nb) return false; return na===nb || na.includes(nb) || nb.includes(na);}
 function getTurmaAtualNova(){
   const mod=getMod();
-  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim());
+  const ano=getAno();
+  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim(),ano);
   if(!mod||!disc) return null;
-  const candidatos=turmas.filter(t=>String(t.modulo||'')===String(mod));
+  const candidatos=turmas.filter(t=>String(t.modulo||'')===String(mod)&&anoMatches(t.ano,ano));
   let best=null,bestScore=0;
   candidatos.forEach(t=>{
     const score = normPlain(t.disciplina)===normPlain(disc)?1:(namesMatch(t.disciplina,disc)?0.95:similarityDisc(t.disciplina,disc));
@@ -904,12 +1004,13 @@ function limparNovaCorrecaoCompleta(){
 
 function checkReady(){
   const hasKey=!!(getKey()||localStorage.getItem('cIA5_apikey_plain'));
+  const hasAno=!!getAno();
   const hasMod=!!getMod();
   const hasAtv=atvFiles.length>0;
   const hasDisc=!!((document.getElementById('nova-disciplina')?.value||'').trim());
   const hasTipo=!!(document.getElementById('nova-tipo')?.value||'');
   const hasCriterio=!!getCriterioSelecionadoNova();
-  const ok=(hasCriterio||gabFiles.length>0)&&hasAtv&&hasKey&&hasMod&&hasDisc&&hasTipo;
+  const ok=(hasCriterio||gabFiles.length>0)&&hasAtv&&hasKey&&hasAno&&hasMod&&hasDisc&&hasTipo;
   document.getElementById('btn-corrigir').disabled=!ok;
   const qtd=atvFiles.length;
   const base=[];
@@ -932,7 +1033,8 @@ function renderCost(qtd){
 }
 async function loadGabFromCloud(){
   const mod=getMod();
-  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim());
+  const ano=getAno();
+  const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim(),ano);
   const statusEl=document.getElementById('cloud-gab-status');
   if(!mod){ if(statusEl) statusEl.textContent=''; return; }
   const criterioSelecionado=getCriterioSelecionadoNova();
@@ -940,7 +1042,7 @@ async function loadGabFromCloud(){
     statusEl.textContent='Critério fixo encontrado para esta atividade. Anexar gabarito geral é opcional.';
     return;
   }
-  let list=gabListCache.filter(g=>normPlain(g.modulo)===normPlain(mod));
+  let list=gabListCache.filter(g=>normPlain(g.modulo)===normPlain(mod)&&anoMatches(g.ano,ano));
   if(disc){
     const comDisc=list.filter(g=>safeText(g.disciplina).trim());
     const filtrados=comDisc.filter(g=>namesMatch(g.disciplina,disc));
@@ -1124,10 +1226,10 @@ function renderTriagemResultado(avaliados){
   document.getElementById('match-hdr').innerHTML='✦ Resultado da triagem inteligente';
   document.getElementById('match-wrap').innerHTML=`<table class="mtable"><thead><tr><th>Arquivo</th><th>Status</th><th>Observação</th><th>Ação</th></tr></thead><tbody>${avaliados.map((x,idx)=>triageRowHTML(x,idx)).join('')}</tbody></table><div style="margin-top:8px;font-size:11px;color:var(--muted2);">Arquivos em <b>alerta</b> serão corrigidos normalmente. Os itens <b>separados</b> podem ser revisados por você e corrigidos manualmente no botão <b>Corrigir mesmo assim</b>.</div>`;
 }
-async function appendResultadoToSession(r,modulo){
+async function appendResultadoToSession(r,modulo,ano){
   let session=cur && cur.modulo===modulo ? cur : null;
   if(!session){
-    session={id:Date.now(),modulo,data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),groups:[],total:0};
+    session={id:Date.now(),modulo,ano:ano||'',data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),groups:[],total:0};
     sessions.push(session);
   }
   let grp=session.groups.find(g=>g.disciplina===r._disc);
@@ -1135,7 +1237,7 @@ async function appendResultadoToSession(r,modulo){
   const tipo=normTipo(r._tipo);
   (grp.atividades[tipo]||(grp.atividades['entender'])).push(r);
   session.total=session.groups.flatMap(g=>Object.values(g.atividades).flat()).length;
-  await sbUpsert('sessoes',{id:session.id,modulo:session.modulo,data:session.data,hora:session.hora,total:session.total,groups:session.groups});
+  await sbUpsert('sessoes',{id:session.id,modulo:session.modulo,ano:session.ano||null,data:session.data,hora:session.hora,total:session.total,groups:session.groups});
   cur=session;
   renderResults(session);renderSidebar();
 }
@@ -1147,7 +1249,7 @@ async function corrigirMesmoAssimTriagem(idx){
   try{
     showLoad(true);setLoad(`Corrigindo manualmente: ${item.af.name.substring(0,24)}...`,65);
     const r=await corrigirComVisao(triageCtx.gabData,item.af.name,item.atvConteudo,getKey(),triageCtx.modulo,item.nomeManual,triageCtx.criterioSelecionado);
-    await appendResultadoToSession(r,triageCtx.modulo);
+    await appendResultadoToSession(r,triageCtx.modulo,triageCtx.ano);
     item.triagem.status='alerta';
     item.triagem.motivos=(item.triagem.motivos?item.triagem.motivos+'; ':'')+'correção manual autorizada pelo usuário';
     renderTriagemResultado(triageCtx.avaliados);
@@ -1160,6 +1262,7 @@ async function corrigirMesmoAssimTriagem(idx){
 async function iniciarCorrecao(){
   if(!getKey()){toast('Informe a chave API.','err');return;}
   const modulo=getMod();if(!modulo){toast('Informe o módulo.','err');return;}
+  const ano=getAno();if(!ano){toast('Informe o Ano.','err');return;}
   showLoad(true);setLoad('Processando gabaritos...',5);
   try{
     const gabData=await Promise.all(gabFiles.map(async f=>{
@@ -1178,7 +1281,7 @@ async function iniciarCorrecao(){
     }
     const aptos=avaliados.filter(x=>x.triagem.status==='ok' || x.triagem.status==='alerta');
     const separados=avaliados.filter(x=>x.triagem.status==='separar');
-    triageCtx={avaliados,gabData,criterioSelecionado,modulo};
+    triageCtx={avaliados,gabData,criterioSelecionado,modulo,ano};
     renderTriagemResultado(avaliados);
     if(!aptos.length){showLoad(false);toast('Nenhum arquivo foi aprovado automaticamente. Revise a triagem e use “Corrigir mesmo assim” nos compatíveis.','err');return;}
     const all=[];
@@ -1195,8 +1298,8 @@ async function iniciarCorrecao(){
       const tipo=normTipo(r._tipo);
       (groups[r._disc].atividades[tipo]||(groups[r._disc].atividades['entender'])).push(r);
     });
-    const session={id:Date.now(),modulo,data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),groups:Object.values(groups),total:all.length};
-    await sbUpsert('sessoes',{id:session.id,modulo:session.modulo,data:session.data,hora:session.hora,total:session.total,groups:session.groups});
+    const session={id:Date.now(),modulo,ano,data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),groups:Object.values(groups),total:all.length};
+    await sbUpsert('sessoes',{id:session.id,modulo:session.modulo,ano:session.ano||null,data:session.data,hora:session.hora,total:session.total,groups:session.groups});
     sessions.push(session);cur=session;
     setLoad('Pronto!',100);await sleep(300);showLoad(false);
     renderResults(session);renderSidebar();goTab('resultados');
@@ -1788,20 +1891,25 @@ function exportTurmaExcel(){
   toast('✓ Excel da turma exportado!','ok');
 }
 async function criarOuCarregarTurma(){
+  const ano=document.getElementById('t-ano').value.trim();
   const mod=document.getElementById('t-modulo').value.trim();
   const disc=document.getElementById('t-disciplina').value.trim();
-  if(!mod||!disc){toast('Informe módulo e disciplina.','err');return;}
-  const id=`${mod}||${disc}`;
-  editingTurma=turmas.find(t=>t.id===id)||{id,modulo:mod,disciplina:disc,alunos:[]};
+  if(!ano||!mod||!disc){toast('Informe Ano, módulo e disciplina.','err');return;}
+  const id=`${ano}||${mod}||${disc}`;
+  // Reaproveita um registro legado (cadastrado antes do campo Ano existir) com mesmo módulo+disciplina,
+  // em vez de criar uma turma duplicada.
+  const legado=turmas.find(t=>!t.ano && normPlain(t.modulo)===normPlain(mod) && normPlain(t.disciplina)===normPlain(disc));
+  editingTurma=turmas.find(t=>t.id===id)||legado||{id,ano,modulo:mod,disciplina:disc,alunos:[]};
+  if(!editingTurma.ano) editingTurma.ano=ano;
   document.getElementById('turma-editor').style.display='block';
-  document.getElementById('turma-editor-label').textContent=`Módulo ${mod} — ${disc} · ${editingTurma.alunos.length} aluno(s)`;
+  document.getElementById('turma-editor-label').textContent=`${anoLabel(editingTurma.ano)} · Módulo ${mod} — ${disc} · ${editingTurma.alunos.length} aluno(s)`;
   populateCopiarDeTurmaSelect();
   renderAlunoList();
 }
 function renderAlunoList(){
   if(!editingTurma)return;
   document.getElementById('aluno-list').innerHTML=editingTurma.alunos.map((a,i)=>`<div class="aluno-chip">${a}<span class="aluno-x" onclick="rmAluno(${i})">×</span></div>`).join('');
-  document.getElementById('turma-editor-label').textContent=`Módulo ${editingTurma.modulo} — ${editingTurma.disciplina} · ${editingTurma.alunos.length} aluno(s)`;
+  document.getElementById('turma-editor-label').textContent=`${anoLabel(editingTurma.ano)} · Módulo ${editingTurma.modulo} — ${editingTurma.disciplina} · ${editingTurma.alunos.length} aluno(s)`;
 }
 function addAluno(){const inp=document.getElementById('novo-aluno');const nome=inp.value.trim();if(!nome||!editingTurma)return;if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(nome)))editingTurma.alunos.push(nome);inp.value='';renderAlunoList();}
 function addAlunosBulk(){
@@ -1820,7 +1928,7 @@ function addAlunosBulk(){
 function populateCopiarDeTurmaSelect(){
   const sel=document.getElementById('turma-copiar-de');if(!sel)return;
   const outras=turmas.filter(t=>!editingTurma||t.id!==editingTurma.id);
-  sel.innerHTML='<option value="">Selecione uma turma...</option>'+outras.map(t=>`<option value="${t.id.replace(/"/g,'&quot;')}">${t.disciplina} — Módulo ${t.modulo} (${t.alunos.length} aluno(s))</option>`).join('');
+  sel.innerHTML='<option value="">Selecione uma turma...</option>'+outras.map(t=>`<option value="${t.id.replace(/"/g,'&quot;')}">${anoLabel(t.ano)} · ${t.disciplina} — Módulo ${t.modulo} (${t.alunos.length} aluno(s))</option>`).join('');
 }
 function copiarAlunosDeTurma(){
   if(!editingTurma){toast('Crie ou carregue uma turma primeiro.','err');return;}
@@ -1839,47 +1947,59 @@ function copiarAlunosDeTurma(){
 function rmAluno(i){if(!editingTurma)return;editingTurma.alunos.splice(i,1);renderAlunoList();}
 async function salvarTurma(){
   if(!editingTurma){toast('Nenhuma turma em edição.','err');return;}
-  await sbUpsert('turmas',{id:editingTurma.id,modulo:editingTurma.modulo,disciplina:editingTurma.disciplina,alunos:editingTurma.alunos});
+  if(!editingTurma.ano){toast('Informe o Ano antes de salvar.','err');return;}
+  await sbUpsert('turmas',{id:editingTurma.id,ano:editingTurma.ano,modulo:editingTurma.modulo,disciplina:editingTurma.disciplina,alunos:editingTurma.alunos});
   const idx=turmas.findIndex(t=>t.id===editingTurma.id);
   if(idx>=0)turmas[idx]=editingTurma;else turmas.push({...editingTurma});
   const m=document.getElementById('turma-msg');m.style.color='var(--green)';m.textContent=`✓ Turma salva! ${editingTurma.alunos.length} aluno(s).`;
   renderTurmasList();
 }
 function clearTurmasFilters(){
+  const z=document.getElementById('turma-filter-ano');if(z)z.value='';
   const m=document.getElementById('turma-filter-mod');if(m)m.value='';
   const d=document.getElementById('turma-filter-disc');if(d)d.value='';
   renderTurmasList();
 }
 function renderTurmasList(){
   const el=document.getElementById('turmas-list');
+  const anoSel=document.getElementById('turma-filter-ano');
   const modSel=document.getElementById('turma-filter-mod');
   const discSel=document.getElementById('turma-filter-disc');
   const summary=document.getElementById('turma-list-summary');
+  const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const mods=[...new Set(turmas.map(t=>String(t.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const mods=[...new Set(turmas.filter(t=>anoMatches(t.ano,fano)).map(t=>String(t.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){
     modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
   }
   const fmod=normPlain(modSel?.value||'');
-  const discOptions=[...new Set(turmas.filter(t=>!fmod||normPlain(t.modulo)===fmod).map(t=>String(t.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const discOptions=[...new Set(turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&anoMatches(t.ano,fano)).map(t=>String(t.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){
     discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
   }
   const fdisc=normPlain(discSel?.value||'');
-  const filtered=turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&(!fdisc||normPlain(t.disciplina)===fdisc));
+  const filtered=turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&(!fdisc||normPlain(t.disciplina)===fdisc)&&anoMatches(t.ano,fano));
   if(summary){
     summary.textContent=filtered.length?`${filtered.length} turma(s) encontrada(s).`:'Nenhuma turma encontrada com os filtros atuais.';
   }
   if(!filtered.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhuma turma cadastrada ainda.</div>';return;}
   // Só abre a lista de alunos automaticamente quando a disciplina é filtrada especificamente.
   const shouldOpen=!!fdisc;
-  const byMod={};filtered.forEach(t=>{if(!byMod[t.modulo])byMod[t.modulo]=[];byMod[t.modulo].push(t);});
-  el.innerHTML=Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<details class="turma-card" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span> <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">· ${t.alunos.length} aluno(s)</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="event.preventDefault();event.stopPropagation();editTurma('${t.id.replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="event.preventDefault();event.stopPropagation();delTurma('${t.id.replace(/'/g,"\\'")}')">Excluir</button></div></summary><div class="aluno-list" style="margin-top:10px;margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div></details>`).join('')}</div>`).join('');
+  const anoOpen=!!fano;
+  const byAno={};filtered.forEach(t=>{const ak=anoLabel(t.ano);if(!byAno[ak])byAno[ak]={};if(!byAno[ak][t.modulo])byAno[ak][t.modulo]=[];byAno[ak][t.modulo].push(t);});
+  el.innerHTML=Object.entries(byAno).sort().map(([ano,byMod])=>`
+    <details class="fcard" style="margin-bottom:14px;" ${anoOpen?'open':''}>
+      <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano} <span style="font-size:10px;color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0;">· clique para ${anoOpen?'recolher':'expandir'}</span></summary>
+      <div style="margin-top:10px;">
+        ${Object.entries(byMod).sort().map(([mod,ts])=>`<div style="margin-bottom:16px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>${ts.map(t=>`<details class="turma-card" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div><span class="turma-title">${t.disciplina}</span> <span class="turma-mod">Mod. ${t.modulo}</span> <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">· ${t.alunos.length} aluno(s)</span></div><div style="display:flex;gap:6px;"><button class="btn-sm accent" onclick="event.preventDefault();event.stopPropagation();editTurma('${t.id.replace(/'/g,"\\'")}')">Editar</button><button class="btn-sm red" onclick="event.preventDefault();event.stopPropagation();delTurma('${t.id.replace(/'/g,"\\'")}')">Excluir</button></div></summary><div class="aluno-list" style="margin-top:10px;margin-bottom:0;">${t.alunos.map(a=>`<div class="aluno-chip">${a}</div>`).join('')||'<span style="color:var(--muted);font-size:12px;">Sem alunos cadastrados.</span>'}</div></details>`).join('')}</div>`).join('')}
+      </div>
+    </details>`).join('');
 }
 function editTurma(id){
   const t=turmas.find(x=>x.id===id);if(!t)return;
   editingTurma={...t,alunos:[...t.alunos]};
+  const anoSel=document.getElementById('t-ano'); if(anoSel) anoSel.value=t.ano||'';
   document.getElementById('t-modulo').value=t.modulo;
   document.getElementById('t-disciplina').value=t.disciplina;
   document.getElementById('turma-editor').style.display='block';
@@ -1896,15 +2016,17 @@ async function delTurma(id){
 }
 function renderDashboard(){
   const filter=document.getElementById('dash-filter')?document.getElementById('dash-filter').value.trim().toLowerCase():'';
+  const fano=document.getElementById('dash-filter-ano')?.value||'';
   const gridEl=document.getElementById('dash-grid');
   const pendEl=document.getElementById('pend-body');
   const tree={};
   sessions.forEach(s=>{
     if(filter&&!safeText(s.modulo).toLowerCase().includes(filter))return;
+    if(!anoMatches(s.ano,fano))return;
     safeArray(s.groups).forEach(g=>{
-      const key=s.modulo+'||'+g.disciplina;
-      if(!tree[key]){ const corrigidos={}; ATV_TYPES.forEach(function(t){corrigidos[t]=[];}); tree[key]={mod:s.modulo,disc:g.disciplina,corrigidos}; }
-      ATV_TYPES.forEach(t=>(g.atividades[t]||[]).forEach(r=>{if(r.nome_aluno&&!r._pendente)tree[key].corrigidos[t].push(String(r.nome_aluno));}));
+      const key=anoLabel(s.ano)+'||'+s.modulo+'||'+g.disciplina;
+      if(!tree[key]){ const corrigidos={},notas={}; ATV_TYPES.forEach(function(t){corrigidos[t]=[];notas[t]=[];}); tree[key]={ano:s.ano||'',mod:s.modulo,disc:g.disciplina,corrigidos,notas}; }
+      ATV_TYPES.forEach(t=>(g.atividades[t]||[]).forEach(r=>{if(r.nome_aluno&&!r._pendente){tree[key].corrigidos[t].push(String(r.nome_aluno));if(typeof r.nota_numerica==='number'&&r.nota_numerica>0)tree[key].notas[t].push(r.nota_numerica);}}));
     });
   });
   if(!Object.keys(tree).length){
@@ -1912,36 +2034,37 @@ function renderDashboard(){
     pendEl.innerHTML='';return;
   }
   const CORES={criar:'#22c55e',delinear:'#4f7cff',entender:'#f59e0b'};
-  function turmaByKey(mod,disc){
+  function turmaByKey(mod,disc,ano){
     return turmas.find(function(t){
+      if(!anoMatches(t.ano,ano))return false;
       if(t.id===mod+'||'+disc)return true;
       if(String(t.modulo)!==String(mod))return false;
       return namesMatch(t.disciplina,disc);
     });
   }
   function isCorrigido(list,nome){return list.some(n=>namesMatch(n,nome));}
-  gridEl.innerHTML=Object.entries(tree).map(([key,d])=>{
-    const [dMod,dDisc]=key.split('||');
-    const turma=turmaByKey(dMod,dDisc);
+  const entriesOrdenadas=Object.entries(tree).sort((a,b)=>`${a[1].ano} ${a[1].mod} ${a[1].disc}`.localeCompare(`${b[1].ano} ${b[1].mod} ${b[1].disc}`,'pt-BR'));
+  gridEl.innerHTML=entriesOrdenadas.map(([key,d])=>{
+    const turma=turmaByKey(d.mod,d.disc,d.ano);
     const total=turma?turma.alunos.length:null;
     const bars=ATV_TYPES.map(t=>{
       const n=turma?turma.alunos.filter(a=>isCorrigido(d.corrigidos[t],a)).length:d.corrigidos[t].length;
       const pct=total?Math.round(n/total*100):null;
       const pctVal=pct!==null?pct:Math.min(n*20,100);
+      const media=d.notas[t].length?(d.notas[t].reduce((a,b)=>a+b,0)/d.notas[t].length).toFixed(1):null;
       return'<div class="prog-row">'+
         '<div class="prog-label"><span class="prog-type '+t+'">'+t.charAt(0).toUpperCase()+t.slice(1)+'</span></div>'+
-        '<div class="prog-bar-wrap" style="flex:1;"><div class="prog-bar '+t+'" style="width:'+pctVal+'%"></div></div>'+
-        '<span class="prog-pct" style="min-width:40px;text-align:right;">'+(pct!==null?pct+'%':n+' ✓')+'</span>'+
+        '<div class="prog-bar-wrap" style="flex:1;'+(pct===null?'opacity:.55;':'')+'"><div class="prog-bar '+t+'" style="width:'+pctVal+'%'+(pct===null?';background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.15),rgba(255,255,255,.15) 4px,transparent 4px,transparent 8px)':'')+'"></div></div>'+
+        '<span class="prog-pct" style="min-width:40px;text-align:right;">'+(pct!==null?pct+'%':'~'+n)+'</span>'+
         '</div>'+
-        '<div class="prog-count">'+n+' corrigido(s)'+(total?' de '+total:'')+'</div>';
+        '<div class="prog-count">'+n+' corrigido(s)'+(total?' de '+total:' · sem turma cadastrada, valor estimado')+(media?' · média '+media:'')+'</div>';
     }).join('');
-    return'<div class="dash-card"><div class="dash-card-title">'+d.disc+'</div><div class="dash-card-mod">Módulo '+d.mod+'</div>'+bars+'</div>';
+    return'<div class="dash-card"><div class="dash-card-title">'+d.disc+'</div><div class="dash-card-mod">'+anoLabel(d.ano)+' · Módulo '+d.mod+'</div>'+bars+'</div>';
   }).join('');
-  pendEl.innerHTML=Object.entries(tree).map(([key,d])=>{
-    const [pMod,pDisc]=key.split('||');
-    const turma=turmaByKey(pMod,pDisc);
+  pendEl.innerHTML=entriesOrdenadas.map(([key,d])=>{
+    const turma=turmaByKey(d.mod,d.disc,d.ano);
     if(!turma||!turma.alunos.length){
-      return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">Módulo '+d.mod+'</span></div>'+
+      return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">'+anoLabel(d.ano)+' · Módulo '+d.mod+'</span></div>'+
         '<div style="font-size:12px;color:var(--muted);">Cadastre a turma para ver pendentes por aluno.</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'+
           ATV_TYPES.map(t=>{const ns=[...new Set(d.corrigidos[t])];return ns.length?'<div style="margin-bottom:8px;width:100%;"><div style="font-size:11px;color:'+CORES[t]+';font-weight:600;margin-bottom:5px;">'+t.charAt(0).toUpperCase()+t.slice(1)+' ('+ns.length+')</div><div class="pend-list">'+ns.map(n=>'<div class="pend-chip ok">✓ '+n+'</div>').join('')+'</div></div>':'';}).join('')+
@@ -1961,7 +2084,7 @@ function renderDashboard(){
       const kkey=key.replace(/\W/g,'_');
       return'<button class="pend-tab '+t+' '+(ti===0?'active':'')+'" onclick="switchPendTab(\''+kkey+'\','+JSON.stringify(ATV_TYPES)+',\''+t+'\',this)">'+t.charAt(0).toUpperCase()+t.slice(1)+(pendCnt>0?' <span style="background:rgba(239,68,68,0.2);color:var(--red);padding:1px 5px;border-radius:4px;font-size:10px;">'+pendCnt+'</span>':'')+'</button>';
     }).join('');
-    return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">Módulo '+d.mod+' · '+turma.alunos.length+' alunos</span></div><div class="pend-tabs">'+tabBtns+'</div>'+panes+'</div>';
+    return'<div class="pend-section"><div class="pend-disc-title">'+d.disc+' <span style="font-size:10px;color:var(--muted);font-weight:400;">'+anoLabel(d.ano)+' · Módulo '+d.mod+' · '+turma.alunos.length+' alunos</span></div><div class="pend-tabs">'+tabBtns+'</div>'+panes+'</div>';
   }).join('');
 }
 
@@ -1974,46 +2097,52 @@ function switchPendTab(key,types,tipo,btn){
 function renderSidebar(){
   const el=document.getElementById('sb-body');
   if(!sessions.length){el.innerHTML='<div class="sb-empty">Nenhuma correção ainda.</div>';return;}
-  const byMod={};
+  const byAno={};
   sessions.slice().reverse().forEach(s=>{
+    const anoKey=anoLabel(s.ano);
     const mod=safeText(s.modulo,'Sem módulo');
-    if(!byMod[mod]) byMod[mod]={total:0,items:{}};
-    byMod[mod].total += Number(s.total)||0;
+    if(!byAno[anoKey]) byAno[anoKey]={};
+    if(!byAno[anoKey][mod]) byAno[anoKey][mod]={total:0,items:{}};
+    byAno[anoKey][mod].total += Number(s.total)||0;
     safeArray(s.groups).forEach(g=>{
-      const disc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'));
+      const disc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'),s.ano);
       const atividades=g?.atividades||{};
       ['entender','delinear','criar','complementar'].forEach(tipo=>{
         safeArray(atividades[tipo]).forEach(r=>{
           const key=`${disc}||${tipo}`;
-          if(!byMod[mod].items[key]) byMod[mod].items[key]={disc,tipo,rows:[],latestSid:0,latestData:'',latestHora:''};
-          byMod[mod].items[key].rows.push({...r,_sessaoData:s.data,_sessaoHora:s.hora,_sessaoId:s.id,_disc:disc,_tKey:tipo});
-          if((s.id||0) >= (byMod[mod].items[key].latestSid||0)){
-            byMod[mod].items[key].latestSid=s.id||0;
-            byMod[mod].items[key].latestData=s.data||'';
-            byMod[mod].items[key].latestHora=s.hora||'';
+          if(!byAno[anoKey][mod].items[key]) byAno[anoKey][mod].items[key]={disc,tipo,rows:[],latestSid:0,latestData:'',latestHora:''};
+          byAno[anoKey][mod].items[key].rows.push({...r,_sessaoData:s.data,_sessaoHora:s.hora,_sessaoId:s.id,_disc:disc,_tKey:tipo,_ano:s.ano});
+          if((s.id||0) >= (byAno[anoKey][mod].items[key].latestSid||0)){
+            byAno[anoKey][mod].items[key].latestSid=s.id||0;
+            byAno[anoKey][mod].items[key].latestData=s.data||'';
+            byAno[anoKey][mod].items[key].latestHora=s.hora||'';
           }
         });
       });
     });
   });
-  el.innerHTML=Object.entries(byMod).map(([mod,pack])=>{
-    const cards=Object.values(pack.items)
-      .sort((a,b)=>a.disc.localeCompare(b.disc,'pt-BR')||a.tipo.localeCompare(b.tipo))
-      .map(item=>{
-        const rows=item.rows.sort((a,b)=>(b._sessaoId||0)-(a._sessaoId||0));
-        const tooltip=`${item.disc} · ${displayTipo(item.tipo)} · ${rows.length} correção(ões) · última: ${item.latestData}${item.latestHora?' '+item.latestHora:''}`;
-        return `<div class="sb-disc ${cur&&cur._groupKey===`${mod}||${item.disc}||${item.tipo}`?'active':''}" title="${safeText(tooltip)}" onclick="loadGroupedActivity('${String(mod).replace(/'/g,"\'")}','${String(item.disc).replace(/'/g,"\'")}','${String(item.tipo).replace(/'/g,"\'")}')"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${item.disc} · ${displayTipo(item.tipo)}</span><span class="sb-mod-badge">${rows.length}</span></div>`;
-      }).join('');
-    return `<div class="sb-mod"><div class="sb-mod-hdr open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${pack.total}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:block;">${cards||'<div class="sb-empty">Sem correções listáveis.</div>'}</div></div>`;
+  el.innerHTML=Object.entries(byAno).sort().map(([ano,byMod])=>{
+    const modBlocks=Object.entries(byMod).map(([mod,pack])=>{
+      const cards=Object.values(pack.items)
+        .sort((a,b)=>a.disc.localeCompare(b.disc,'pt-BR')||a.tipo.localeCompare(b.tipo))
+        .map(item=>{
+          const rows=item.rows.sort((a,b)=>(b._sessaoId||0)-(a._sessaoId||0));
+          const tooltip=`${item.disc} · ${displayTipo(item.tipo)} · ${rows.length} correção(ões) · última: ${item.latestData}${item.latestHora?' '+item.latestHora:''}`;
+          return `<div class="sb-disc ${cur&&cur._groupKey===`${mod}||${item.disc}||${item.tipo}`?'active':''}" title="${safeText(tooltip)}" onclick="loadGroupedActivity('${String(mod).replace(/'/g,"\'")}','${String(item.disc).replace(/'/g,"\'")}','${String(item.tipo).replace(/'/g,"\'")}','${String(ano).replace(/'/g,"\'")}')"><div class="sb-dot"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${item.disc} · ${displayTipo(item.tipo)}</span><span class="sb-mod-badge">${rows.length}</span></div>`;
+        }).join('');
+      return `<div class="sb-mod"><div class="sb-mod-hdr" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span>Módulo ${mod}</span><span style="display:flex;align-items:center;gap:6px;"><span class="sb-mod-badge">${pack.total}</span><button class="btn-sm red" style="padding:2px 6px;font-size:10px;" title="Excluir todo o módulo" onclick="event.stopPropagation();delModulo('${String(mod).replace(/'/g,"\'")}','${String(ano).replace(/'/g,"\'")}')">✕</button></span></div><div class="sb-disc-list" style="display:none;">${cards||'<div class="sb-empty">Sem correções listáveis.</div>'}</div></div>`;
+    }).join('');
+    return `<div class="sb-ano"><div class="sb-mod-hdr" style="background:var(--bg2,rgba(255,255,255,.03));" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'"><span style="font-weight:700;">${ano}</span></div><div style="display:none;">${modBlocks}</div></div>`;
   }).join('');
 }
-function loadGroupedActivity(mod,disc,tipo){
+function loadGroupedActivity(mod,disc,tipo,ano){
   const rows=[];
   let latestSid=0, latestData='', latestHora='';
   sessions.forEach(s=>{
     if(safeText(s.modulo,'')!==safeText(mod,'')) return;
+    if(ano && !anoMatches(s.ano,ano)) return;
     safeArray(s.groups).forEach(g=>{
-      const gDisc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'));
+      const gDisc=canonicalDiscLabel(mod,safeText(g?.disciplina,'Sem disciplina'),s.ano);
       if(gDisc!==disc) return;
       safeArray(g?.atividades?.[tipo]).forEach(r=>rows.push({...r,_sessaoData:s.data,_sessaoHora:s.hora,_sessaoId:s.id,_disc:disc,_tKey:tipo}));
       if(s.id>latestSid){latestSid=s.id;latestData=s.data||'';latestHora=s.hora||'';}
@@ -2047,12 +2176,13 @@ async function delSess(id){
   if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
   toast('Correção excluída.','ok');
 }
-async function delModulo(mod){
-  if(!confirm('Excluir todas as correções do Módulo '+mod+'?'))return;
-  const toDelete=sessions.filter(s=>String(s.modulo)===String(mod));
+async function delModulo(mod,ano){
+  if(!confirm('Excluir todas as correções do '+(ano?ano+' — ':'')+'Módulo '+mod+'?'))return;
+  const toDelete=sessions.filter(s=>String(s.modulo)===String(mod)&&(!ano||anoMatches(s.ano,ano)));
   for(const s of toDelete) await sbDelete('sessoes',s.id);
-  sessions=sessions.filter(s=>String(s.modulo)!==String(mod));
-  if(cur&&String(cur.modulo)===String(mod))cur=null;
+  const idsToDelete=new Set(toDelete.map(s=>s.id));
+  sessions=sessions.filter(s=>!idsToDelete.has(s.id));
+  if(cur&&idsToDelete.has(cur.id))cur=null;
   renderSidebar();
   renderHistory();
   if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
@@ -2060,39 +2190,74 @@ async function delModulo(mod){
   toast('Módulo excluído.','ok');
 }
 function clearHistFiltros(){
+  const z=document.getElementById('hist-filter-ano');if(z)z.value='';
   const m=document.getElementById('hist-filter-mod');if(m)m.value='';
   const d=document.getElementById('hist-filter-disc');if(d)d.value='';
+  const t=document.getElementById('hist-filter-tipo');if(t)t.value='';
   renderHistory();
+}
+function distribuicaoHtml(notas,esc){
+  if(!notas.length) return '';
+  const faixaMax=esc||10;
+  const faixas=[
+    {label:'0-'+Math.round(faixaMax*0.4),min:0,max:faixaMax*0.4,cor:'var(--red)'},
+    {label:Math.round(faixaMax*0.4)+'-'+Math.round(faixaMax*0.6),min:faixaMax*0.4,max:faixaMax*0.6,cor:'var(--yellow)'},
+    {label:Math.round(faixaMax*0.6)+'-'+Math.round(faixaMax*0.8),min:faixaMax*0.6,max:faixaMax*0.8,cor:'#4f7cff'},
+    {label:Math.round(faixaMax*0.8)+'-'+faixaMax,min:faixaMax*0.8,max:faixaMax+0.001,cor:'var(--green)'}
+  ];
+  const counts=faixas.map(f=>notas.filter(n=>n>=f.min&&n<f.max).length);
+  const maxCount=Math.max(...counts,1);
+  return '<div style="display:flex;align-items:flex-end;gap:4px;height:34px;margin-top:6px;">'+
+    faixas.map((f,i)=>`<div title="${f.label}: ${counts[i]} aluno(s)" style="flex:1;height:${Math.max(4,Math.round(counts[i]/maxCount*34))}px;background:${f.cor};border-radius:2px;opacity:${counts[i]?1:0.15};"></div>`).join('')+
+    '</div><div style="display:flex;gap:4px;font-size:9px;color:var(--muted2);font-family:\'DM Mono\',monospace;margin-top:2px;">'+
+    faixas.map(f=>`<div style="flex:1;text-align:center;">${f.label}</div>`).join('')+'</div>';
 }
 function renderHistory(){
   const el=document.getElementById('hist-body');
   if(!sessions.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Histórico vazio</div></div>`;return;}
 
+  const anoSel=document.getElementById('hist-filter-ano');
   const modSel=document.getElementById('hist-filter-mod');
   const discSel=document.getElementById('hist-filter-disc');
+  const tipoSel=document.getElementById('hist-filter-tipo');
+  const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const allMods=[...new Set(sessions.map(s=>String(s.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const allMods=[...new Set(sessions.filter(s=>anoMatches(s.ano,fano)).map(s=>String(s.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){modSel.innerHTML='<option value="">Todos</option>'+allMods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');}
   const fmod=normPlain(modSel?.value||'');
-  const allDiscs=[...new Set(sessions.filter(s=>!fmod||normPlain(s.modulo)===fmod).flatMap(s=>safeArray(s.groups).map(g=>g.disciplina)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const allDiscs=[...new Set(sessions.filter(s=>(!fmod||normPlain(s.modulo)===fmod)&&anoMatches(s.ano,fano)).flatMap(s=>safeArray(s.groups).map(g=>g.disciplina)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){discSel.innerHTML='<option value="">Todas</option>'+allDiscs.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');}
   const fdisc=normPlain(discSel?.value||'');
+  const ftipo=normPlain(tipoSel?.value||'');
 
   const tree={};
   sessions.forEach(s=>{
     if(fmod&&normPlain(s.modulo)!==fmod)return;
+    if(!anoMatches(s.ano,fano))return;
+    const ak=anoLabel(s.ano);
     safeArray(s.groups).forEach(g=>{
       if(fdisc&&normPlain(g.disciplina)!==fdisc)return;
-      if(!tree[s.modulo])tree[s.modulo]={};
-      if(!tree[s.modulo][g.disciplina])tree[s.modulo][g.disciplina]={criar:{rs:[],sessoes:new Set()},delinear:{rs:[],sessoes:new Set()},entender:{rs:[],sessoes:new Set()},escala:10};
-      ATV_TYPES.forEach(t=>{(g.atividades[t]||[]).forEach(r=>{tree[s.modulo][g.disciplina][t].rs.push({...r,_sessaoData:s.data});tree[s.modulo][g.disciplina][t].sessoes.add(s.id);if(r.escala_maxima)tree[s.modulo][g.disciplina].escala=r.escala_maxima;});});
+      if(!tree[ak])tree[ak]={};
+      if(!tree[ak][s.modulo])tree[ak][s.modulo]={};
+      if(!tree[ak][s.modulo][g.disciplina])tree[ak][s.modulo][g.disciplina]={criar:{rs:[],sessoes:new Set()},delinear:{rs:[],sessoes:new Set()},entender:{rs:[],sessoes:new Set()},complementar:{rs:[],sessoes:new Set()},escala:10};
+      ATV_TYPES.forEach(t=>{
+        if(ftipo&&t!==ftipo)return;
+        (g.atividades[t]||[]).forEach(r=>{tree[ak][s.modulo][g.disciplina][t].rs.push({...r,_sessaoData:s.data});tree[ak][s.modulo][g.disciplina][t].sessoes.add(s.id);if(r.escala_maxima)tree[ak][s.modulo][g.disciplina].escala=r.escala_maxima;});
+      });
     });
   });
   if(!Object.keys(tree).length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum resultado encontrado com os filtros atuais.</div>';return;}
-  // Só expande automaticamente o bloco da disciplina quando ela é filtrada especificamente.
+  // Só expande automaticamente quando um filtro específico restringe a lista.
+  const anoOpen=!!fano;
   const shouldOpen=!!fdisc;
-  el.innerHTML=Object.entries(tree).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="event.preventDefault();event.stopPropagation();exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<details class="h-disc-block" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s) · clique para ${shouldOpen?'recolher':'expandir'}</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></summary><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></details>`;}).join('')}</div>`).join('');
+  el.innerHTML=Object.entries(tree).sort().map(([ano,byMod])=>`
+    <details class="fcard" style="margin-bottom:14px;" ${anoOpen?'open':''}>
+      <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano} <span style="font-size:10px;color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0;">· clique para ${anoOpen?'recolher':'expandir'}</span></summary>
+      <div style="margin-top:10px;">
+        ${Object.entries(byMod).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${distribuicaoHtml(ns,esc)}${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="event.preventDefault();event.stopPropagation();exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<details class="h-disc-block" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s) · clique para ${shouldOpen?'recolher':'expandir'}</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></summary><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></details>`;}).join('')}</div>`).join('')}
+      </div>
+    </details>`).join('');
 }
 async function delDisc(mod,disc){
   if(!confirm(`Excluir "${disc}" do Módulo ${mod}?`))return;
@@ -2110,8 +2275,9 @@ function editarSessaoDisc(mod,disc){
   toast('Sessão carregada — edite nome ou disciplina nos resultados.','ok');
 }
 async function uploadGabaritos(e){
+  const ano=(document.getElementById('gab-ano')?.value||'').trim();
   const modulo=document.getElementById('gab-modulo').value.trim();
-  if(!modulo){toast('Informe o módulo.','err');e.target.value='';return;}
+  if(!ano||!modulo){toast('Informe Ano e módulo.','err');e.target.value='';return;}
   const files=Array.from(e.target.files);const prog=document.getElementById('upload-gab-progress');prog.style.color='var(--muted2)';
   let ok=0, falhas=[];
   for(const f of files){
@@ -2121,6 +2287,7 @@ async function uploadGabaritos(e){
       await stUpload(path,f);
       let salvo=false, ultimoErro='';
       const tentativas=[
+        {id:path,nome:f.name,modulo,ano,tamanho:f.size,tipo_mime:f.type||'application/pdf'},
         {id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'},
         {id:path,nome:f.name,modulo,tamanho:f.size},
         {id:path,nome:f.name,modulo}
@@ -2137,7 +2304,7 @@ async function uploadGabaritos(e){
       if(!salvo){
         throw new Error(`arquivo enviado ao storage, mas falhou ao registrar metadata: ${ultimoErro}`);
       }
-      const meta={id:path,nome:f.name,modulo,tamanho:f.size,tipo_mime:f.type||'application/pdf'};
+      const meta={id:path,nome:f.name,modulo,ano,tamanho:f.size,tipo_mime:f.type||'application/pdf'};
       if(!gabListCache.find(g=>g.id===path)) gabListCache.push(meta);
       ok++;
       prog.style.color='var(--green)';
@@ -2161,11 +2328,19 @@ async function uploadGabaritos(e){
 }
 function renderGabList(){
   const el=document.getElementById('gab-list');if(!el)return;
+  const fano=document.getElementById('gab-filter-ano')?.value||'';
   const filter=document.getElementById('gab-filter')?document.getElementById('gab-filter').value.trim().toLowerCase():'';
-  const list=filter?gabListCache.filter(g=>g.modulo.toLowerCase().includes(filter)):gabListCache;
+  const list=gabListCache.filter(g=>anoMatches(g.ano,fano)&&(!filter||g.modulo.toLowerCase().includes(filter)));
   if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum gabarito salvo ainda.</div>';return;}
-  const byMod={};list.forEach(g=>{if(!byMod[g.modulo])byMod[g.modulo]=[];byMod[g.modulo].push(g);});
-  el.innerHTML=Object.entries(byMod).sort().map(([mod,gs])=>`<div style="margin-bottom:14px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:7px;">Módulo ${mod}</div>${gs.map(g=>`<div class="gab-row"><span>${g.tipo_mime==='application/pdf'?'📄':'📝'}</span><span class="gab-row-name" title="${g.nome}">${g.nome}</span><span class="gab-row-mod">Mod. ${g.modulo}</span><span class="gab-row-size">${(g.tamanho/1024).toFixed(0)}kb</span><button class="btn-sm red" onclick="delGab('${g.id.replace(/'/g,"\\'")}','${g.nome.replace(/'/g,"\\'")}')">✕</button></div>`).join('')}</div>`).join('');
+  const anoOpen=!!fano;
+  const byAno={};list.forEach(g=>{const ak=anoLabel(g.ano);if(!byAno[ak])byAno[ak]={};if(!byAno[ak][g.modulo])byAno[ak][g.modulo]=[];byAno[ak][g.modulo].push(g);});
+  el.innerHTML=Object.entries(byAno).sort().map(([ano,byMod])=>`
+    <details class="fcard" style="margin-bottom:12px;" ${anoOpen?'open':''}>
+      <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano} <span style="font-size:10px;color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0;">· clique para ${anoOpen?'recolher':'expandir'}</span></summary>
+      <div style="margin-top:10px;">
+        ${Object.entries(byMod).sort().map(([mod,gs])=>`<div style="margin-bottom:14px;"><div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:7px;">Módulo ${mod}</div>${gs.map(g=>`<div class="gab-row"><span>${g.tipo_mime==='application/pdf'?'📄':'📝'}</span><span class="gab-row-name" title="${g.nome}">${g.nome}</span><span class="gab-row-mod">Mod. ${g.modulo}</span><span class="gab-row-size">${(g.tamanho/1024).toFixed(0)}kb</span><button class="btn-sm red" onclick="delGab('${g.id.replace(/'/g,"\\'")}','${g.nome.replace(/'/g,"\\'")}')">✕</button></div>`).join('')}</div>`).join('')}
+      </div>
+    </details>`).join('');
 }
 async function delGab(path,nome){
   if(!confirm(`Excluir "${nome}"?`))return;
@@ -2177,10 +2352,12 @@ async function delGab(path,nome){
 function clearCriterioForm(){
   editingCriterioId=null;
   ['crit-modulo','crit-disciplina','crit-texto'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const ano=document.getElementById('crit-ano'); if(ano) ano.value='';
   const tipo=document.getElementById('crit-tipo'); if(tipo) tipo.value='entender';
   const msg=document.getElementById('crit-msg'); if(msg){ msg.style.color='var(--muted2)'; msg.textContent='Formulário limpo.'; }
 }
 function clearCriteriosFilters(){
+  const z=document.getElementById('crit-filter-ano'); if(z) z.value='';
   const a=document.getElementById('crit-filter-mod'); if(a) a.value='';
   const b=document.getElementById('crit-filter-disc'); if(b) b.value='';
   const c=document.getElementById('crit-filter-tipo'); if(c) c.value='';
@@ -2189,6 +2366,7 @@ function clearCriteriosFilters(){
 function loadCriterioFixo(id){
   const c=criteriosFixos.find(x=>x.id===id); if(!c) return;
   editingCriterioId=id;
+  const ano=document.getElementById('crit-ano'); if(ano) ano.value=c.ano||'';
   document.getElementById('crit-modulo').value=c.modulo||'';
   document.getElementById('crit-disciplina').value=c.disciplina||'';
   document.getElementById('crit-tipo').value=c.tipo||'entender';
@@ -2198,22 +2376,27 @@ function loadCriterioFixo(id){
   document.getElementById('panel-criterios').scrollTo({top:0,behavior:'smooth'});
 }
 async function saveCriterioFixo(){
+  const ano=(document.getElementById('crit-ano')?.value||'').trim();
   const modulo=document.getElementById('crit-modulo').value.trim();
   const disciplina=document.getElementById('crit-disciplina').value.trim();
   const tipo=document.getElementById('crit-tipo').value.trim();
   const texto=document.getElementById('crit-texto').value.trim();
   const msg=document.getElementById('crit-msg');
-  if(!modulo||!disciplina||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha módulo, disciplina, tipo e critérios.';return;}
-  const newId=criterioId(modulo,disciplina,tipo);
+  if(!ano||!modulo||!disciplina||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha Ano, módulo, disciplina, tipo e critérios.';return;}
+  // Reaproveita um critério legado (cadastrado antes do campo Ano existir) com mesmo módulo+disciplina+tipo,
+  // em vez de criar um registro duplicado.
+  const legado=!editingCriterioId && criteriosFixos.find(c=>!c.ano && normPlain(c.modulo)===normPlain(modulo) && normPlain(c.disciplina)===normPlain(disciplina) && normPlain(c.tipo)===normPlain(tipo));
+  const baseId=criterioId(modulo,disciplina,tipo);
+  const newId=(editingCriterioId&&criteriosFixos.some(c=>c.id===editingCriterioId))?editingCriterioId:(legado?legado.id:baseId);
   const oldId=editingCriterioId;
-  const row={id:newId,modulo,disciplina,tipo,texto,updated_at:new Date().toISOString()};
+  const row={id:newId,ano,modulo,disciplina,tipo,texto,updated_at:new Date().toISOString()};
   try{
     await sbUpsert('criterios_fixos',row);
     const idx=criteriosFixos.findIndex(c=>c.id===row.id);
     if(idx>=0) criteriosFixos[idx]=row; else criteriosFixos.push(row);
     editingCriterioId=row.id;
     msg.style.color='var(--green)';
-    msg.textContent=(oldId&&oldId!==newId)?'✓ Critério salvo como novo tipo sem sobrescrever o anterior.':'✓ Critério salvo com sucesso.';
+    msg.textContent=(oldId&&oldId!==newId&&oldId!==baseId)?'✓ Critério salvo como novo tipo sem sobrescrever o anterior.':'✓ Critério salvo com sucesso.';
     renderCriteriosList();syncNovaCriteriaContext();checkReady();
   }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
 }
@@ -2229,25 +2412,27 @@ function renderCriteriosList(){
   const tipoSel=document.getElementById('crit-filter-tipo');
   const discSel=document.getElementById('crit-filter-disc');
   const summary=document.getElementById('crit-list-summary');
+  const anoSel=document.getElementById('crit-filter-ano');
 
+  const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const mods=[...new Set(criteriosFixos.map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const mods=[...new Set(criteriosFixos.filter(c=>anoMatches(c.ano,fano)).map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){
     modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
   }
 
   const fmod=normPlain(modSel?.value||'');
   const ftipo=normPlain(tipoSel?.value||'');
-  const discOptions=[...new Set(criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo)===fmod)).map(c=>String(c.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const discOptions=[...new Set(criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&anoMatches(c.ano,fano)).map(c=>String(c.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){
     discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
   }
   const fdisc=normPlain(discSel?.value||'');
 
   const list=criteriosFixos
-    .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina)===fdisc)&&(!ftipo||normPlain(c.tipo)===ftipo))
-    .sort((a,b)=>`${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
+    .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina)===fdisc)&&(!ftipo||normPlain(c.tipo)===ftipo)&&anoMatches(c.ano,fano))
+    .sort((a,b)=>`${a.ano||''} ${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.ano||''} ${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
 
   if(summary){
     summary.textContent=list.length?`${list.length} critério(s) encontrado(s).`:'Nenhum critério encontrado com os filtros atuais.';
@@ -2256,21 +2441,27 @@ function renderCriteriosList(){
 
   const grouped={};
   list.forEach(c=>{
+    const ak=anoLabel(c.ano);
     const mk=String(c.modulo||'—');
     const dk=String(c.disciplina||'Sem disciplina');
-    if(!grouped[mk]) grouped[mk]={};
-    if(!grouped[mk][dk]) grouped[mk][dk]=[];
-    grouped[mk][dk].push(c);
+    if(!grouped[ak]) grouped[ak]={};
+    if(!grouped[ak][mk]) grouped[ak][mk]={};
+    if(!grouped[ak][mk][dk]) grouped[ak][mk][dk]=[];
+    grouped[ak][mk][dk].push(c);
   });
 
-  // Só abre automaticamente quando um filtro específico (disciplina ou tipo) restringe a lista.
-  // Sem filtro, tudo fica minimizado para não poluir a tela com o texto completo de cada critério.
+  // Só abre automaticamente quando um filtro específico restringe a lista — sem filtro, tudo
+  // fica minimizado para não poluir a tela com o texto completo de cada critério.
+  const anoOpen=!!fano;
   const discOpen=!!fdisc;
   const itemOpen=!!(fdisc&&ftipo);
 
-  el.innerHTML=Object.entries(grouped).map(([mod,discs])=>{
-    return `<div style="margin-bottom:18px;">
-      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px;">Módulo ${mod}</div>
+  el.innerHTML=Object.entries(grouped).sort().map(([ano,mods])=>`
+    <details class="fcard" style="margin-bottom:14px;" ${anoOpen?'open':''}>
+      <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano} <span style="font-size:10px;color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0;">· clique para ${anoOpen?'recolher':'expandir'}</span></summary>
+      <div style="margin-top:10px;">
+        ${Object.entries(mods).sort().map(([mod,discs])=>`<div style="margin-bottom:18px;">
+      <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>
       ${Object.entries(discs).map(([disc,items])=>`
         <details class="fcard" style="padding:14px 16px;" ${discOpen?'open':''}>
           <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -2293,8 +2484,9 @@ function renderCriteriosList(){
             </details>`).join('')}
           </div>
         </details>`).join('')}
-    </div>`;
-  }).join('');
+    </div>`).join('')}
+      </div>
+    </details>`).join('');
 }
 function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo!==mod)return;safeArray(s.groups).forEach(g=>{if(g.disciplina!==disc)return;safeArray(g?.atividades?.[tipo]).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
 function exportMesclado(mod,disc,tipo){
@@ -2344,13 +2536,94 @@ function goTab(tab){
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   const panelId=tab==='resultados'?'results':tab;
   document.getElementById('panel-'+panelId).classList.add('active');
-  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,criterios:4,historico:5,config:6}[tab];
+  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,criterios:4,historico:5,config:6,migracao:7}[tab];
   if(idx>=0)document.querySelectorAll('.tbtn')[idx].classList.add('active');
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
   if(tab==='gabaritos')renderGabList();
   if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();}
   if(tab==='turmas')renderTurmasList();
+  if(tab==='migracao')renderMigracao();
+}
+// Verifica se existem registros legados (sem Ano definido) e mostra/esconde a aba de migração.
+function updateMigracaoTabVisibility(){
+  const btn=document.getElementById('tbtn-migracao');
+  if(!btn)return;
+  const temLegado = turmas.some(t=>!t.ano) || criteriosFixos.some(c=>!c.ano) || gabListCache.some(g=>!g.ano) || sessions.some(s=>!s.ano);
+  btn.style.display = temLegado ? '' : 'none';
+}
+// Lista, por módulo, todos os registros legados (sem Ano) agrupados — turmas, critérios,
+// gabaritos e sessões — para que o Ano seja definido uma vez por módulo e aplicado em lote.
+function renderMigracao(){
+  const el=document.getElementById('migracao-body'); if(!el) return;
+  const mods=new Set();
+  turmas.forEach(t=>{if(!t.ano)mods.add(String(t.modulo||'—'));});
+  criteriosFixos.forEach(c=>{if(!c.ano)mods.add(String(c.modulo||'—'));});
+  gabListCache.forEach(g=>{if(!g.ano)mods.add(String(g.modulo||'—'));});
+  sessions.forEach(s=>{if(!s.ano)mods.add(String(s.modulo||'—'));});
+  if(!mods.size){
+    el.innerHTML='<div class="fcard"><div style="color:var(--green);font-size:14px;">✓ Nenhum registro pendente de migração. Todos os módulos já têm Ano definido.</div></div>';
+    updateMigracaoTabVisibility();
+    return;
+  }
+  el.innerHTML=[...mods].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true})).map(mod=>{
+    const nT=turmas.filter(t=>!t.ano&&String(t.modulo||'—')===mod).length;
+    const nC=criteriosFixos.filter(c=>!c.ano&&String(c.modulo||'—')===mod).length;
+    const nG=gabListCache.filter(g=>!g.ano&&String(g.modulo||'—')===mod).length;
+    const nS=sessions.filter(s=>!s.ano&&String(s.modulo||'—')===mod).length;
+    const selId='migr-ano-'+mod.replace(/\W/g,'_');
+    return `<div class="fcard" style="padding:16px 18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">Módulo ${mod}</div>
+          <div style="font-size:12px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:4px;">${nT} turma(s) · ${nC} critério(s) · ${nG} gabarito(s) · ${nS} sessão(ões) de correção sem Ano</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select class="finput mod" id="${selId}" style="width:130px;">
+            <option value="">Escolher Ano</option>
+            <option value="Ano 1">Ano 1</option>
+            <option value="Ano 2">Ano 2</option>
+            <option value="Ano 3">Ano 3</option>
+            <option value="Ano 4">Ano 4</option>
+          </select>
+          <button class="btn accent" onclick="aplicarMigracaoAno('${mod.replace(/'/g,"\\'")}','${selId}')">Aplicar a este módulo</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function aplicarMigracaoAno(mod,selId){
+  const sel=document.getElementById(selId);
+  const ano=sel?.value||'';
+  if(!ano){toast('Escolha um Ano antes de aplicar.','err');return;}
+  if(!confirm(`Aplicar "${ano}" a todos os registros sem Ano do Módulo ${mod}?`))return;
+  let count=0;
+  for(const t of turmas.filter(x=>!x.ano&&String(x.modulo||'—')===mod)){
+    t.ano=ano;
+    await sbUpsert('turmas',{id:t.id,ano:t.ano,modulo:t.modulo,disciplina:t.disciplina,alunos:t.alunos});
+    count++;
+  }
+  for(const c of criteriosFixos.filter(x=>!x.ano&&String(x.modulo||'—')===mod)){
+    c.ano=ano;
+    await sbUpsert('criterios_fixos',{id:c.id,ano:c.ano,modulo:c.modulo,disciplina:c.disciplina,tipo:c.tipo,texto:c.texto,updated_at:new Date().toISOString()});
+    count++;
+  }
+  for(const g of gabListCache.filter(x=>!x.ano&&String(x.modulo||'—')===mod)){
+    g.ano=ano;
+    try{ await sbUpsert('gabaritos',{id:g.id,ano:g.ano,nome:g.nome,modulo:g.modulo,tamanho:g.tamanho,tipo_mime:g.tipo_mime}); }
+    catch(_e){ /* tabela pode não aceitar todos os campos; ano já ficou setado localmente */ }
+    count++;
+  }
+  for(const s of sessions.filter(x=>!x.ano&&String(x.modulo||'—')===mod)){
+    s.ano=ano;
+    await sbUpsert('sessoes',{id:s.id,modulo:s.modulo,ano:s.ano||null,data:s.data,hora:s.hora,total:s.total,groups:s.groups});
+    count++;
+  }
+  toast(`✓ ${count} registro(s) do Módulo ${mod} migrado(s) para ${ano}.`,'ok');
+  renderMigracao();
+  renderTurmasList();renderCriteriosList();renderGabList();renderHistory();renderSidebar();
+  if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
+  updateMigracaoTabVisibility();
 }
 function limparArquivosNova(){
   gabFiles=[];atvFiles=[];atvNomes=[];atvManualIdx=new Set();
