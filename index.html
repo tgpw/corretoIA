@@ -252,6 +252,17 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .nome-edit-pop.show{display:block;}
 .custo-real{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:4px 11px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;}
 .del-modal-bg{background:rgba(11,13,18,0.7);border-radius:11px;padding:20px;display:none;margin-top:10px;}
+.confirm-overlay{position:fixed;inset:0;background:rgba(11,13,18,0.75);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.confirm-overlay.show{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.confirm-box-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
+.confirm-box-sub{font-size:13px;color:var(--muted2);line-height:1.5;margin-bottom:18px;white-space:pre-line;}
+.confirm-box-btns{display:flex;gap:8px;justify-content:flex-end;}
+.disc-sug{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:60;display:none;min-width:220px;}
+.disc-sug.show{display:block;}
+.disc-sug-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);}
+.disc-sug-item:last-child{border-bottom:none;}
+.disc-sug-item:hover{background:var(--surface);}
 .del-modal-bg.show{display:block;}
 .del-modal{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:18px 20px;max-width:360px;}
 .del-modal-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px;}
@@ -276,6 +287,40 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 .api-row{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
 .api-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
 .api-row input:focus{border-color:var(--accent);}
+
+/* ===== Responsividade (tablet/mobile) ===== */
+#sb-toggle{display:none;}
+@media (max-width: 900px){
+  header{padding:0 12px;flex-wrap:wrap;height:auto;min-height:54px;padding-top:8px;padding-bottom:8px;gap:8px;}
+  .tnav{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;}
+  .tnav::-webkit-scrollbar{height:3px;}
+  .tbtn{white-space:nowrap;padding:6px 10px;}
+  #sb-toggle{display:inline-flex;align-items:center;gap:6px;}
+  .abody{position:relative;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:400;transform:translateX(-100%);transition:transform 0.25s ease;box-shadow:0 0 40px rgba(0,0,0,0.5);}
+  .sidebar.mobile-open{transform:translateX(0);}
+  .sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:399;}
+  .sidebar-scrim.show{display:block;}
+  .panel{padding:16px 14px;}
+  .ptitle{font-size:17px;}
+  .row-fields{gap:8px;}
+  .row-fields .finput,.row-fields select,.row-fields input{flex:1 1 auto;min-width:110px;}
+  .fcard{padding:14px 14px;}
+  .res-split{grid-template-columns:1fr;}
+  .h-atv-grid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));}
+  .dash-grid{grid-template-columns:1fr;}
+  .confirm-box{padding:18px 16px;}
+  .lbox2{min-width:0;width:100%;padding:28px 22px;}
+  table{display:block;overflow-x:auto;white-space:nowrap;}
+}
+@media (max-width: 520px){
+  .llogo{font-size:22px;}
+  .lbox{padding:32px 22px;}
+  .hlogo span{display:none;}
+  .cloud-badge{display:none;}
+  .tbtn{padding:6px 8px;font-size:11px;}
+  .scard{min-width:100px;}
+}
 </style>
 </head>
 <body>
@@ -293,7 +338,8 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
 <div id="app">
   <header>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div class="hlogo"><div class="ldot"></div>CorretoIA</div>
+      <button class="ghost" id="sb-toggle" onclick="toggleMobileSidebar()" title="Correções salvas">☰</button>
+      <div class="hlogo"><div class="ldot"></div><span>CorretoIA</span></div>
       <span class="cloud-badge">☁ nuvem</span>
     </div>
     <div class="tnav">
@@ -303,13 +349,17 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
       <button class="tbtn" onclick="goTab('gabaritos')">Gabaritos</button>
       <button class="tbtn" onclick="goTab('criterios')">Critérios</button>
       <button class="tbtn" onclick="goTab('historico')">Histórico</button>
+      <button class="tbtn" onclick="goTab('boletim')">👤 Aluno</button>
+      <button class="tbtn" onclick="goTab('cadastro')">📋 Cadastro</button>
       <button class="tbtn" onclick="goTab('config')">Config</button>
       <button class="tbtn" id="tbtn-migracao" onclick="goTab('migracao')" style="display:none;">⚠ Migração</button>
     </div>
+    <div id="usage-painel" style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;white-space:nowrap;cursor:pointer;" onclick="goTab('config')" title="Clique para ver detalhes e zerar o contador"></div>
     <button class="ghost" onclick="logout()">Sair</button>
   </header>
   <div class="abody">
-    <div class="sidebar">
+    <div class="sidebar-scrim" id="sidebar-scrim" onclick="toggleMobileSidebar(false)"></div>
+    <div class="sidebar" id="sidebar-main">
       <div class="sb-sec">Correções salvas</div>
       <div class="sb-body" id="sb-body"><div class="sb-empty">Carregando...</div></div>
     </div>
@@ -416,7 +466,10 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="t-modulo" placeholder="Ex: I">
             <span class="flabel">Disciplina</span>
-            <input class="finput disc" type="text" id="t-disciplina" placeholder="Ex: Cálculo III">
+            <span style="position:relative;display:inline-block;">
+              <input class="finput disc" type="text" id="t-disciplina" placeholder="Ex: Cálculo III" oninput="mostrarSugestoesDisciplina('t-disciplina')" onblur="setTimeout(()=>esconderSugestoesDisciplina('t-disciplina'),150)" autocomplete="off">
+              <div id="t-disciplina-sug" class="disc-sug"></div>
+            </span>
             <button class="btn" onclick="criarOuCarregarTurma()">Carregar / Criar</button>
           </div>
           <div id="turma-editor" style="display:none;">
@@ -548,7 +601,10 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
             <span class="flabel">Módulo</span>
             <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I">
             <span class="flabel">Disciplina</span>
-            <input class="finput disc" type="text" id="crit-disciplina" placeholder="Ex: Introdução a EaD">
+            <span style="position:relative;display:inline-block;">
+              <input class="finput disc" type="text" id="crit-disciplina" placeholder="Ex: Introdução a EaD" oninput="mostrarSugestoesDisciplina('crit-disciplina')" onblur="setTimeout(()=>esconderSugestoesDisciplina('crit-disciplina'),150)" autocomplete="off">
+              <div id="crit-disciplina-sug" class="disc-sug"></div>
+            </span>
             <span class="flabel">Tipo</span>
             <select class="finput mod" id="crit-tipo" style="width:140px;text-align:left;">
               <option value="entender">Entender</option>
@@ -666,9 +722,51 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <div id="res-turma-body"></div>
         </div>
       </div>
+      <div class="panel" id="panel-boletim">
+        <div class="ptitle">👤 Boletim do Aluno</div>
+        <p class="psub">Busque um aluno por nome para ver todas as correções dele, de todas as disciplinas, anos e módulos, em um só lugar.</p>
+        <div class="fcard">
+          <div style="position:relative;">
+            <input class="finput wide" type="text" id="boletim-busca" placeholder="Digite o nome do aluno..." oninput="renderBuscaAluno()" onblur="setTimeout(()=>{const el=document.getElementById('boletim-sugestoes');if(el)el.style.display='none';},150)" style="width:100%;max-width:420px;" autocomplete="off">
+            <div id="boletim-sugestoes" style="position:absolute;top:100%;left:0;right:0;max-width:420px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:260px;overflow-y:auto;z-index:50;display:none;"></div>
+          </div>
+        </div>
+        <div id="boletim-corpo"></div>
+      </div>
+      <div class="panel" id="panel-cadastro">
+        <div class="ptitle">📋 Cadastro Central</div>
+        <p class="psub">Cadastre aqui os nomes corretos de alunos e disciplinas uma única vez — o resto do sistema passa a sugerir e reaproveitar esses nomes, em vez de digitar de novo (e arriscar grafias diferentes) toda vez.</p>
+        <div class="fcard">
+          <div class="fcard-title">🧑‍🎓 Alunos</div>
+          <div class="row-fields" style="align-items:flex-start;">
+            <input class="finput wide" type="text" id="novo-aluno-cadastro" placeholder="Nome do aluno" style="min-width:220px;" onkeydown="if(event.key==='Enter')addAlunoCadastro()">
+            <button class="btn-sm accent" onclick="addAlunoCadastro()">+ Adicionar</button>
+          </div>
+          <div class="row-fields" style="align-items:flex-start;">
+            <textarea id="alunos-cadastro-bulk" class="finput wide" style="min-height:70px;font-family:'DM Mono',monospace;" placeholder="Ou cole vários nomes de uma vez — um por linha, ou separados por vírgula/ponto e vírgula."></textarea>
+          </div>
+          <div style="margin-bottom:12px;"><button class="btn-sm accent" onclick="addAlunosCadastroBulk()">+ Adicionar todos da lista</button></div>
+          <input class="finput mod" type="text" id="filtro-alunos-cadastro" placeholder="Buscar aluno cadastrado..." oninput="renderAlunosCadastro()" style="width:100%;max-width:280px;margin-bottom:10px;">
+          <div id="alunos-cadastro-list"></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-title">📚 Disciplinas</div>
+          <div class="row-fields">
+            <input class="finput wide" type="text" id="nova-disciplina-cadastro" placeholder="Nome da disciplina" style="min-width:220px;" onkeydown="if(event.key==='Enter')addDisciplinaCadastro()">
+            <button class="btn-sm accent" onclick="addDisciplinaCadastro()">+ Adicionar</button>
+          </div>
+          <div id="disciplinas-cadastro-list"></div>
+        </div>
+      </div>
       <div class="panel" id="panel-config">
         <div class="ptitle">Configurações</div>
         <p class="psub" style="margin-bottom:20px;">Gerencie senha, chave API e dados.</p>
+        <div class="scrd">
+          <h3>💰 Gasto Acumulado (estimado)</h3>
+          <p>Contador local baseado no consumo real de tokens de cada correção — não é o saldo oficial da Anthropic (isso só aparece em console.anthropic.com → Billing), mas ajuda a acompanhar o ritmo de consumo para saber quando recarregar.</p>
+          <div id="usage-painel-config" style="font-size:13px;line-height:1.6;margin-bottom:12px;"></div>
+          <button class="btn-o" onclick="zerarUsageTotals()">Zerar contador</button>
+        </div>
         <div class="scrd">
           <h3>🔑 Chave API Anthropic</h3>
           <p>Salva criptografada na nuvem — carrega automaticamente em qualquer computador.</p>
@@ -710,6 +808,16 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
 </div>
 <div id="loading"><div class="lbox2"><div class="spin"></div><div class="ltitle">Corrigindo atividades...</div><div class="lmsg" id="lmsg">Preparando</div><div class="lpbar"><div class="lbar" id="lbar"></div></div></div></div>
 <div class="toast" id="toast"></div>
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-box-title" id="confirm-box-title"></div>
+    <div class="confirm-box-sub" id="confirm-box-sub"></div>
+    <div class="confirm-box-btns">
+      <button class="btn-o" id="confirm-box-cancel">Cancelar</button>
+      <button class="btn red" id="confirm-box-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
 <script>
 const SB_URL='https://hvxwbbsozhwsxrnpfedb.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eHdiYnNvemh3c3hybnBmZWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzA2NTksImV4cCI6MjA4OTYwNjY1OX0.uCJk8HgnrkOkQHk4onA2WZRT42uqcrrU_LGM3j3QOtU';
@@ -725,7 +833,34 @@ function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.c
 function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
 const ATV_TYPES=['criar','delinear','entender','complementar'];
 const ANO_OPTIONS=['Ano 1','Ano 2','Ano 3','Ano 4'];
-let gabFiles=[],atvFiles=[],atvNomes=[],atvManualIdx=new Set(),sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
+let gabFiles=[],atvFiles=[],atvNomes=[],atvManualIdx=new Set(),sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],alunosCadastro=[],disciplinasCadastro=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
+let usageTotals={usd:0,tokIn:0,tokOut:0,tokCacheWrite:0,tokCacheRead:0,chamadas:0,since:''};
+const PRECOS={input:3,output:15,cacheWrite:3.75,cacheRead:0.30}; // USD por milhão de tokens (claude-sonnet-4-5)
+function custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead){
+  return (tokIn/1e6*PRECOS.input)+(tokOut/1e6*PRECOS.output)+(tokCacheWrite/1e6*PRECOS.cacheWrite)+(tokCacheRead/1e6*PRECOS.cacheRead);
+}
+async function registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead){
+  usageTotals.tokIn+=tokIn;usageTotals.tokOut+=tokOut;usageTotals.tokCacheWrite+=tokCacheWrite;usageTotals.tokCacheRead+=tokCacheRead;
+  usageTotals.usd+=custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead);
+  usageTotals.chamadas+=1;
+  if(!usageTotals.since) usageTotals.since=new Date().toISOString();
+  renderUsagePainel();
+  try{ await sbUpsert('config',{id:'usage_totals',valor:JSON.stringify(usageTotals)}); }catch(_e){ /* não bloqueia a correção se falhar */ }
+}
+function renderUsagePainel(){
+  const el=document.getElementById('usage-painel'); if(!el) return;
+  const desde=usageTotals.since?new Date(usageTotals.since).toLocaleDateString('pt-BR'):'-';
+  el.innerHTML=`💰 <b>$${usageTotals.usd.toFixed(2)}</b> · R$${(usageTotals.usd*5.80).toFixed(2)} gastos desde ${desde} (${usageTotals.chamadas} correção(ões))`;
+  const elCfg=document.getElementById('usage-painel-config');
+  if(elCfg) elCfg.innerHTML=`Total acumulado: <b>$${usageTotals.usd.toFixed(2)}</b> (R$${(usageTotals.usd*5.80).toFixed(2)}) desde ${desde}<br>${usageTotals.chamadas} correção(ões) · ${((usageTotals.tokIn+usageTotals.tokOut+usageTotals.tokCacheWrite+usageTotals.tokCacheRead)/1000).toFixed(1)}k tokens no total`;
+}
+async function zerarUsageTotals(){
+  if(!(await confirmarAcao('Zerar contador de gasto?','Isso não afeta seu saldo real na Anthropic, só o contador local deste painel.','Zerar')))return;
+  usageTotals={usd:0,tokIn:0,tokOut:0,tokCacheWrite:0,tokCacheRead:0,chamadas:0,since:''};
+  await sbUpsert('config',{id:'usage_totals',valor:JSON.stringify(usageTotals)});
+  renderUsagePainel();
+  toast('Contador de gasto zerado.','ok');
+}
 // Compara Ano entre um registro salvo e um filtro. Se qualquer um dos dois não tiver Ano definido
 // (dado legado, anterior à migração), o registro NÃO é escondido — evita sumir histórico antigo.
 function anoMatches(anoRegistro,anoFiltro){
@@ -813,6 +948,7 @@ function getCriterioSelecionadoNova(){
 }
 function getDisciplinasCatalogo(mod='',ano=''){
   const itens=[];
+  disciplinasCadastro.forEach(d=>{if(d.nome) itens.push(d.nome);}); // sempre disponíveis, independente de módulo/ano (útil p/ reoferta)
   criteriosFixos.forEach(c=>{if((!mod||normPlain(c.modulo)===normPlain(mod))&&anoMatches(c.ano,ano)) itens.push(c.disciplina);});
   turmas.forEach(t=>{if((!mod||normPlain(t.modulo)===normPlain(mod))&&anoMatches(t.ano,ano)) itens.push(t.disciplina);});
   gabListCache.forEach(g=>{if((!mod||normPlain(g.modulo)===normPlain(mod))&&anoMatches(g.ano,ano)) itens.push((g.disciplina||'').trim());});
@@ -897,6 +1033,13 @@ async function loadCloud(pw){
   turmas=trows.map(r=>({id:r.id,ano:r.ano||'',modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina,r.ano),alunos:r.alunos||[]}));
   gabListCache=await sbGetAll('gabaritos');
   try{criteriosFixos=await sbGetAll('criterios_fixos');}catch(_e){criteriosFixos=[];}
+  try{alunosCadastro=await sbGetAll('alunos_cadastro');}catch(_e){alunosCadastro=[];}
+  try{disciplinasCadastro=await sbGetAll('disciplinas_cadastro');}catch(_e){disciplinasCadastro=[];}
+  try{
+    const usageRow=await sbGet('config','usage_totals');
+    if(usageRow&&usageRow.valor) usageTotals=Object.assign(usageTotals,JSON.parse(usageRow.valor));
+  }catch(_e){ /* mantém zerado se ainda não existir */ }
+  renderUsagePainel();
   renderSidebar();
   renderCriteriosList();
   syncNovaCriteriaContext();
@@ -921,6 +1064,22 @@ function getKey(){const v=document.getElementById('apikey').value.trim();if(v)lo
 function getMod(){return document.getElementById('modulo').value.trim();}
 function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
 function namesMatch(a,b){const na=normalizeName(a), nb=normalizeName(b); if(!na||!nb) return false; return na===nb || na.includes(nb) || nb.includes(na);}
+// Verifica se um aluno já tem uma correção salva para a mesma combinação Ano+Módulo+Disciplina+Tipo,
+// para evitar que reenvios/duplicidades inflem a média da turma sem o professor perceber.
+function alunoJaCorrigido(nome,ano,mod,disc,tipo){
+  if(!nome) return null;
+  for(const s of sessions){
+    if(String(s.modulo||'')!==String(mod)) continue;
+    if(!anoMatches(s.ano,ano)) continue;
+    for(const g of safeArray(s.groups)){
+      if(!namesMatch(g.disciplina,disc)) continue;
+      const rows=safeArray(g.atividades?.[tipo]);
+      const found=rows.find(r=>namesMatch(r.nome_aluno,nome));
+      if(found) return {sessaoId:s.id,data:s.data,row:found};
+    }
+  }
+  return null;
+}
 function getTurmaAtualNova(){
   const mod=getMod();
   const ano=getAno();
@@ -972,7 +1131,7 @@ function renderChips(id,files,fn){
         nomeField='<select class="finput" onchange="if(this.value===\'__outro__\'){toggleAtvManual('+i+',true);}else{updateAtvNome('+i+',this.value);}" style="font-size:11px;padding:4px 8px;width:240px;margin:0 4px;">'+opts+'</select>';
       }else{
         const backLink=alunosNova.length?'<span style="font-size:10px;color:var(--accent);cursor:pointer;margin-left:4px;white-space:nowrap;" onclick="toggleAtvManual('+i+',false)">↩ usar lista da turma</span>':'';
-        nomeField='<input class="finput" type="text" placeholder="Nome do aluno" value="'+nome+'" oninput="updateAtvNome('+i+',this.value)" style="font-size:11px;padding:4px 8px;width:170px;margin:0 4px;">'+backLink;
+        nomeField='<span style="position:relative;display:inline-block;"><input class="finput" type="text" id="atv-nome-'+i+'" placeholder="Nome do aluno" value="'+nome+'" oninput="updateAtvNome('+i+',this.value);mostrarSugestoesAlunoAtv('+i+')" onblur="setTimeout(()=>esconderSugestoesAlunoAtv('+i+'),150)" autocomplete="off" style="font-size:11px;padding:4px 8px;width:170px;margin:0 4px;"><div id="atv-nome-sug-'+i+'" class="disc-sug" style="min-width:170px;"></div></span>'+backLink;
       }
     }
     return'<div class="chip" style="max-width:'+(isAtv?'560px':'230px')+';flex-wrap:wrap;gap:4px;padding:5px 8px;align-items:center;"><span>'+fi(f.name)+'</span><span class="chip-name" style="max-width:180px;">'+f.name+'</span>'+nomeField+'<span class="chip-x" onclick="'+fn+'('+i+')">×</span></div>';
@@ -1275,12 +1434,28 @@ async function iniciarCorrecao(){
       const af=atvFiles[i];
       setLoad(`Validando ${i+1}/${atvFiles.length}: ${af.name.substring(0,24)}...`,Math.round(((i+1)/atvFiles.length)*25)+5);
       const atvConteudo=await extrairArquivo(af);
-      const nomeManual=atvNomes[i]?.trim()||'';
+      const nomeManualDigitado=atvNomes[i]?.trim()||'';
+      const nomeManual=nomeManualDigitado?await registrarAlunoSeNovo(nomeManualDigitado):''; // usa grafia já cadastrada ou registra como novo aluno
       const triagem=validarArquivoParaContexto(af,atvConteudo,criterioSelecionado);
       avaliados.push({af,atvConteudo,nomeManual,triagem});
     }
     const aptos=avaliados.filter(x=>x.triagem.status==='ok' || x.triagem.status==='alerta');
     const separados=avaliados.filter(x=>x.triagem.status==='separar');
+    // Checagem de duplicidade: só é possível de antemão para arquivos com nome já identificado
+    // (via turma cadastrada ou digitado manualmente) — evita gastar tokens corrigindo de novo
+    // quem já tem correção salva para esta mesma combinação Ano+Módulo+Disciplina+Tipo.
+    const discForm=canonicalDiscLabel(modulo,(document.getElementById('nova-disciplina')?.value||'').trim(),ano);
+    const tipoForm=criterioSelecionado?criterioSelecionado.tipo:(document.getElementById('nova-tipo')?.value||'');
+    const duplicadosPrevios=[];
+    aptos.forEach(x=>{
+      if(!x.nomeManual) return;
+      const found=alunoJaCorrigido(x.nomeManual,ano,modulo,discForm,tipoForm);
+      if(found) duplicadosPrevios.push(x.nomeManual);
+    });
+    if(duplicadosPrevios.length){
+      const msg=`${duplicadosPrevios.join(', ')}\n\nContinuar vai ADICIONAR uma segunda correção para eles, o que pode inflar a média da turma. Se quiser substituir a antiga, cancele aqui e exclua-a pelo Histórico antes de corrigir de novo.`;
+      if(!(await confirmarAcao(`⚠ ${duplicadosPrevios.length} aluno(s) já corrigido(s)`,msg,'Continuar mesmo assim'))){showLoad(false);toast('Correção cancelada — duplicidade encontrada.','err');return;}
+    }
     triageCtx={avaliados,gabData,criterioSelecionado,modulo,ano};
     renderTriagemResultado(avaliados);
     if(!aptos.length){showLoad(false);toast('Nenhum arquivo foi aprovado automaticamente. Revise a triagem e use “Corrigir mesmo assim” nos compatíveis.','err');return;}
@@ -1458,6 +1633,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
   const tokCacheWrite=data.usage?.cache_creation_input_tokens||0;const tokCacheRead=data.usage?.cache_read_input_tokens||0;
+  registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead);
   const txt=data.content.map(c=>c.text||'').join('').trim();
   try{
     const p=tryParseJSONObject(txt);
@@ -1893,8 +2069,9 @@ function exportTurmaExcel(){
 async function criarOuCarregarTurma(){
   const ano=document.getElementById('t-ano').value.trim();
   const mod=document.getElementById('t-modulo').value.trim();
-  const disc=document.getElementById('t-disciplina').value.trim();
-  if(!ano||!mod||!disc){toast('Informe Ano, módulo e disciplina.','err');return;}
+  const discDigitada=document.getElementById('t-disciplina').value.trim();
+  if(!ano||!mod||!discDigitada){toast('Informe Ano, módulo e disciplina.','err');return;}
+  const disc=await registrarDisciplinaSeNova(discDigitada); // usa a grafia já cadastrada, se existir, ou cadastra esta como nova
   const id=`${ano}||${mod}||${disc}`;
   // Reaproveita um registro legado (cadastrado antes do campo Ano existir) com mesmo módulo+disciplina,
   // em vez de criar uma turma duplicada.
@@ -1911,19 +2088,25 @@ function renderAlunoList(){
   document.getElementById('aluno-list').innerHTML=editingTurma.alunos.map((a,i)=>`<div class="aluno-chip">${a}<span class="aluno-x" onclick="rmAluno(${i})">×</span></div>`).join('');
   document.getElementById('turma-editor-label').textContent=`${anoLabel(editingTurma.ano)} · Módulo ${editingTurma.modulo} — ${editingTurma.disciplina} · ${editingTurma.alunos.length} aluno(s)`;
 }
-function addAluno(){const inp=document.getElementById('novo-aluno');const nome=inp.value.trim();if(!nome||!editingTurma)return;if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(nome)))editingTurma.alunos.push(nome);inp.value='';renderAlunoList();}
-function addAlunosBulk(){
+async function addAluno(){
+  const inp=document.getElementById('novo-aluno');const nomeDigitado=inp.value.trim();if(!nomeDigitado||!editingTurma)return;
+  const nome=await registrarAlunoSeNovo(nomeDigitado); // usa a grafia já cadastrada, se existir, ou cadastra esta como nova
+  if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(nome)))editingTurma.alunos.push(nome);
+  inp.value='';renderAlunoList();
+}
+async function addAlunosBulk(){
   if(!editingTurma){toast('Crie ou carregue uma turma primeiro.','err');return;}
   const ta=document.getElementById('alunos-bulk');
-  const nomes=(ta.value||'').split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
-  if(!nomes.length){toast('Cole ao menos um nome.','err');return;}
+  const nomesDigitados=(ta.value||'').split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!nomesDigitados.length){toast('Cole ao menos um nome.','err');return;}
   let add=0;
-  nomes.forEach(n=>{
+  for(const nd of nomesDigitados){
+    const n=await registrarAlunoSeNovo(nd); // reaproveita grafia já cadastrada ou registra como novo aluno
     if(!editingTurma.alunos.some(a=>normPlain(a)===normPlain(n))){editingTurma.alunos.push(n);add++;}
-  });
+  }
   ta.value='';
   renderAlunoList();
-  toast(add?`✓ ${add} aluno(s) adicionado(s) (${nomes.length-add} já estavam na lista).`:'Todos os nomes já estavam cadastrados.',add?'ok':'err');
+  toast(add?`✓ ${add} aluno(s) adicionado(s) (${nomesDigitados.length-add} já estavam na lista).`:'Todos os nomes já estavam cadastrados.',add?'ok':'err');
 }
 function populateCopiarDeTurmaSelect(){
   const sel=document.getElementById('turma-copiar-de');if(!sel)return;
@@ -2009,7 +2192,7 @@ function editTurma(id){
   document.getElementById('panel-turmas').scrollTo({top:0,behavior:'smooth'});
 }
 async function delTurma(id){
-  if(!confirm('Excluir esta turma?'))return;
+  if(!(await confirmarAcao('Excluir turma?','Esta turma e a lista de alunos cadastrados serão removidas.','Excluir')))return;
   await sbDelete('turmas',id);turmas=turmas.filter(t=>t.id!==id);
   if(editingTurma&&editingTurma.id===id){editingTurma=null;document.getElementById('turma-editor').style.display='none';}
   renderTurmasList();toast('Turma excluída.','ok');
@@ -2161,12 +2344,13 @@ function loadGroupedActivity(mod,disc,tipo,ano){
   renderResults(pseudo);
   renderSidebar();
   goTab('resultados');
+  toggleMobileSidebar(false);
 }
 function loadSess(id){const s=sessions.find(x=>x.id===id);if(!s)return;cur={...s,groups:safeArray(s.groups)};renderResults(cur);renderSidebar();goTab('resultados');}
 async function delSess(id){
   const s=sessions.find(x=>x.id===id); if(!s)return;
   const label=(safeArray(s.groups).map(g=>g?.disciplina).filter(Boolean)[0])||'esta correção';
-  if(!confirm('Excluir '+label+'?'))return;
+  if(!(await confirmarAcao('Excluir correção?','A correção de '+label+' será removida.','Excluir')))return;
   await sbDelete('sessoes',id);
   sessions=sessions.filter(x=>x.id!==id);
   if(cur&&cur.id===id)cur=null;
@@ -2177,7 +2361,7 @@ async function delSess(id){
   toast('Correção excluída.','ok');
 }
 async function delModulo(mod,ano){
-  if(!confirm('Excluir todas as correções do '+(ano?ano+' — ':'')+'Módulo '+mod+'?'))return;
+  if(!(await confirmarAcao('Excluir módulo inteiro?','Todas as correções do '+(ano?ano+' — ':'')+'Módulo '+mod+' serão apagadas.','Excluir')))return;
   const toDelete=sessions.filter(s=>String(s.modulo)===String(mod)&&(!ano||anoMatches(s.ano,ano)));
   for(const s of toDelete) await sbDelete('sessoes',s.id);
   const idsToDelete=new Set(toDelete.map(s=>s.id));
@@ -2259,8 +2443,269 @@ function renderHistory(){
       </div>
     </details>`).join('');
 }
+// ===== Boletim do Aluno / Busca Global =====
+// Varre turmas cadastradas + todos os resultados salvos para montar uma lista única de nomes,
+// evitando duplicar o mesmo aluno grafado de formas ligeiramente diferentes.
+function coletarTodosAlunos(){
+  const nomes=new Map();
+  turmas.forEach(t=>t.alunos.forEach(a=>{const k=normalizeName(a);if(a&&!nomes.has(k))nomes.set(k,a);}));
+  sessions.forEach(s=>safeArray(s.groups).forEach(g=>ATV_TYPES.forEach(t=>safeArray(g?.atividades?.[t]).forEach(r=>{
+    if(r.nome_aluno){const k=normalizeName(r.nome_aluno);if(!nomes.has(k))nomes.set(k,r.nome_aluno);}
+  }))));
+  return [...nomes.values()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+function renderBuscaAluno(){
+  const input=document.getElementById('boletim-busca');if(!input)return;
+  const sugEl=document.getElementById('boletim-sugestoes');
+  const q=input.value.trim();
+  if(q.length<2){
+    sugEl.style.display='none';
+    if(!q) document.getElementById('boletim-corpo').innerHTML='';
+    return;
+  }
+  const nq=normalizeName(q);
+  const matches=coletarTodosAlunos().filter(n=>normalizeName(n).includes(nq));
+  if(!matches.length){
+    sugEl.style.display='block';
+    sugEl.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--muted);">Nenhum aluno encontrado com esse nome.</div>';
+    return;
+  }
+  sugEl.style.display='block';
+  sugEl.innerHTML=matches.slice(0,15).map(n=>`<div style="padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''" onmousedown="selecionarAlunoBoletim('${n.replace(/'/g,"\\'")}')">${n}</div>`).join('');
+}
+function selecionarAlunoBoletim(nome){
+  document.getElementById('boletim-busca').value=nome;
+  document.getElementById('boletim-sugestoes').style.display='none';
+  renderBoletimAluno(nome);
+}
+// Reúne todas as correções salvas (qualquer Ano/Módulo/Disciplina/Tipo) que correspondam ao nome,
+// usando o mesmo comparador fuzzy (namesMatch) já usado para casar turmas/critérios no resto do app.
+function coletarResultadosAluno(nome){
+  const linhas=[];
+  sessions.forEach(s=>{
+    safeArray(s.groups).forEach(g=>{
+      ATV_TYPES.forEach(t=>{
+        safeArray(g?.atividades?.[t]).forEach(r=>{
+          if(r.nome_aluno && namesMatch(r.nome_aluno,nome)){
+            linhas.push({...r,_ano:s.ano,_mod:s.modulo,_disc:canonicalDiscLabel(s.modulo,safeText(g?.disciplina,'Sem disciplina'),s.ano),_tipo:t,_data:s.data,_sessaoId:s.id});
+          }
+        });
+      });
+    });
+  });
+  return linhas.sort((a,b)=>`${a._ano||''}${a._mod}${a._disc}`.localeCompare(`${b._ano||''}${b._mod}${b._disc}`,'pt-BR'));
+}
+function renderBoletimAluno(nome){
+  const el=document.getElementById('boletim-corpo');if(!el)return;
+  const linhas=coletarResultadosAluno(nome);
+  if(!linhas.length){el.innerHTML='<div class="fcard"><div style="color:var(--muted);font-size:13px;">Nenhuma correção encontrada para este nome ainda.</div></div>';return;}
+  const notas=linhas.map(r=>r.nota_numerica).filter(n=>typeof n==='number'&&n>0);
+  const escala=linhas.find(r=>r.escala_maxima)?.escala_maxima||10;
+  const media=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'-';
+  const corMedia=notas.length?(parseFloat(media)/escala>=0.7?'var(--green)':parseFloat(media)/escala>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';
+
+  const byAno={};
+  linhas.forEach(r=>{
+    const ak=anoLabel(r._ano);
+    if(!byAno[ak]) byAno[ak]={};
+    if(!byAno[ak][r._mod]) byAno[ak][r._mod]=[];
+    byAno[ak][r._mod].push(r);
+  });
+
+  const header=`<div class="fcard" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;">${nome}</div>
+      <div style="font-size:12px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:4px;">${linhas.length} correção(ões) · ${Object.keys(byAno).length} ano(s)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="text-align:right;">
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:${corMedia};">${media}<span style="font-size:12px;color:var(--muted);">/${escala}</span></div>
+        <div style="font-size:11px;color:var(--muted2);">média geral</div>
+      </div>
+      <button class="btn-sm green" onclick="exportBoletimExcel('${nome.replace(/'/g,"\\'")}')">↓ Excel</button>
+    </div>
+  </div>`;
+
+  const corpo=Object.entries(byAno).sort().map(([ano,byMod])=>`
+    <details class="fcard" open>
+      <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano}</summary>
+      <div style="margin-top:10px;">
+        ${Object.entries(byMod).sort().map(([mod,rs])=>`<div style="margin-bottom:14px;">
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Módulo ${mod}</div>
+          ${rs.map(r=>{
+            const cor=(r.nota_numerica>0)?(r.nota_numerica/(r.escala_maxima||10)>=0.7?'var(--green)':r.nota_numerica/(r.escala_maxima||10)>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';
+            return `<div class="gab-row" style="align-items:flex-start;gap:12px;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                  <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;">${r._disc}</span>
+                  <span class="gab-row-mod">${displayTipo(r._tipo)}</span>
+                  <span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${r._data||''}</span>
+                </div>
+                ${r.feedback?`<div style="font-size:12px;color:var(--muted2);line-height:1.5;">${safeText(r.feedback)}</div>`:''}
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor};white-space:nowrap;">${r.nota_final||'-'}</div>
+            </div>`;
+          }).join('')}
+        </div>`).join('')}
+      </div>
+    </details>`).join('');
+
+  el.innerHTML=header+corpo;
+}
+function exportBoletimExcel(nome){
+  const linhas=coletarResultadosAluno(nome);
+  if(!linhas.length){toast('Nada para exportar.','err');return;}
+  const header=['Ano','Módulo','Disciplina','Tipo','Data','Nota','Nota Numérica','Feedback'];
+  const dataRows=linhas.map(r=>[anoLabel(r._ano),r._mod,r._disc,displayTipo(r._tipo),r._data||'',r.nota_final||'',r.nota_numerica||'',safeText(r.feedback)]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([[`Boletim — ${nome}`],[''],header,...dataRows]);
+  ws['!cols']=[{wch:10},{wch:10},{wch:26},{wch:14},{wch:12},{wch:10},{wch:14},{wch:50}];
+  XLSX.utils.book_append_sheet(wb,ws,'Boletim');
+  XLSX.writeFile(wb,'Boletim_'+nome.replace(/[^a-zA-Z0-9]+/g,'_')+'.xlsx');
+  toast('✓ Boletim exportado!','ok');
+}
+// ===== Cadastro central de Alunos e Disciplinas =====
+// Fonte única de verdade para nomes — turmas, critérios e correções passam a reaproveitar
+// esses nomes exatos em vez de digitar/colar de novo a cada vez, evitando grafias diferentes
+// para a mesma pessoa ou disciplina.
+function acharAlunoCadastrado(nome){
+  const n=normalizeName(nome);
+  return alunosCadastro.find(a=>normalizeName(a.nome)===n)||null;
+}
+async function registrarAlunoSeNovo(nome){
+  const limpo=safeText(nome).trim();
+  if(!limpo) return limpo;
+  const existente=acharAlunoCadastrado(limpo);
+  if(existente) return existente.nome; // usa a grafia já cadastrada, evita duplicar variações
+  const row={id:normalizeName(limpo)||('a_'+Date.now()),nome:limpo};
+  try{
+    await sbUpsert('alunos_cadastro',row);
+    alunosCadastro.push(row);
+  }catch(_e){ /* tabela pode não existir ainda — segue sem bloquear o fluxo */ }
+  return limpo;
+}
+async function addAlunoCadastro(){
+  const inp=document.getElementById('novo-aluno-cadastro');
+  const nome=inp.value.trim();
+  if(!nome){toast('Digite um nome.','err');return;}
+  if(acharAlunoCadastrado(nome)){toast('Esse aluno já está cadastrado.','err');return;}
+  await registrarAlunoSeNovo(nome);
+  inp.value='';
+  renderAlunosCadastro();
+  toast('✓ Aluno cadastrado.','ok');
+}
+async function addAlunosCadastroBulk(){
+  const ta=document.getElementById('alunos-cadastro-bulk');
+  const nomes=(ta.value||'').split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!nomes.length){toast('Cole ao menos um nome.','err');return;}
+  let add=0;
+  for(const n of nomes){
+    if(!acharAlunoCadastrado(n)){ await registrarAlunoSeNovo(n); add++; }
+  }
+  ta.value='';
+  renderAlunosCadastro();
+  toast(add?`✓ ${add} aluno(s) cadastrado(s) (${nomes.length-add} já existiam).`:'Todos os nomes já estavam cadastrados.',add?'ok':'err');
+}
+async function delAlunoCadastro(id){
+  if(!(await confirmarAcao('Remover aluno do cadastro?','Isso não apaga correções ou turmas já salvas — só remove da lista de sugestões.','Remover')))return;
+  try{ await sbDelete('alunos_cadastro',id); }catch(_e){}
+  alunosCadastro=alunosCadastro.filter(a=>a.id!==id);
+  renderAlunosCadastro();
+  toast('Aluno removido do cadastro.','ok');
+}
+function renderAlunosCadastro(){
+  const el=document.getElementById('alunos-cadastro-list');if(!el)return;
+  const q=normPlain(document.getElementById('filtro-alunos-cadastro')?.value||'');
+  const list=alunosCadastro.filter(a=>!q||normPlain(a.nome).includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhum aluno cadastrado ainda.</div>';return;}
+  el.innerHTML='<div style="font-size:12px;color:var(--muted2);margin-bottom:8px;">'+list.length+' aluno(s) cadastrado(s)</div><div class="aluno-list">'+list.map(a=>`<div class="aluno-chip">${a.nome}<span class="aluno-x" onclick="delAlunoCadastro('${a.id.replace(/'/g,"\\'")}')">×</span></div>`).join('')+'</div>';
+}
+function acharDisciplinaCadastrada(nome){
+  const n=normalizeName(nome);
+  return disciplinasCadastro.find(d=>normalizeName(d.nome)===n)||null;
+}
+async function registrarDisciplinaSeNova(nome){
+  const limpo=safeText(nome).trim();
+  if(!limpo) return limpo;
+  const existente=acharDisciplinaCadastrada(limpo);
+  if(existente) return existente.nome;
+  const row={id:normalizeName(limpo)||('d_'+Date.now()),nome:limpo};
+  try{
+    await sbUpsert('disciplinas_cadastro',row);
+    disciplinasCadastro.push(row);
+  }catch(_e){ /* tabela pode não existir ainda */ }
+  return limpo;
+}
+async function addDisciplinaCadastro(){
+  const inp=document.getElementById('nova-disciplina-cadastro');
+  const nome=inp.value.trim();
+  if(!nome){toast('Digite um nome.','err');return;}
+  if(acharDisciplinaCadastrada(nome)){toast('Essa disciplina já está cadastrada.','err');return;}
+  await registrarDisciplinaSeNova(nome);
+  inp.value='';
+  renderDisciplinasCadastro();
+  toast('✓ Disciplina cadastrada.','ok');
+}
+async function delDisciplinaCadastro(id){
+  if(!(await confirmarAcao('Remover disciplina do cadastro?','Isso não apaga turmas, critérios ou correções já salvas — só remove da lista de sugestões.','Remover')))return;
+  try{ await sbDelete('disciplinas_cadastro',id); }catch(_e){}
+  disciplinasCadastro=disciplinasCadastro.filter(d=>d.id!==id);
+  renderDisciplinasCadastro();
+  toast('Disciplina removida do cadastro.','ok');
+}
+function renderDisciplinasCadastro(){
+  const el=document.getElementById('disciplinas-cadastro-list');if(!el)return;
+  const list=[...disciplinasCadastro].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!list.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">Nenhuma disciplina cadastrada ainda.</div>';return;}
+  el.innerHTML='<div style="font-size:12px;color:var(--muted2);margin-bottom:8px;">'+list.length+' disciplina(s) cadastrada(s)</div><div class="aluno-list">'+list.map(d=>`<div class="aluno-chip">${d.nome}<span class="aluno-x" onclick="delDisciplinaCadastro('${d.id.replace(/'/g,"\\'")}')">×</span></div>`).join('')+'</div>';
+}
+// Autocomplete genérico de disciplina cadastrada, reutilizado nos campos de Turma e Critério Fixo.
+function mostrarSugestoesDisciplina(inputId){
+  const input=document.getElementById(inputId);
+  const sugEl=document.getElementById(inputId+'-sug');
+  if(!input||!sugEl)return;
+  const q=input.value.trim();
+  if(!q){sugEl.classList.remove('show');sugEl.innerHTML='';return;}
+  const nq=normPlain(q);
+  const matches=disciplinasCadastro.filter(d=>normPlain(d.nome).includes(nq)).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!matches.length){sugEl.classList.remove('show');sugEl.innerHTML='';return;}
+  sugEl.innerHTML=matches.slice(0,10).map(d=>`<div class="disc-sug-item" onmousedown="selecionarDisciplinaSugerida('${inputId}','${d.nome.replace(/'/g,"\\'")}')">${d.nome}</div>`).join('');
+  sugEl.classList.add('show');
+}
+function esconderSugestoesDisciplina(inputId){
+  const sugEl=document.getElementById(inputId+'-sug');
+  if(sugEl) sugEl.classList.remove('show');
+}
+function selecionarDisciplinaSugerida(inputId,nome){
+  const input=document.getElementById(inputId);
+  if(input) input.value=nome;
+  esconderSugestoesDisciplina(inputId);
+}
+// Autocomplete de aluno cadastrado no campo manual da Nova Correção (turma sem cadastro, ou "Outro").
+function mostrarSugestoesAlunoAtv(i){
+  const input=document.getElementById('atv-nome-'+i);
+  const sugEl=document.getElementById('atv-nome-sug-'+i);
+  if(!input||!sugEl)return;
+  const q=input.value.trim();
+  if(!q){sugEl.classList.remove('show');sugEl.innerHTML='';return;}
+  const nq=normPlain(q);
+  const matches=alunosCadastro.filter(a=>normPlain(a.nome).includes(nq)).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!matches.length){sugEl.classList.remove('show');sugEl.innerHTML='';return;}
+  sugEl.innerHTML=matches.slice(0,8).map(a=>`<div class="disc-sug-item" onmousedown="selecionarAlunoAtvSugerido(${i},'${a.nome.replace(/'/g,"\\'")}')">${a.nome}</div>`).join('');
+  sugEl.classList.add('show');
+}
+function esconderSugestoesAlunoAtv(i){
+  const sugEl=document.getElementById('atv-nome-sug-'+i);
+  if(sugEl) sugEl.classList.remove('show');
+}
+function selecionarAlunoAtvSugerido(i,nome){
+  const input=document.getElementById('atv-nome-'+i);
+  if(input) input.value=nome;
+  updateAtvNome(i,nome);
+  esconderSugestoesAlunoAtv(i);
+}
 async function delDisc(mod,disc){
-  if(!confirm(`Excluir "${disc}" do Módulo ${mod}?`))return;
+  if(!(await confirmarAcao('Excluir disciplina?',`Todas as correções de "${disc}" do Módulo ${mod} serão apagadas.`,'Excluir')))return;
   const toDelete=sessions.filter(s=>s.modulo===mod&&s.groups.some(g=>g.disciplina===disc));
   for(const s of toDelete)await sbDelete('sessoes',s.id);
   sessions=sessions.filter(s=>!(s.modulo===mod&&s.groups.some(g=>g.disciplina===disc)));
@@ -2343,7 +2788,7 @@ function renderGabList(){
     </details>`).join('');
 }
 async function delGab(path,nome){
-  if(!confirm(`Excluir "${nome}"?`))return;
+  if(!(await confirmarAcao('Excluir gabarito?',`"${nome}" será removido da nuvem.`,'Excluir')))return;
   await stDelete(path);await sbDelete('gabaritos',path);
   gabListCache=gabListCache.filter(g=>g.id!==path);renderGabList();toast('Gabarito excluído.','ok');
 }
@@ -2378,11 +2823,12 @@ function loadCriterioFixo(id){
 async function saveCriterioFixo(){
   const ano=(document.getElementById('crit-ano')?.value||'').trim();
   const modulo=document.getElementById('crit-modulo').value.trim();
-  const disciplina=document.getElementById('crit-disciplina').value.trim();
+  const disciplinaDigitada=document.getElementById('crit-disciplina').value.trim();
   const tipo=document.getElementById('crit-tipo').value.trim();
   const texto=document.getElementById('crit-texto').value.trim();
   const msg=document.getElementById('crit-msg');
-  if(!ano||!modulo||!disciplina||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha Ano, módulo, disciplina, tipo e critérios.';return;}
+  if(!ano||!modulo||!disciplinaDigitada||!tipo||!texto){msg.style.color='var(--red)';msg.textContent='Preencha Ano, módulo, disciplina, tipo e critérios.';return;}
+  const disciplina=await registrarDisciplinaSeNova(disciplinaDigitada); // usa a grafia já cadastrada, se existir, ou cadastra esta como nova
   // Reaproveita um critério legado (cadastrado antes do campo Ano existir) com mesmo módulo+disciplina+tipo,
   // em vez de criar um registro duplicado.
   const legado=!editingCriterioId && criteriosFixos.find(c=>!c.ano && normPlain(c.modulo)===normPlain(modulo) && normPlain(c.disciplina)===normPlain(disciplina) && normPlain(c.tipo)===normPlain(tipo));
@@ -2401,7 +2847,7 @@ async function saveCriterioFixo(){
   }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
 }
 async function delCriterioFixo(id){
-  if(!confirm('Excluir este critério fixo?')) return;
+  if(!(await confirmarAcao('Excluir critério fixo?','Este critério deixará de ser usado nas próximas correções.','Excluir'))) return;
   await sbDelete('criterios_fixos',id);
   criteriosFixos=criteriosFixos.filter(c=>c.id!==id);
   renderCriteriosList();syncNovaCriteriaContext();checkReady();toast('Critério excluído.','ok');
@@ -2492,22 +2938,54 @@ function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo
 function exportMesclado(mod,disc,tipo){
   const rs=getMesclado(mod,disc,tipo);if(!rs.length){toast('Sem dados.','err');return;}
   const wb=XLSX.utils.book_new();const sn=tipo.charAt(0).toUpperCase()+tipo.slice(1);
-  const ws=XLSX.utils.aoa_to_sheet(buildRows(mod,disc,sn,rs));ws['!cols']=[{wch:28},{wch:11},{wch:20},{wch:12},{wch:13},{wch:11},{wch:13},{wch:38},{wch:33},{wch:33},{wch:50}];
+  const rows=buildRows(mod,disc,sn,rs);
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=colsFromHeader(rows[3]||[]);
   XLSX.utils.book_append_sheet(wb,ws,sn);XLSX.writeFile(wb,`Mod${mod}_${disc.replace(/\s+/g,'_')}_${sn}.xlsx`);toast(`✓ Excel ${sn} exportado!`,'ok');
 }
 function exportMescladoDisc(mod,disc){
   const wb=XLSX.utils.book_new();
-  ATV_TYPES.forEach(tipo=>{const rs=getMesclado(mod,disc,tipo);const sn=tipo.charAt(0).toUpperCase()+tipo.slice(1);const rows=rs.length?buildRows(mod,disc,sn,rs):[[`Módulo ${mod} — ${disc} — ${sn}`],['(sem atividades)']];const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:28},{wch:11},{wch:20},{wch:12},{wch:13},{wch:11},{wch:13},{wch:38},{wch:33},{wch:33},{wch:50}];XLSX.utils.book_append_sheet(wb,ws,sn);});
+  ATV_TYPES.forEach(tipo=>{const rs=getMesclado(mod,disc,tipo);const sn=tipo.charAt(0).toUpperCase()+tipo.slice(1);const rows=rs.length?buildRows(mod,disc,sn,rs):[[`Módulo ${mod} — ${disc} — ${sn}`],['(sem atividades)']];const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=colsFromHeader(rows[3]||[]);XLSX.utils.book_append_sheet(wb,ws,sn);});
   const sr=[[`Módulo ${mod} — ${disc} — Resumo`],[''],['Aluno','Criar','Delinear','Entender','Média']];
   const sm={};ATV_TYPES.forEach(t=>getMesclado(mod,disc,t).forEach(r=>{if(!sm[r.nome_aluno])sm[r.nome_aluno]={};sm[r.nome_aluno][t]=r.nota_numerica;}));
   Object.entries(sm).forEach(([n,v])=>{const nums=ATV_TYPES.map(t=>v[t]).filter(x=>typeof x==='number');sr.push([n,...ATV_TYPES.map(t=>v[t]!=null?v[t]:'—'),nums.length?(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1):'—']);});
   const wsS=XLSX.utils.aoa_to_sheet(sr);wsS['!cols']=[{wch:30},{wch:12},{wch:12},{wch:12},{wch:12}];XLSX.utils.book_append_sheet(wb,wsS,'Resumo');
   XLSX.writeFile(wb,`Mod${mod}_${disc.replace(/\s+/g,'_')}_COMPLETO.xlsx`);toast('✓ Excel completo exportado!','ok');
 }
+// Larguras heurísticas por tipo de coluna, já que o número de colunas varia conforme
+// quantos critérios a atividade tem (Estatística tem 6, Redação Oficial tem 1, etc).
+function colsFromHeader(header){
+  return header.map(h=>{
+    const s=String(h||'');
+    if(/Esperado|Entregue|Feedback|Positivos|Melhorar/.test(s)) return {wch:34};
+    if(/Aluno/.test(s)) return {wch:28};
+    if(/Arquivo/.test(s)) return {wch:24};
+    if(/Desconto/.test(s)) return {wch:26};
+    if(/Peso/.test(s)) return {wch:9};
+    return {wch:13};
+  });
+}
 function buildRows(mod,disc,tipo,rs){
-  const rows=[[`Módulo ${mod} — ${disc} — ${tipo}`],[`Total: ${rs.length} · ${new Date().toLocaleDateString('pt-BR')}`],[''],['Aluno','Data','Arquivo','Nota Final','Nota Num.','Escala','Descontos','Motivos','Positivos','A Melhorar','Feedback']];
-  rs.forEach(r=>{const td=(r.descontos||[]).reduce((a,d)=>a+(parseFloat(d.pontos)||0),0).toFixed(1);rows.push([r.nome_aluno||'—',r._sessaoData||'—',r._arquivo||'—',r.nota_final||'—',r.nota_numerica||0,r.escala_maxima||10,td,(r.descontos||[]).map(d=>d.motivo).join('; '),(r.pontos_positivos||[]).join('; '),(r.pontos_negativos||[]).join('; '),r.feedback||'—']);});
-  const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);if(ns.length){rows.push([''],['MÉDIA','','','',ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(2):'-'],['MAIOR','','','',Math.max(...ns).toFixed(1)],['MENOR','','','',Math.min(...ns).toFixed(1)]);}
+  // Lista de critérios possíveis nesta atividade — pode variar entre lotes se o critério fixo
+  // foi editado no meio do caminho; junta todos os labels já vistos, na ordem em que apareceram.
+  const critSet=[];const seen=new Set();
+  rs.forEach(r=>(r.criterios||[]).forEach(c=>{if(c.label&&!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}}));
+  const critHeaderCols=critSet.flatMap(lbl=>[`${lbl} — Peso`,`${lbl} — Esperado`,`${lbl} — Entregue`,`${lbl} — Desconto`]);
+  const rows=[[`Módulo ${mod} — ${disc} — ${tipo}`],[`Total: ${rs.length} · ${new Date().toLocaleDateString('pt-BR')}`],[''],['Aluno','Data','Arquivo','Nota Final','Nota Num.','Escala',...critHeaderCols,'Total Descontado','Positivos','A Melhorar','Feedback']];
+  rs.forEach(r=>{
+    const critCells=critSet.flatMap(lbl=>{
+      const c=(r.criterios||[]).find(x=>x.label===lbl);
+      if(!c) return ['—','—','—','—'];
+      const desc=parseFloat(c.desconto)||0;
+      const descTxt = desc>0 ? `${desc}${c.motivo?' — '+c.motivo:''}` : (c.motivo?'OK — '+c.motivo:'OK');
+      return [c.peso_max??'—',c.esperado||'—',c.entregue||'—',descTxt];
+    });
+    // Soma real dos descontos, calculada a partir de cada critério — corrige o bug em que
+    // esse total vinha de um campo (r.descontos) que a IA nunca preenche de fato.
+    const totalDesc=(r.criterios||[]).reduce((a,c)=>a+(parseFloat(c.desconto)||0),0).toFixed(1);
+    rows.push([r.nome_aluno||'—',r._sessaoData||'—',r._arquivo||'—',r.nota_final||'—',r.nota_numerica||0,r.escala_maxima||10,...critCells,totalDesc,(r.pontos_positivos||[]).join('; '),(r.pontos_negativos||[]).join('; '),r.feedback||'—']);
+  });
+  const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);
+  if(ns.length){rows.push([''],['MÉDIA','','','',ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(2):'-'],['MAIOR','','','',Math.max(...ns).toFixed(1)],['MENOR','','','',Math.min(...ns).toFixed(1)]);}
   return rows;
 }
 function exportBackup(){if(!sessions.length){toast('Sem histórico.','err');return;}const blob=new Blob([JSON.stringify({v:'cIA5',exported:new Date().toISOString(),sessions,turmas},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`CorretoIA_backup_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.json`;a.click();URL.revokeObjectURL(url);toast('✓ Backup exportado!','ok');}
@@ -2530,13 +3008,13 @@ async function importBackup(e){
   };
   reader.readAsText(file);
 }
-async function limparTudo(){if(!confirm('Apagar TODO o histórico da nuvem?'))return;for(const s of sessions)await sbDelete('sessoes',s.id);sessions=[];cur=null;renderSidebar();renderHistory();toast('Histórico apagado.','ok');}
+async function limparTudo(){if(!(await confirmarAcao('Apagar TODO o histórico?','Todas as correções salvas na nuvem serão apagadas permanentemente. Esta ação não pode ser desfeita.','Apagar tudo')))return;for(const s of sessions)await sbDelete('sessoes',s.id);sessions=[];cur=null;renderSidebar();renderHistory();toast('Histórico apagado.','ok');}
 function goTab(tab){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   const panelId=tab==='resultados'?'results':tab;
   document.getElementById('panel-'+panelId).classList.add('active');
-  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,criterios:4,historico:5,config:6,migracao:7}[tab];
+  const idx={nova:0,turmas:1,dashboard:2,gabaritos:3,criterios:4,historico:5,boletim:6,cadastro:7,config:8,migracao:9}[tab];
   if(idx>=0)document.querySelectorAll('.tbtn')[idx].classList.add('active');
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
@@ -2544,6 +3022,8 @@ function goTab(tab){
   if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();}
   if(tab==='turmas')renderTurmasList();
   if(tab==='migracao')renderMigracao();
+  if(tab==='boletim')renderBuscaAluno();
+  if(tab==='cadastro'){renderAlunosCadastro();renderDisciplinasCadastro();}
 }
 // Verifica se existem registros legados (sem Ano definido) e mostra/esconde a aba de migração.
 function updateMigracaoTabVisibility(){
@@ -2596,7 +3076,7 @@ async function aplicarMigracaoAno(mod,selId){
   const sel=document.getElementById(selId);
   const ano=sel?.value||'';
   if(!ano){toast('Escolha um Ano antes de aplicar.','err');return;}
-  if(!confirm(`Aplicar "${ano}" a todos os registros sem Ano do Módulo ${mod}?`))return;
+  if(!(await confirmarAcao('Aplicar migração de Ano?',`Todos os registros sem Ano do Módulo ${mod} receberão "${ano}".`,'Aplicar')))return;
   let count=0;
   for(const t of turmas.filter(x=>!x.ano&&String(x.modulo||'—')===mod)){
     t.ano=ano;
@@ -2642,6 +3122,40 @@ function limparArquivosNova(){
 function showLoad(on){document.getElementById('loading').classList.toggle('on',on);if(!on)document.getElementById('lbar').style.width='0%';}
 function setLoad(msg,pct){document.getElementById('lmsg').textContent=msg;document.getElementById('lbar').style.width=pct+'%';}
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
+// Abre/fecha a sidebar de "Correções salvas" como gaveta em telas estreitas (mobile/tablet).
+// Sem argumento, alterna o estado atual; com true/false, força abrir/fechar.
+function toggleMobileSidebar(force){
+  const sb=document.getElementById('sidebar-main');
+  const scrim=document.getElementById('sidebar-scrim');
+  if(!sb||!scrim) return;
+  const abrir = force!==undefined ? force : !sb.classList.contains('mobile-open');
+  sb.classList.toggle('mobile-open',abrir);
+  scrim.classList.toggle('show',abrir);
+}
+// Modal de confirmação genérico, no visual do app, para substituir o confirm() nativo do navegador.
+// Uso: if(!(await confirmarAcao('Título','Mensagem'))) return;
+function confirmarAcao(titulo,mensagem,textoConfirmar){
+  return new Promise(resolve=>{
+    const overlay=document.getElementById('confirm-overlay');
+    document.getElementById('confirm-box-title').textContent=titulo;
+    document.getElementById('confirm-box-sub').textContent=mensagem;
+    const okBtn=document.getElementById('confirm-box-ok');
+    const cancelBtn=document.getElementById('confirm-box-cancel');
+    okBtn.textContent=textoConfirmar||'Confirmar';
+    function limpar(v){
+      overlay.classList.remove('show');
+      okBtn.onclick=null;cancelBtn.onclick=null;
+      document.removeEventListener('keydown',onKey);
+      resolve(v);
+    }
+    function onKey(e){ if(e.key==='Escape') limpar(false); if(e.key==='Enter') limpar(true); }
+    okBtn.onclick=()=>limpar(true);
+    cancelBtn.onclick=()=>limpar(false);
+    overlay.onclick=(e)=>{ if(e.target===overlay) limpar(false); };
+    document.addEventListener('keydown',onKey);
+    overlay.classList.add('show');
+  });
+}
 function b64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
 function mimeof(f){const n=f.name.toLowerCase();if(n.endsWith('.pdf'))return'application/pdf';if(n.endsWith('.jpg')||n.endsWith('.jpeg'))return'image/jpeg';if(n.endsWith('.png'))return'image/png';if(n.endsWith('.webp'))return'image/webp';return'application/octet-stream';}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
