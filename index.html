@@ -535,7 +535,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
             <option value="Ano 4">Ano 4</option>
           </select>
           <span class="flabel">Filtrar módulo:</span>
-          <input class="finput mod" type="text" id="dash-filter" placeholder="Todos" oninput="renderDashboard()">
+          <input class="finput mod" type="text" id="dash-filter" placeholder="Todos" oninput="debouncedRenderDashboard()">
         </div>
         <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;">📊 Progresso de Envios</div>
         <div class="dash-grid" id="dash-grid"></div>
@@ -578,7 +578,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <option value="Ano 4">Ano 4</option>
             </select>
             <span class="flabel">Filtrar:</span>
-            <input class="finput mod" type="text" id="gab-filter" placeholder="Módulo" oninput="renderGabList()">
+            <input class="finput mod" type="text" id="gab-filter" placeholder="Módulo" oninput="debouncedRenderGabList()">
           </div>
           <div id="gab-list"><div style="color:var(--muted);font-size:13px;">Carregando...</div></div>
         </div>
@@ -612,6 +612,15 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <option value="criar">Criar</option>
               <option value="complementar">Complementar</option>
             </select>
+          </div>
+          <div class="fcard" style="background:var(--bg);padding:12px 14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:8px;">🤖 Extrair critério de um gabarito com IA</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="file" id="extrair-criterio-file" accept=".pdf,.docx,.doc" style="font-size:12px;max-width:260px;">
+              <button class="btn-sm accent" onclick="extrairCriterioComIA()">✨ Extrair e preencher</button>
+            </div>
+            <div id="extrair-criterio-status" style="font-size:11px;margin-top:8px;min-height:16px;color:var(--muted2);"></div>
+            <div style="font-size:10px;color:var(--muted2);margin-top:4px;">Preenche disciplina, tipo e o texto abaixo automaticamente — sempre revise antes de salvar.</div>
           </div>
           <div class="row-fields" style="align-items:flex-start;">
             <span class="flabel">Critérios e pesos</span>
@@ -703,7 +712,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
         </div>
         <div class="res-view active" id="res-view-aluno">
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-            <input class="finput wide" type="text" id="res-busca" placeholder="Buscar aluno..." oninput="renderResLista()" style="max-width:200px;">
+            <input class="finput wide" type="text" id="res-busca" placeholder="Buscar aluno..." oninput="debouncedRenderResLista()" style="max-width:200px;">
             <select class="finput" id="res-fdisc" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todas as disciplinas</option></select>
             <select class="finput" id="res-ftipo" onchange="renderResLista()" style="font-size:12px;padding:7px 10px;"><option value="">Todos os tipos</option><option>Criar</option><option>Delinear</option><option>Entender</option><option>Complementar</option></select>
           </div>
@@ -727,7 +736,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
         <p class="psub">Busque um aluno por nome para ver todas as correções dele, de todas as disciplinas, anos e módulos, em um só lugar.</p>
         <div class="fcard">
           <div style="position:relative;">
-            <input class="finput wide" type="text" id="boletim-busca" placeholder="Digite o nome do aluno..." oninput="renderBuscaAluno()" onblur="setTimeout(()=>{const el=document.getElementById('boletim-sugestoes');if(el)el.style.display='none';},150)" style="width:100%;max-width:420px;" autocomplete="off">
+            <input class="finput wide" type="text" id="boletim-busca" placeholder="Digite o nome do aluno..." oninput="debouncedRenderBuscaAluno()" onblur="setTimeout(()=>{const el=document.getElementById('boletim-sugestoes');if(el)el.style.display='none';},150)" style="width:100%;max-width:420px;" autocomplete="off">
             <div id="boletim-sugestoes" style="position:absolute;top:100%;left:0;right:0;max-width:420px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:260px;overflow-y:auto;z-index:50;display:none;"></div>
           </div>
         </div>
@@ -746,7 +755,7 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
             <textarea id="alunos-cadastro-bulk" class="finput wide" style="min-height:70px;font-family:'DM Mono',monospace;" placeholder="Ou cole vários nomes de uma vez — um por linha, ou separados por vírgula/ponto e vírgula."></textarea>
           </div>
           <div style="margin-bottom:12px;"><button class="btn-sm accent" onclick="addAlunosCadastroBulk()">+ Adicionar todos da lista</button></div>
-          <input class="finput mod" type="text" id="filtro-alunos-cadastro" placeholder="Buscar aluno cadastrado..." oninput="renderAlunosCadastro()" style="width:100%;max-width:280px;margin-bottom:10px;">
+          <input class="finput mod" type="text" id="filtro-alunos-cadastro" placeholder="Buscar aluno cadastrado..." oninput="debouncedRenderAlunosCadastro()" style="width:100%;max-width:280px;margin-bottom:10px;">
           <div id="alunos-cadastro-list"></div>
         </div>
         <div class="fcard">
@@ -793,6 +802,11 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
           <div id="backup-msg" style="font-size:12px;margin-top:8px;min-height:14px;"></div>
         </div>
         <div class="scrd">
+          <h3>♻ Lixeira</h3>
+          <p>Itens removidos ficam aqui por 30 dias antes de você poder apagá-los de vez. Restaure o que foi excluído por engano.</p>
+          <div id="lixeira-body" style="margin-top:10px;"></div>
+        </div>
+        <div class="scrd">
           <h3>🗑 Limpar Dados</h3>
           <p>Apaga todo o histórico da nuvem. Irreversível.</p>
           <button class="btn-o" style="border-color:rgba(239,68,68,0.4);color:var(--red);" onclick="limparTudo()">Apagar histórico da nuvem</button>
@@ -818,6 +832,30 @@ Clareza, organização e coesão do texto — 15 pontos — descrição..."></te
     </div>
   </div>
 </div>
+<div class="confirm-overlay" id="edit-correcao-overlay">
+  <div class="confirm-box" style="max-width:640px;max-height:88vh;overflow-y:auto;text-align:left;">
+    <div class="confirm-box-title">✎ Editar correção — <span id="ec-nome-aluno"></span></div>
+    <div class="confirm-box-sub" style="color:var(--yellow);">Isso sobrescreve o resultado gerado pela IA e fica marcado como "editado manualmente" no histórico e nos relatórios.</div>
+    <div class="row-fields">
+      <span class="flabel">Nota final (ex: 8,5/10)</span>
+      <input class="finput mod" type="text" id="ec-nota-final" style="width:110px;">
+      <span class="flabel">Nota numérica</span>
+      <input class="finput mod" type="number" step="0.1" id="ec-nota-numerica" style="width:90px;">
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 8px;">Critérios</div>
+    <div id="ec-criterios-list"></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 6px;">Feedback</div>
+    <textarea id="ec-feedback" class="finput wide" style="min-height:70px;width:100%;"></textarea>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 6px;">Pontos positivos (um por linha)</div>
+    <textarea id="ec-positivos" class="finput wide" style="min-height:50px;width:100%;"></textarea>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 6px;">A melhorar (um por linha)</div>
+    <textarea id="ec-negativos" class="finput wide" style="min-height:50px;width:100%;"></textarea>
+    <div class="confirm-box-btns" style="margin-top:16px;">
+      <button class="btn-o" onclick="fecharEdicaoCorrecao()">Cancelar</button>
+      <button class="btn green" onclick="salvarEdicaoCorrecao()">💾 Salvar edição</button>
+    </div>
+  </div>
+</div>
 <script>
 const SB_URL='https://hvxwbbsozhwsxrnpfedb.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eHdiYnNvemh3c3hybnBmZWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzA2NTksImV4cCI6MjA4OTYwNjY1OX0.uCJk8HgnrkOkQHk4onA2WZRT42uqcrrU_LGM3j3QOtU';
@@ -825,23 +863,87 @@ const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 async function sbGet(table,id){const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao ler ${table}: ${r.status} ${t}`);}const d=await r.json();return Array.isArray(d)?(d[0]||null):null;}
 async function sbUpsert(table,data){const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(data)});if(!r.ok){const t=await r.text();throw new Error(`Falha ao salvar em ${table}: ${r.status} ${t}`);}}
 async function sbDelete(table,id){const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao excluir em ${table}: ${r.status} ${t}`);}}
-async function sbGetAll(table,filter=''){const r=await fetch(`${SB_URL}/rest/v1/${table}?order=id.asc${filter}`,{headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao listar ${table}: ${r.status} ${t}`);}const data=await r.json();if(!Array.isArray(data))throw new Error(`Resposta inválida ao listar ${table}`);return data;}
+// Busca TODAS as linhas de uma tabela, paginando em blocos de 1000 (limite padrão do PostgREST/Supabase
+// por requisição) até a API parar de devolver linhas cheias — evita que o histórico "suma" silenciosamente
+// quando o total de correções passar de 1000 registros.
+// Tenta de novo automaticamente em falhas transitórias (instabilidade de rede, limite de taxa,
+// servidor sobrecarregado) — evita perder a correção de um aluno por um problema momentâneo no
+// meio de um lote grande. Erros permanentes (chave inválida, requisição malformada) não são
+// repetidos, pois tentar de novo não muda o resultado.
+async function fetchComRetry(url,options,tentativas=3){
+  const statusTransitorios=[429,500,502,503,529];
+  let ultimoErro;
+  for(let i=0;i<tentativas;i++){
+    try{
+      const res=await fetch(url,options);
+      if(res.ok||!statusTransitorios.includes(res.status)||i===tentativas-1) return res;
+      await new Promise(r=>setTimeout(r,800*(i+1)));
+    }catch(networkErr){
+      ultimoErro=networkErr;
+      if(i===tentativas-1) throw networkErr;
+      await new Promise(r=>setTimeout(r,800*(i+1)));
+    }
+  }
+  throw ultimoErro||new Error('Falha desconhecida ao chamar a API');
+}
+async function sbGetAll(table,filter=''){
+  const PAGE=1000;
+  let offset=0;
+  const all=[];
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=id.asc${filter}&limit=${PAGE}&offset=${offset}`,{headers:H});
+    if(!r.ok){const t=await r.text();throw new Error(`Falha ao listar ${table}: ${r.status} ${t}`);}
+    const data=await r.json();
+    if(!Array.isArray(data))throw new Error(`Resposta inválida ao listar ${table}`);
+    all.push(...data);
+    if(data.length<PAGE) break; // última página (veio incompleta ou vazia)
+    offset+=PAGE;
+  }
+  return all;
+}
 async function stUpload(path,file){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'POST',headers:{...H,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});if(!r.ok){const t=await r.text();throw new Error(`Upload falhou: ${r.status} ${t}`);} }
 async function stDownload(path){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{headers:H});if(!r.ok)throw new Error('Download falhou');return await r.blob();}
 async function stDelete(path){const r=await fetch(`${SB_URL}/storage/v1/object/gabaritos/${path}`,{method:'DELETE',headers:H});if(!r.ok){const t=await r.text();throw new Error(`Falha ao excluir arquivo: ${r.status} ${t}`);}}
-function enc(s,k){let o='';for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));return btoa(o);}
-function dec(s,k){const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^k.charCodeAt(i%k.length));return o;}
+// Criptografia real (AES-GCM, chave derivada da senha via SHA-256) para a chave de API salva na nuvem —
+// substitui o XOR anterior, que era trivialmente reversível e não protegia nada de verdade.
+async function deriveAesKey(pw){
+  const hashBuf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return crypto.subtle.importKey('raw', hashBuf, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+}
+async function enc(s,pw){
+  const key=await deriveAesKey(pw);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(s));
+  const bytes=new Uint8Array(iv.length+ct.byteLength);
+  bytes.set(iv,0); bytes.set(new Uint8Array(ct),iv.length);
+  return btoa(String.fromCharCode(...bytes));
+}
+async function dec(s,pw){
+  try{
+    const bytes=Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+    const iv=bytes.slice(0,12), ct=bytes.slice(12);
+    const key=await deriveAesKey(pw);
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct);
+    return new TextDecoder().decode(pt);
+  }catch(_e){
+    // Fallback: chave salva antes desta correção, ainda no formato XOR antigo — só leitura,
+    // mantido para não obrigar todo mundo a recadastrar a chave de API depois da atualização.
+    const r=atob(s);let o='';for(let i=0;i<r.length;i++)o+=String.fromCharCode(r.charCodeAt(i)^pw.charCodeAt(i%pw.length));
+    return o;
+  }
+}
 const ATV_TYPES=['criar','delinear','entender','complementar'];
 const ANO_OPTIONS=['Ano 1','Ano 2','Ano 3','Ano 4'];
 let gabFiles=[],atvFiles=[],atvNomes=[],atvManualIdx=new Set(),sessions=[],turmas=[],gabListCache=[],criteriosFixos=[],alunosCadastro=[],disciplinasCadastro=[],cur=null,matchT=null,currentPw='',editingTurma=null,editingCriterioId=null;
 let usageTotals={usd:0,tokIn:0,tokOut:0,tokCacheWrite:0,tokCacheRead:0,chamadas:0,since:''};
-const PRECOS={input:3,output:15,cacheWrite:3.75,cacheRead:0.30}; // USD por milhão de tokens (claude-sonnet-4-5)
-function custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead){
-  return (tokIn/1e6*PRECOS.input)+(tokOut/1e6*PRECOS.output)+(tokCacheWrite/1e6*PRECOS.cacheWrite)+(tokCacheRead/1e6*PRECOS.cacheRead);
+const PRECOS={input:2,output:10,cacheWrite:2.5,cacheRead:0.20}; // USD por milhão de tokens (claude-sonnet-5)
+const PRECOS_OPUS={input:5,output:25,cacheWrite:6.25,cacheRead:0.50}; // USD por milhão de tokens (claude-opus-5) — usado só na extração de critério, tarefa pontual
+function custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead,precos=PRECOS){
+  return (tokIn/1e6*precos.input)+(tokOut/1e6*precos.output)+(tokCacheWrite/1e6*precos.cacheWrite)+(tokCacheRead/1e6*precos.cacheRead);
 }
-async function registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead){
+async function registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead,precos=PRECOS){
   usageTotals.tokIn+=tokIn;usageTotals.tokOut+=tokOut;usageTotals.tokCacheWrite+=tokCacheWrite;usageTotals.tokCacheRead+=tokCacheRead;
-  usageTotals.usd+=custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead);
+  usageTotals.usd+=custoUsd(tokIn,tokOut,tokCacheWrite,tokCacheRead,precos);
   usageTotals.chamadas+=1;
   if(!usageTotals.since) usageTotals.since=new Date().toISOString();
   renderUsagePainel();
@@ -872,7 +974,11 @@ function anoLabel(a){return safeText(a).trim()||'Ano não definido';}
 function getAno(){return (document.getElementById('nova-ano')?.value)||'';}
 function safeArray(v){return Array.isArray(v)?v:[];}
 function safeText(v,fallback=''){return v==null?fallback:String(v);}
-function sessionFromRow(r){return {id:r.id,ano:safeText(r.ano),modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups)};}
+// Escapa HTML antes de inserir texto vindo da IA (que descreve o conteúdo do documento do aluno,
+// portanto não é totalmente confiável) dentro de innerHTML — evita que um documento malicioso
+// consiga injetar HTML/script na tela de quem está corrigindo.
+function esc(v){return safeText(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function sessionFromRow(r){return {id:r.id,ano:safeText(r.ano),modulo:safeText(r.modulo),data:safeText(r.data),hora:safeText(r.hora),total:Number(r.total)||0,groups:safeArray(r.groups),deletado_em:r.deletado_em||null};}
 function normPlain(s){return safeText(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();}
 function criterioKey(modulo,disciplina,tipo){return `${normPlain(modulo)}||${normPlain(disciplina)}||${normPlain(tipo)}`;}
 function displayTipo(t){const v=normPlain(t);if(v==='criar')return 'Criar';if(v==='delinear')return 'Delinear';if(v==='entender')return 'Entender';if(v==='complementar')return 'Complementar';return safeText(t);}
@@ -932,11 +1038,11 @@ function getCriterioSelecionadoNova(){
   const disc=(document.getElementById('nova-disciplina')?.value||'').trim();
   const tipo=document.getElementById('nova-tipo')?.value||'';
   const canonDisc=canonicalDiscLabel(mod,disc,ano);
-  const exact=criteriosFixos.find(c=>anoMatches(c.ano,ano)&&criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,canonDisc,tipo))||null;
+  const exact=criteriosFixos.find(c=>!estaNaLixeira(c)&&anoMatches(c.ano,ano)&&criterioKey(c.modulo,c.disciplina,c.tipo)===criterioKey(mod,canonDisc,tipo))||null;
   if(exact) return exact;
   const nd=normPlain(canonDisc||disc);
   const nt=normPlain(tipo);
-  const candidatos=criteriosFixos.filter(c=>anoMatches(c.ano,ano) && normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
+  const candidatos=criteriosFixos.filter(c=>!estaNaLixeira(c) && anoMatches(c.ano,ano) && normPlain(c.modulo)===normPlain(mod) && normPlain(c.tipo)===nt);
   if(candidatos.length===1) return candidatos[0];
   let best=null, bestScore=0;
   candidatos.forEach(c=>{
@@ -1007,10 +1113,27 @@ Formatação e entrega conforme orientações — 5 pontos — O arquivo está f
   document.getElementById('crit-texto').value=presets[tipo]||presets.entender;
 }
 
-function getHash(){return localStorage.getItem('cIA5_pw')||btoa('corretoIA2024');}
+async function sha256Hex(s){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Confere a senha digitada contra o hash real (SHA-256) salvo localmente. Se só existir o hash antigo
+// (Base64 — que não é hash de verdade, é reversível), aceita por compatibilidade e migra silenciosamente
+// para o formato novo, sem exigir que ninguém redefina a senha depois desta correção.
+async function verificarSenha(pw){
+  const novoHash=localStorage.getItem('cIA5_pw_hash');
+  if(novoHash) return (await sha256Hex(pw))===novoHash;
+  const legado=localStorage.getItem('cIA5_pw')||btoa('corretoIA2024');
+  if(btoa(pw)===legado){
+    localStorage.setItem('cIA5_pw_hash',await sha256Hex(pw));
+    localStorage.removeItem('cIA5_pw');
+    return true;
+  }
+  return false;
+}
 async function login(){
   const pw=document.getElementById('pw').value;
-  if(btoa(pw)!==getHash()){document.getElementById('lerr').textContent='Senha incorreta.';document.getElementById('pw').value='';return;}
+  if(!(await verificarSenha(pw))){document.getElementById('lerr').textContent='Senha incorreta.';document.getElementById('pw').value='';return;}
   currentPw=pw;
   localStorage.setItem('cIA5_pw_plain',pw);
   document.getElementById('lerr').textContent='';
@@ -1026,11 +1149,11 @@ async function login(){
 }
 async function loadCloud(pw){
   const cfg=await sbGet('config','apikey');
-  if(cfg){try{const k=dec(cfg.valor,pw);document.getElementById('apikey').value=k;document.getElementById('cfg-apikey').value=k;localStorage.setItem('cIA5_apikey_plain',k);}catch(e){}}
+  if(cfg){try{const k=await dec(cfg.valor,pw);document.getElementById('apikey').value=k;document.getElementById('cfg-apikey').value=k;localStorage.setItem('cIA5_apikey_plain',k);}catch(e){}}
   const rows=await sbGetAll('sessoes');
   sessions=rows.map(sessionFromRow);
   const trows=await sbGetAll('turmas');
-  turmas=trows.map(r=>({id:r.id,ano:r.ano||'',modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina,r.ano),alunos:r.alunos||[]}));
+  turmas=trows.map(r=>({id:r.id,ano:r.ano||'',modulo:r.modulo,disciplina:canonicalDiscLabel(r.modulo,r.disciplina,r.ano),alunos:r.alunos||[],deletado_em:r.deletado_em||null}));
   gabListCache=await sbGetAll('gabaritos');
   try{criteriosFixos=await sbGetAll('criterios_fixos');}catch(_e){criteriosFixos=[];}
   try{alunosCadastro=await sbGetAll('alunos_cadastro');}catch(_e){alunosCadastro=[];}
@@ -1047,19 +1170,19 @@ async function loadCloud(pw){
   updateMigracaoTabVisibility();
 }
 function logout(){currentPw='';sessionStorage.removeItem('cIA5_logged');localStorage.removeItem('cIA5_pw_plain');document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('apikey').value='';}
-function alterarSenha(){
+async function alterarSenha(){
   const a=document.getElementById('c-atual').value,n=document.getElementById('c-nova').value,c=document.getElementById('c-conf').value,m=document.getElementById('c-msg');
-  if(btoa(a)!==getHash()){m.style.color='var(--red)';m.textContent='Senha atual incorreta.';return;}
+  if(!(await verificarSenha(a))){m.style.color='var(--red)';m.textContent='Senha atual incorreta.';return;}
   if(n.length<4){m.style.color='var(--red)';m.textContent='Mínimo 4 caracteres.';return;}
   if(n!==c){m.style.color='var(--red)';m.textContent='Senhas não coincidem.';return;}
   const apiKey=document.getElementById('apikey').value.trim();
-  if(apiKey)sbUpsert('config',{id:'apikey',valor:enc(apiKey,n)});
-  localStorage.setItem('cIA5_pw',btoa(n));currentPw=n;
+  if(apiKey)await sbUpsert('config',{id:'apikey',valor:await enc(apiKey,n)});
+  localStorage.setItem('cIA5_pw_hash',await sha256Hex(n));currentPw=n;
   m.style.color='var(--green)';m.textContent='✓ Senha alterada!';
   ['c-atual','c-nova','c-conf'].forEach(id=>document.getElementById(id).value='');
 }
-async function saveApiKeyCloud(){const k=document.getElementById('apikey').value.trim();if(!k){toast('Digite a chave.','err');return;}await sbUpsert('config',{id:'apikey',valor:enc(k,currentPw)});toast('✓ Chave API salva na nuvem!','ok');}
-async function saveApiKeyFromConfig(){const k=document.getElementById('cfg-apikey').value.trim();if(!k)return;document.getElementById('apikey').value=k;await sbUpsert('config',{id:'apikey',valor:enc(k,currentPw)});const m=document.getElementById('cfg-api-msg');m.style.color='var(--green)';m.textContent='✓ Salva! Disponível em qualquer computador.';checkReady();}
+async function saveApiKeyCloud(){const k=document.getElementById('apikey').value.trim();if(!k){toast('Digite a chave.','err');return;}await sbUpsert('config',{id:'apikey',valor:await enc(k,currentPw)});toast('✓ Chave API salva na nuvem!','ok');}
+async function saveApiKeyFromConfig(){const k=document.getElementById('cfg-apikey').value.trim();if(!k)return;document.getElementById('apikey').value=k;await sbUpsert('config',{id:'apikey',valor:await enc(k,currentPw)});const m=document.getElementById('cfg-api-msg');m.style.color='var(--green)';m.textContent='✓ Salva! Disponível em qualquer computador.';checkReady();}
 function getKey(){const v=document.getElementById('apikey').value.trim();if(v)localStorage.setItem('cIA5_apikey_plain',v);return v||localStorage.getItem('cIA5_apikey_plain')||'';}
 function getMod(){return document.getElementById('modulo').value.trim();}
 function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
@@ -1085,7 +1208,7 @@ function getTurmaAtualNova(){
   const ano=getAno();
   const disc=canonicalDiscLabel(mod,(document.getElementById('nova-disciplina')?.value||'').trim(),ano);
   if(!mod||!disc) return null;
-  const candidatos=turmas.filter(t=>String(t.modulo||'')===String(mod)&&anoMatches(t.ano,ano));
+  const candidatos=turmas.filter(t=>!estaNaLixeira(t)&&String(t.modulo||'')===String(mod)&&anoMatches(t.ano,ano));
   let best=null,bestScore=0;
   candidatos.forEach(t=>{
     const score = normPlain(t.disciplina)===normPlain(disc)?1:(namesMatch(t.disciplina,disc)?0.95:similarityDisc(t.disciplina,disc));
@@ -1184,7 +1307,7 @@ function renderCost(qtd){
   if(!qtd){box.style.display='none';return;}
   box.style.display='block';
   const hasCriterio=!!getCriterioSelecionadoNova(); const inp=(hasCriterio?1200:2500)+(gabFiles.length*800),out=1400,tI=qtd*inp,tO=qtd*out;
-  const usd=(tI/1e6*3)+(tO/1e6*15);
+  const usd=custoUsd(tI,tO,0,0);
   document.getElementById('est-usd').textContent='$'+usd.toFixed(3);
   document.getElementById('est-brl').textContent='R$'+(usd*5.80).toFixed(2);
   document.getElementById('est-qtd').textContent=qtd;
@@ -1628,14 +1751,16 @@ REGRAS OBRIGATÓRIAS — siga à risca:
   content[content.length-1].cache_control={type:'ephemeral'};
   adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
   const sys=[{type:'text',text:`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Se o critério definir níveis fechados de nota, escolha sempre um nível exato — nunca um valor interpolado. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`,cache_control:{type:'ephemeral'}}];
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1400,temperature:0,system:sys,messages:[{role:'user',content}]})});
+  const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:2400,temperature:0,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
   const tokCacheWrite=data.usage?.cache_creation_input_tokens||0;const tokCacheRead=data.usage?.cache_read_input_tokens||0;
   registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead);
   const txt=data.content.map(c=>c.text||'').join('').trim();
+  const cortadoPorLimite = data.stop_reason==='max_tokens';
   try{
+    if(cortadoPorLimite) throw new Error('A resposta da IA foi cortada por atingir o limite de tokens (max_tokens) — o critério desta atividade provavelmente tem detalhe demais para o espaço reservado.');
     const p=tryParseJSONObject(txt);
     p._arquivo=atvName;
     p._disc=p.disciplina||'Não identificado';
@@ -1646,7 +1771,12 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     p._tokCacheRead=tokCacheRead;
     p.status_correcao=p.status_correcao||'ok';
     if(nomeManual)p.nome_aluno=nomeManual;
-    if(criterioFixo){ if(!p.disciplina||normPlain(p.disciplina)!==normPlain(criterioFixo.disciplina)) p.disciplina=criterioFixo.disciplina; if(!p.tipo_atividade||normPlain(p.tipo_atividade)!==normPlain(criterioFixo.tipo)) p.tipo_atividade=displayTipo(criterioFixo.tipo); p.gabarito_usado=p.gabarito_usado||`Critério fixo: ${criterioFixo.disciplina} - ${displayTipo(criterioFixo.tipo)}`; p._disc=criterioFixo.disciplina; p._tipo=criterioFixo.tipo; }
+    if(criterioFixo){ if(!p.disciplina||normPlain(p.disciplina)!==normPlain(criterioFixo.disciplina)) p.disciplina=criterioFixo.disciplina; if(!p.tipo_atividade||normPlain(p.tipo_atividade)!==normPlain(criterioFixo.tipo)) p.tipo_atividade=displayTipo(criterioFixo.tipo); p.gabarito_usado=p.gabarito_usado||`Critério fixo: ${criterioFixo.disciplina} - ${displayTipo(criterioFixo.tipo)}`; p._disc=criterioFixo.disciplina; p._tipo=criterioFixo.tipo;
+      // Guarda qual versão exata do critério fixo foi usada nesta correção — permite provar depois
+      // que a mesma régua foi aplicada a todos os alunos, mesmo corrigidos em datas diferentes.
+      p._criterioTextoUsado=criterioFixo.texto;
+      p._criterioVersaoEm=criterioFixo.updated_at||null;
+    }
     if(!Array.isArray(p.criterios))p.criterios=[];
     if(!Array.isArray(p.pontos_positivos))p.pontos_positivos=[];
     if(!Array.isArray(p.pontos_negativos))p.pontos_negativos=[];
@@ -1657,7 +1787,10 @@ REGRAS OBRIGATÓRIAS — siga à risca:
     return p;
   }catch(ex){
     console.error('Falha ao interpretar resposta da IA:', ex, txt);
-    return {nome_aluno:nomeManual||atvName.replace(/\.[^.]+$/,''),disciplina:'Revisão',tipo_atividade:'entender',status_correcao:'revisao',nota_final:'Revisão',nota_numerica:NaN,escala_maxima:10,memoria_calculo:txt?txt.substring(0,1000):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:['Falha no processamento do retorno da IA'],feedback:'Erro ao processar automaticamente. Revisão manual necessária.',_arquivo:atvName,_disc:'Revisão',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut,_tokCacheWrite:tokCacheWrite,_tokCacheRead:tokCacheRead};
+    const motivoFalha = cortadoPorLimite
+      ? 'A resposta da IA foi cortada por atingir o limite de tokens (a atividade/critério é maior do que o espaço reservado). Considere simplificar o critério fixo ou avisar o suporte para aumentar o limite.'
+      : 'Erro ao processar automaticamente. Revisão manual necessária.';
+    return {nome_aluno:nomeManual||atvName.replace(/\.[^.]+$/,''),disciplina:'Revisão',tipo_atividade:'entender',status_correcao:'revisao',nota_final:'Revisão',nota_numerica:NaN,escala_maxima:10,memoria_calculo:txt?txt.substring(0,1000):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:[cortadoPorLimite?'Resposta cortada por limite de tokens (max_tokens)':'Falha no processamento do retorno da IA'],feedback:motivoFalha,_arquivo:atvName,_disc:'Revisão',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut,_tokCacheWrite:tokCacheWrite,_tokCacheRead:tokCacheRead};
   }
 }
 let _curSess=null,_selIdx=null;
@@ -1675,9 +1808,10 @@ function renderResults(s){
   const custoEl=document.getElementById('res-custo-real');
   const tTotal=tI+tO+tCW+tCR;
   if(tTotal>0){
-    // Preços por milhão de tokens (claude-sonnet-4-5): input $3, output $15, cache write (5min) $3.75 (+25%), cache read $0.30 (-90%)
-    const usd=(tI/1e6*3)+(tO/1e6*15)+(tCW/1e6*3.75)+(tCR/1e6*0.30);
-    const usdSemCache=((tI+tCW+tCR)/1e6*3)+(tO/1e6*15);
+    // Preços por milhão de tokens: lidos de PRECOS (claude-sonnet-5), não fixos aqui, para não
+    // desalinhar se o preço do modelo mudar — já aconteceu uma vez (sonnet-4-5 → sonnet-5).
+    const usd=custoUsd(tI,tO,tCW,tCR);
+    const usdSemCache=custoUsd(tI+tCW+tCR,tO,0,0);
     const economia=usdSemCache>0?(1-usd/usdSemCache)*100:0;
     const econStr=tCR>0?' · 💾 economia de cache: '+economia.toFixed(0)+'%':'';
     custoEl.innerHTML='<span class="custo-real">💰 Custo real: $'+usd.toFixed(4)+' · R$'+(usd*5.80).toFixed(3)+' · '+(tTotal/1000).toFixed(1)+'k tokens'+econStr+'</span>';
@@ -1688,7 +1822,7 @@ function renderResults(s){
 }
 function resAllRows(){
   if(!_curSess)return[];
-  return safeArray(_curSess.groups).flatMap(g=>ATV_TYPES.flatMap(t=>(safeArray(g?.atividades?.[t])).map(r=>({...r,_gIdx:safeArray(_curSess.groups).indexOf(g),_tKey:t}))));
+  return safeArray(_curSess.groups).flatMap(g=>ATV_TYPES.flatMap(t=>(safeArray(g?.atividades?.[t])).map((r,idx)=>({...r,_gIdx:safeArray(_curSess.groups).indexOf(g),_tKey:t,_rIdx:idx}))));
 }
 function resTab(v,btn){
   document.querySelectorAll('.res-view').forEach(el=>el.classList.remove('active'));
@@ -1764,8 +1898,8 @@ function selResAluno(i){
   const emRevisao=(r.status_correcao==='revisao')||!Number.isFinite(r.nota_numerica)||r.nota_final==='Revisão';
   const p=r.escala_maxima>0&&Number.isFinite(r.nota_numerica)?r.nota_numerica/r.escala_maxima:0;
   const nbcls=emRevisao?'nm':(p>=0.7?'nh':p>=0.5?'nm':'nl');
-  const pos=(r.pontos_positivos||[]).map(function(x){return'<span class="pill g">'+x+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
-  const neg=(r.pontos_negativos||[]).map(function(x){return'<span class="pill y">'+x+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const pos=(r.pontos_positivos||[]).map(function(x){return'<span class="pill g">'+esc(x)+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
+  const neg=(r.pontos_negativos||[]).map(function(x){return'<span class="pill y">'+esc(x)+'</span>';}).join('')||'<span style="color:var(--muted);font-size:11px;">—</span>';
   const safeNome=(r.nome_aluno||'Aluno').replace(/'/g,"\\'");
   const el=document.getElementById('res-det-panel');
   el.innerHTML='';
@@ -1806,6 +1940,19 @@ function selResAluno(i){
   const notaPill=document.createElement('span');notaPill.className='npill '+nbcls;notaPill.textContent=emRevisao?'Revisão':(r.nota_final||'—');
   hdr.appendChild(leftDiv);hdr.appendChild(notaPill);
   el.appendChild(hdr);
+  if(r._editadoManualmente){
+    const selo=document.createElement('div');
+    selo.style.cssText='font-size:11px;color:var(--yellow);margin:-6px 0 10px;display:flex;align-items:center;gap:5px;';
+    selo.innerHTML='✎ Editado manualmente'+(r._editadoEm?' em '+new Date(r._editadoEm).toLocaleString('pt-BR'):'');
+    el.appendChild(selo);
+  }
+  if(r._criterioTextoUsado){
+    const critDiv=document.createElement('details');
+    critDiv.style.cssText='font-size:11px;color:var(--muted2);margin:-4px 0 10px;';
+    critDiv.innerHTML='<summary style="cursor:pointer;">📋 Ver critério exato usado nesta correção'+(r._criterioVersaoEm?' (versão de '+new Date(r._criterioVersaoEm).toLocaleString('pt-BR')+')':'')+'</summary>'
+      +'<div style="white-space:pre-wrap;background:var(--bg);padding:8px 10px;border-radius:6px;margin-top:6px;max-height:180px;overflow:auto;font-family:\'DM Mono\',monospace;">'+esc(r._criterioTextoUsado)+'</div>';
+    el.appendChild(critDiv);
+  }
   const btnSalvar=pop.querySelector('#btn-salvar-nome');
   if(btnSalvar)btnSalvar.onclick=function(){salvarNomeAluno(i);};
   const mcDiv=document.createElement('div');mcDiv.style.overflowX='auto';mcDiv.innerHTML=mcTabela(r);el.appendChild(mcDiv);
@@ -1816,7 +1963,7 @@ function selResAluno(i){
   negDiv.innerHTML='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;">A melhorar</div><div class="plist">'+neg+'</div>';
   el.appendChild(negDiv);
   const feedDiv=document.createElement('div');feedDiv.className='cbs';
-  feedDiv.innerHTML='<div class="cbl feed">Feedback</div><div class="cbbox">'+(r.feedback||'—')+'</div>';
+  feedDiv.innerHTML='<div class="cbl feed">Feedback</div><div class="cbbox">'+esc(r.feedback||'—')+'</div>';
   el.appendChild(feedDiv);
   const fileDiv=document.createElement('div');fileDiv.className='cbs';
   fileDiv.innerHTML='<div class="cbl calc">Arquivo corrigido</div><div class="cbbox">'+(r._arquivo||'—')+'</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-sm accent" onclick="copyArquivoNome('+(JSON.stringify('IDX_PLACEHOLDER'))+')">Copiar nome do arquivo</button></div>';
@@ -1824,7 +1971,8 @@ function selResAluno(i){
   el.appendChild(fileDiv);
 
   const actDiv=document.createElement('div');actDiv.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;';
-  actDiv.innerHTML='<button class="btn-sm green" onclick="exportAlunoExcel('+i+')">↓ Excel</button>'
+  actDiv.innerHTML='<button class="btn-sm accent" onclick="abrirEdicaoCorrecao('+i+')">✎ Editar correção</button>'
+    +'<button class="btn-sm green" onclick="exportAlunoExcel('+i+')">↓ Excel</button>'
     +'<button class="btn-sm accent" onclick="exportAlunoPDF('+i+')">↓ PDF</button>'
     +'<button class="btn-sm red" onclick="mostrarModalExcluir('+i+')">✕ Excluir</button>';
   el.appendChild(actDiv);
@@ -1842,7 +1990,7 @@ function selResAluno(i){
 function mcTabela(r){
   var crits=r.criterios||[];
   if(!crits.length){
-    return '<div class="mc-strip">'+(r.memoria_calculo||'Sem detalhamento de criterios.')+'</div>';
+    return '<div class="mc-strip">'+esc(r.memoria_calculo||'Sem detalhamento de criterios.')+'</div>';
   }
   var totalPeso=crits.reduce(function(a,c){return a+(parseFloat(c.peso_max)||0);},0);
   var totalDesc=crits.reduce(function(a,c){return a+(parseFloat(c.desconto)||0);},0);
@@ -1860,11 +2008,11 @@ function mcTabela(r){
     var rat=pm>0?nc/pm:0;
     var cls=rat>=0.7?'a':rat>=0.5?'m':'b';
     return '<tr>'
-      +'<td><span style="font-weight:600;font-size:11px;">'+(c.label||'')+'</span>'
-      +(c.esperado?'<div class="mc-motivo" style="color:var(--muted2);">Esperado: '+c.esperado+'</div>':'')
-      +(c.entregue?'<div class="mc-motivo">Entregue: '+c.entregue+'</div>':'')
+      +'<td><span style="font-weight:600;font-size:11px;">'+esc(c.label||'')+'</span>'
+      +(c.esperado?'<div class="mc-motivo" style="color:var(--muted2);">Esperado: '+esc(c.esperado)+'</div>':'')
+      +(c.entregue?'<div class="mc-motivo">Entregue: '+esc(c.entregue)+'</div>':'')
       +'</td>'
-      +'<td>'+(dc>0?'<span class="mc-desc">-'+dc+'</span><div class="mc-motivo">'+(c.motivo||'')+'</div>':'<span class="mc-ok">sem desconto</span>')+'</td>'
+      +'<td>'+(dc>0?'<span class="mc-desc">-'+dc+'</span><div class="mc-motivo">'+esc(c.motivo||'')+'</div>':'<span class="mc-ok">sem desconto</span>')+'</td>'
       +'<td class="r"><span class="mc-peso">'+pm+' pts</span></td>'
       +'<td class="r"><span class="mc-nc '+cls+'">'+nc+' pts</span></td>'
       +'</tr>';
@@ -1882,6 +2030,87 @@ function mcTabela(r){
     +'<thead><tr><th>Criterio / Esperado / Entregue</th><th>Desconto</th><th class="r">Peso</th><th class="r">Nota</th></tr></thead>'
     +'<tbody>'+rows+footer+'</tbody>'
     +'</table>';
+}
+// ===== Edição manual de correção (nota, critérios, feedback) — com rastro de auditoria =====
+// Sobrescreve o resultado gerado pela IA e marca _editadoManualmente/_editadoEm no registro,
+// para que Histórico, Boletim e relatórios em Excel sinalizem quando uma nota não é 100% da IA.
+let _ecIdx=null;
+function abrirEdicaoCorrecao(i){
+  const rows=_resFiltered();const r=rows[i];if(!r)return;
+  _ecIdx=i;
+  document.getElementById('ec-nome-aluno').textContent=r.nome_aluno||'Aluno';
+  document.getElementById('ec-nota-final').value=r.nota_final||'';
+  document.getElementById('ec-nota-numerica').value=Number.isFinite(r.nota_numerica)?r.nota_numerica:'';
+  document.getElementById('ec-feedback').value=r.feedback||'';
+  document.getElementById('ec-positivos').value=(r.pontos_positivos||[]).join('\n');
+  document.getElementById('ec-negativos').value=(r.pontos_negativos||[]).join('\n');
+  const critList=document.getElementById('ec-criterios-list');
+  const crits=r.criterios||[];
+  if(!crits.length){
+    critList.innerHTML='<div style="font-size:12px;color:var(--muted);">Esta atividade não tem critérios detalhados — dá pra editar nota, feedback e pontos mesmo assim.</div>';
+  }else{
+    critList.innerHTML=crits.map((c,ci)=>`
+      <div class="fcard" style="padding:10px 12px;margin-bottom:8px;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;">${esc(c.label||('Critério '+(ci+1)))}</div>
+        <div class="row-fields" style="margin-bottom:6px;">
+          <span class="flabel">Peso</span><input class="finput mod" type="number" step="0.1" id="ec-crit-peso-${ci}" value="${c.peso_max??0}" style="width:70px;">
+          <span class="flabel">Desconto</span><input class="finput mod" type="number" step="0.1" id="ec-crit-desconto-${ci}" value="${c.desconto??0}" style="width:70px;">
+        </div>
+        <textarea class="finput wide" id="ec-crit-esperado-${ci}" placeholder="Esperado" style="width:100%;min-height:36px;margin-bottom:6px;">${esc(c.esperado||'')}</textarea>
+        <textarea class="finput wide" id="ec-crit-entregue-${ci}" placeholder="Entregue" style="width:100%;min-height:36px;margin-bottom:6px;">${esc(c.entregue||'')}</textarea>
+        <textarea class="finput wide" id="ec-crit-motivo-${ci}" placeholder="Motivo do desconto" style="width:100%;min-height:36px;">${esc(c.motivo||'')}</textarea>
+      </div>`).join('');
+  }
+  document.getElementById('edit-correcao-overlay').classList.add('show');
+}
+function fecharEdicaoCorrecao(){
+  document.getElementById('edit-correcao-overlay').classList.remove('show');
+  _ecIdx=null;
+}
+async function salvarEdicaoCorrecao(){
+  const idx=_ecIdx;
+  if(idx===null){toast('Nada selecionado.','err');return;}
+  const rows=_resFiltered();const r=rows[idx];if(!r||!_curSess){toast('Não foi possível localizar a correção.','err');return;}
+  const g=_curSess.groups[r._gIdx];if(!g){toast('Não foi possível localizar a disciplina.','err');return;}
+  const arr=g.atividades[r._tKey]||[];
+  const alvo=(r._rIdx!=null && arr[r._rIdx] && arr[r._rIdx]._arquivo===r._arquivo && arr[r._rIdx].nome_aluno===r.nome_aluno)
+    ? arr[r._rIdx]
+    : arr.find(x=>x._arquivo===r._arquivo && x.nome_aluno===r.nome_aluno);
+  if(!alvo){toast('Não foi possível localizar a correção original.','err');return;}
+
+  const notaFinalDigitada=document.getElementById('ec-nota-final').value.trim();
+  if(notaFinalDigitada) alvo.nota_final=notaFinalDigitada;
+  const nn=parseFloat(document.getElementById('ec-nota-numerica').value);
+  if(!isNaN(nn)) alvo.nota_numerica=nn;
+  alvo.feedback=document.getElementById('ec-feedback').value.trim();
+  alvo.pontos_positivos=document.getElementById('ec-positivos').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  alvo.pontos_negativos=document.getElementById('ec-negativos').value.split('\n').map(s=>s.trim()).filter(Boolean);
+
+  if(Array.isArray(alvo.criterios)){
+    alvo.criterios=alvo.criterios.map((c,ci)=>{
+      const pesoEl=document.getElementById('ec-crit-peso-'+ci);
+      if(!pesoEl) return c;
+      const descEl=document.getElementById('ec-crit-desconto-'+ci);
+      const espEl=document.getElementById('ec-crit-esperado-'+ci);
+      const entEl=document.getElementById('ec-crit-entregue-'+ci);
+      const motEl=document.getElementById('ec-crit-motivo-'+ci);
+      const peso=parseFloat(pesoEl.value)||0;
+      const desc=parseFloat(descEl.value)||0;
+      return {...c,peso_max:peso,desconto:desc,esperado:espEl?espEl.value.trim():c.esperado,entregue:entEl?entEl.value.trim():c.entregue,motivo:motEl?motEl.value.trim():c.motivo,nota_crit:peso-desc};
+    });
+  }
+
+  alvo._editadoManualmente=true;
+  alvo._editadoEm=new Date().toISOString();
+
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,ano:_curSess.ano||null,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  const si=sessions.findIndex(s=>s.id===_curSess.id);
+  if(si>=0) sessions[si]=_curSess;
+
+  fecharEdicaoCorrecao();
+  selResAluno(idx);
+  renderResLista();
+  toast('✓ Correção editada manualmente.','ok');
 }
 var _editIdx=null;
 function abrirEditNome(i){
@@ -1935,7 +2164,7 @@ async function salvarDisc(){
   g.disciplina=novo;
   // Atualiza _disc em todos os registros desse grupo
   ATV_TYPES.forEach(function(t){(g.atividades[t]||[]).forEach(function(a){a._disc=novo;a.disciplina=novo;});});
-  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,ano:_curSess.ano||null,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
   var si=sessions.findIndex(function(s){return s.id===_curSess.id;});
   if(si>=0)sessions[si]=_curSess;
   fecharEditDisc();_selIdx=null;
@@ -1956,7 +2185,7 @@ async function salvarNomeAluno(i){
   var arr=g.atividades[r._tKey]||[];
   var ri=arr.findIndex(function(x){return x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno;});
   if(ri>=0)arr[ri].nome_aluno=novo;
-  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,ano:_curSess.ano||null,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
   var si=sessions.findIndex(function(s){return s.id===_curSess.id;});
   if(si>=0)sessions[si]=_curSess;
   fecharEditNome();_selIdx=null;
@@ -1971,7 +2200,7 @@ async function confirmarExcluir(i){
   var rIdx=arr.findIndex(function(x){return x._arquivo===r._arquivo&&x.nome_aluno===r.nome_aluno;});
   if(rIdx>=0)arr.splice(rIdx,1);
   _curSess.total=_curSess.groups.flatMap(function(g){return Object.values(g.atividades).flat();}).length;
-  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
+  await sbUpsert('sessoes',{id:_curSess.id,modulo:_curSess.modulo,ano:_curSess.ano||null,data:_curSess.data,hora:_curSess.hora,total:_curSess.total,groups:_curSess.groups});
   var sessIdx=sessions.findIndex(function(s){return s.id===_curSess.id;});
   if(sessIdx>=0)sessions[sessIdx]=_curSess;
   _selIdx=null;
@@ -2039,8 +2268,8 @@ function exportAlunoExcel(i){
 }
 function exportAlunoPDF(i){
   const rows=_resFiltered();const r=rows[i];if(!r)return;
-  const critRows=(r.criterios||[]).map(c=>'<tr><td><b>'+(c.label||'')+'</b></td><td style="color:#555;">'+(c.esperado||'—')+'</td><td>'+(c.entregue||'—')+'</td><td>'+(c.peso||'—')+'</td><td style="color:'+(c.desconto?'#c0392b':'#27ae60')+';">'+(c.desconto||'✓')+' '+(c.motivo?'('+c.motivo+')':'')+'</td></tr>').join('');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;margin:30px;color:#222;}h1{font-size:16px;margin-bottom:4px;}h2{font-size:13px;color:#555;margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top;}.nota{font-size:20px;font-weight:bold;color:'+(r.nota_numerica>=7?'#27ae60':r.nota_numerica>=5?'#e67e22':'#c0392b')+'}.mc{background:#f8f9fa;padding:10px;border-left:3px solid #4f7cff;font-size:11px;margin-bottom:12px;}.feed{background:#f8f9fa;padding:10px;font-size:11px;}</style></head><body><h1>'+(r.nome_aluno||'Aluno')+'</h1><h2>'+r._disc+' · '+r._tKey+' · Módulo '+(_curSess?.modulo||'')+'</h2><p>Nota: <span class="nota">'+(r.nota_final||'—')+'</span></p><h3>Critérios de Avaliação</h3><table><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table><h3>Memória de Cálculo</h3><div class="mc">'+(r.memoria_calculo||'—')+'</div><h3>Feedback</h3><div class="feed">'+(r.feedback||'—')+'</div></body></html>';
+  const critRows=(r.criterios||[]).map(c=>'<tr><td><b>'+esc(c.label||'')+'</b></td><td style="color:#555;">'+esc(c.esperado||'—')+'</td><td>'+esc(c.entregue||'—')+'</td><td>'+esc(c.peso||'—')+'</td><td style="color:'+(c.desconto?'#c0392b':'#27ae60')+';">'+esc(c.desconto||'✓')+' '+(c.motivo?'('+esc(c.motivo)+')':'')+'</td></tr>').join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;margin:30px;color:#222;}h1{font-size:16px;margin-bottom:4px;}h2{font-size:13px;color:#555;margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:11px;border:1px solid #ddd;}td{padding:6px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top;}.nota{font-size:20px;font-weight:bold;color:'+(r.nota_numerica>=7?'#27ae60':r.nota_numerica>=5?'#e67e22':'#c0392b')+'}.mc{background:#f8f9fa;padding:10px;border-left:3px solid #4f7cff;font-size:11px;margin-bottom:12px;}.feed{background:#f8f9fa;padding:10px;font-size:11px;}</style></head><body><h1>'+esc(r.nome_aluno||'Aluno')+'</h1><h2>'+esc(r._disc||'')+' · '+esc(r._tKey||'')+' · Módulo '+esc(_curSess?.modulo||'')+'</h2><p>Nota: <span class="nota">'+esc(r.nota_final||'—')+'</span></p><h3>Critérios de Avaliação</h3><table><thead><tr><th>Critério</th><th>Esperado</th><th>Entregue</th><th>Peso</th><th>Desconto</th></tr></thead><tbody>'+critRows+'</tbody></table><h3>Memória de Cálculo</h3><div class="mc">'+esc(r.memoria_calculo||'—')+'</div><h3>Feedback</h3><div class="feed">'+esc(r.feedback||'—')+'</div></body></html>';
   const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();
 }
 function exportTurmaExcel(){
@@ -2144,6 +2373,7 @@ function clearTurmasFilters(){
   renderTurmasList();
 }
 function renderTurmasList(){
+  const turmasAtivas=turmas.filter(t=>!estaNaLixeira(t));
   const el=document.getElementById('turmas-list');
   const anoSel=document.getElementById('turma-filter-ano');
   const modSel=document.getElementById('turma-filter-mod');
@@ -2152,17 +2382,17 @@ function renderTurmasList(){
   const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const mods=[...new Set(turmas.filter(t=>anoMatches(t.ano,fano)).map(t=>String(t.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const mods=[...new Set(turmasAtivas.filter(t=>anoMatches(t.ano,fano)).map(t=>String(t.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){
     modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
   }
   const fmod=normPlain(modSel?.value||'');
-  const discOptions=[...new Set(turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&anoMatches(t.ano,fano)).map(t=>String(t.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const discOptions=[...new Set(turmasAtivas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&anoMatches(t.ano,fano)).map(t=>String(t.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){
     discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
   }
   const fdisc=normPlain(discSel?.value||'');
-  const filtered=turmas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&(!fdisc||normPlain(t.disciplina)===fdisc)&&anoMatches(t.ano,fano));
+  const filtered=turmasAtivas.filter(t=>(!fmod||normPlain(t.modulo)===fmod)&&(!fdisc||normPlain(t.disciplina)===fdisc)&&anoMatches(t.ano,fano));
   if(summary){
     summary.textContent=filtered.length?`${filtered.length} turma(s) encontrada(s).`:'Nenhuma turma encontrada com os filtros atuais.';
   }
@@ -2192,10 +2422,12 @@ function editTurma(id){
   document.getElementById('panel-turmas').scrollTo({top:0,behavior:'smooth'});
 }
 async function delTurma(id){
-  if(!(await confirmarAcao('Excluir turma?','Esta turma e a lista de alunos cadastrados serão removidas.','Excluir')))return;
-  await sbDelete('turmas',id);turmas=turmas.filter(t=>t.id!==id);
+  if(!(await confirmarAcao('Mover turma para a lixeira?','A turma sai da lista, mas fica recuperável por '+LIXEIRA_DIAS+' dias em Config → Lixeira.','Mover para lixeira')))return;
+  const t=turmas.find(x=>x.id===id); if(!t)return;
+  t.deletado_em=new Date().toISOString();
+  await sbUpsert('turmas',{id:t.id,ano:t.ano||null,modulo:t.modulo,disciplina:t.disciplina,alunos:t.alunos,deletado_em:t.deletado_em});
   if(editingTurma&&editingTurma.id===id){editingTurma=null;document.getElementById('turma-editor').style.display='none';}
-  renderTurmasList();toast('Turma excluída.','ok');
+  renderTurmasList();toast('Turma movida para a lixeira.','ok');
 }
 function renderDashboard(){
   const filter=document.getElementById('dash-filter')?document.getElementById('dash-filter').value.trim().toLowerCase():'';
@@ -2204,6 +2436,7 @@ function renderDashboard(){
   const pendEl=document.getElementById('pend-body');
   const tree={};
   sessions.forEach(s=>{
+    if(estaNaLixeira(s))return;
     if(filter&&!safeText(s.modulo).toLowerCase().includes(filter))return;
     if(!anoMatches(s.ano,fano))return;
     safeArray(s.groups).forEach(g=>{
@@ -2281,7 +2514,7 @@ function renderSidebar(){
   const el=document.getElementById('sb-body');
   if(!sessions.length){el.innerHTML='<div class="sb-empty">Nenhuma correção ainda.</div>';return;}
   const byAno={};
-  sessions.slice().reverse().forEach(s=>{
+  sessions.filter(s=>!estaNaLixeira(s)).slice().reverse().forEach(s=>{
     const anoKey=anoLabel(s.ano);
     const mod=safeText(s.modulo,'Sem módulo');
     if(!byAno[anoKey]) byAno[anoKey]={};
@@ -2347,31 +2580,98 @@ function loadGroupedActivity(mod,disc,tipo,ano){
   toggleMobileSidebar(false);
 }
 function loadSess(id){const s=sessions.find(x=>x.id===id);if(!s)return;cur={...s,groups:safeArray(s.groups)};renderResults(cur);renderSidebar();goTab('resultados');}
+// ===== Lixeira (soft delete) =====
+// Em vez de apagar de vez, marca 'deletado_em'. Os itens somem da interface normalmente,
+// mas ficam recuperáveis por LIXEIRA_DIAS na aba Config → Lixeira.
+const LIXEIRA_DIAS=30;
+function estaNaLixeira(x){return !!(x&&x.deletado_em);}
+function diasDesde(iso){try{return Math.floor((Date.now()-new Date(iso).getTime())/86400000);}catch(_e){return 0;}}
+function itensNaLixeira(){
+  const itens=[];
+  sessions.filter(estaNaLixeira).forEach(s=>{
+    const disc=safeArray(s.groups).map(g=>g?.disciplina).filter(Boolean).join(', ')||'sem disciplina';
+    itens.push({tipo:'sessoes',id:s.id,rotulo:`Correção · ${anoLabel(s.ano)} · Mód. ${s.modulo} · ${disc}`,extra:`${s.total||0} atividade(s) · ${s.data||''}`,deletado_em:s.deletado_em});
+  });
+  turmas.filter(estaNaLixeira).forEach(t=>{
+    itens.push({tipo:'turmas',id:t.id,rotulo:`Turma · ${anoLabel(t.ano)} · Mód. ${t.modulo} · ${t.disciplina}`,extra:`${(t.alunos||[]).length} aluno(s)`,deletado_em:t.deletado_em});
+  });
+  criteriosFixos.filter(estaNaLixeira).forEach(c=>{
+    itens.push({tipo:'criterios_fixos',id:c.id,rotulo:`Critério · ${anoLabel(c.ano)} · Mód. ${c.modulo} · ${c.disciplina}`,extra:displayTipo(c.tipo),deletado_em:c.deletado_em});
+  });
+  return itens.sort((a,b)=>new Date(b.deletado_em)-new Date(a.deletado_em));
+}
+function renderLixeira(){
+  const el=document.getElementById('lixeira-body'); if(!el) return;
+  const itens=itensNaLixeira();
+  if(!itens.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);">Lixeira vazia.</div>';return;}
+  el.innerHTML=itens.map(it=>{
+    const dias=diasDesde(it.deletado_em);
+    const restam=Math.max(0,LIXEIRA_DIAS-dias);
+    return `<div class="gab-row" style="align-items:center;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;">${esc(it.rotulo)}</div>
+        <div style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${esc(it.extra)} · excluído há ${dias} dia(s)${restam>0?` · expira em ${restam}`:' · expirado'}</div>
+      </div>
+      <button class="btn-sm accent" onclick="restaurarDaLixeira('${it.tipo}','${String(it.id).replace(/'/g,"\\'")}')">↩ Restaurar</button>
+      <button class="btn-sm red" onclick="excluirDefinitivo('${it.tipo}','${String(it.id).replace(/'/g,"\\'")}')">✕ Apagar</button>
+    </div>`;
+  }).join('');
+}
+async function restaurarDaLixeira(tipo,id){
+  let alvo=null;
+  if(tipo==='sessoes'){
+    alvo=sessions.find(s=>String(s.id)===String(id)); if(!alvo)return;
+    alvo.deletado_em=null;
+    await sbUpsert('sessoes',{id:alvo.id,modulo:alvo.modulo,ano:alvo.ano||null,data:alvo.data,hora:alvo.hora,total:alvo.total,groups:alvo.groups,deletado_em:null});
+  }else if(tipo==='turmas'){
+    alvo=turmas.find(t=>String(t.id)===String(id)); if(!alvo)return;
+    alvo.deletado_em=null;
+    await sbUpsert('turmas',{id:alvo.id,ano:alvo.ano||null,modulo:alvo.modulo,disciplina:alvo.disciplina,alunos:alvo.alunos,deletado_em:null});
+  }else if(tipo==='criterios_fixos'){
+    alvo=criteriosFixos.find(c=>String(c.id)===String(id)); if(!alvo)return;
+    alvo.deletado_em=null;
+    await sbUpsert('criterios_fixos',{id:alvo.id,ano:alvo.ano||null,modulo:alvo.modulo,disciplina:alvo.disciplina,tipo:alvo.tipo,texto:alvo.texto,deletado_em:null,updated_at:new Date().toISOString()});
+  }
+  renderLixeira();renderSidebar();renderHistory();renderTurmasList();renderCriteriosList();
+  if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
+  toast('✓ Item restaurado.','ok');
+}
+async function excluirDefinitivo(tipo,id){
+  if(!(await confirmarAcao('Apagar definitivamente?','Esta ação não pode ser desfeita — o item será removido da nuvem para sempre.','Apagar de vez')))return;
+  await sbDelete(tipo,id);
+  if(tipo==='sessoes'){ sessions=sessions.filter(s=>String(s.id)!==String(id)); if(cur&&String(cur.id)===String(id))cur=null; }
+  if(tipo==='turmas') turmas=turmas.filter(t=>String(t.id)!==String(id));
+  if(tipo==='criterios_fixos') criteriosFixos=criteriosFixos.filter(c=>String(c.id)!==String(id));
+  renderLixeira();renderSidebar();renderHistory();renderTurmasList();renderCriteriosList();
+  toast('Item apagado definitivamente.','ok');
+}
+async function softDeleteSessao(s){
+  s.deletado_em=new Date().toISOString();
+  await sbUpsert('sessoes',{id:s.id,modulo:s.modulo,ano:s.ano||null,data:s.data,hora:s.hora,total:s.total,groups:s.groups,deletado_em:s.deletado_em});
+}
 async function delSess(id){
   const s=sessions.find(x=>x.id===id); if(!s)return;
   const label=(safeArray(s.groups).map(g=>g?.disciplina).filter(Boolean)[0])||'esta correção';
-  if(!(await confirmarAcao('Excluir correção?','A correção de '+label+' será removida.','Excluir')))return;
-  await sbDelete('sessoes',id);
-  sessions=sessions.filter(x=>x.id!==id);
+  if(!(await confirmarAcao('Mover para a lixeira?','A correção de '+label+' sai da lista, mas fica recuperável por '+LIXEIRA_DIAS+' dias em Config → Lixeira.','Mover para lixeira')))return;
+  await softDeleteSessao(s);
   if(cur&&cur.id===id)cur=null;
   renderSidebar();
   renderHistory();
   if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
   if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
-  toast('Correção excluída.','ok');
+  toast('Correção movida para a lixeira.','ok');
 }
 async function delModulo(mod,ano){
-  if(!(await confirmarAcao('Excluir módulo inteiro?','Todas as correções do '+(ano?ano+' — ':'')+'Módulo '+mod+' serão apagadas.','Excluir')))return;
-  const toDelete=sessions.filter(s=>String(s.modulo)===String(mod)&&(!ano||anoMatches(s.ano,ano)));
-  for(const s of toDelete) await sbDelete('sessoes',s.id);
-  const idsToDelete=new Set(toDelete.map(s=>s.id));
-  sessions=sessions.filter(s=>!idsToDelete.has(s.id));
-  if(cur&&idsToDelete.has(cur.id))cur=null;
+  if(!(await confirmarAcao('Mover módulo inteiro para a lixeira?','Todas as correções do '+(ano?ano+' — ':'')+'Módulo '+mod+' saem da lista, mas ficam recuperáveis por '+LIXEIRA_DIAS+' dias.','Mover para lixeira')))return;
+  const toDelete=sessions.filter(s=>!estaNaLixeira(s)&&String(s.modulo)===String(mod)&&(!ano||anoMatches(s.ano,ano)));
+  for(const s of toDelete) await softDeleteSessao(s);
+  const ids=new Set(toDelete.map(s=>s.id));
+  if(cur&&ids.has(cur.id))cur=null;
   renderSidebar();
   renderHistory();
   if(document.getElementById('panel-dashboard')?.classList.contains('active'))renderDashboard();
   if(document.getElementById('panel-results')?.classList.contains('active'))goTab('historico');
-  toast('Módulo excluído.','ok');
+  toast(`${toDelete.length} correção(ões) movida(s) para a lixeira.`,'ok');
 }
 function clearHistFiltros(){
   const z=document.getElementById('hist-filter-ano');if(z)z.value='';
@@ -2379,6 +2679,104 @@ function clearHistFiltros(){
   const d=document.getElementById('hist-filter-disc');if(d)d.value='';
   const t=document.getElementById('hist-filter-tipo');if(t)t.value='';
   renderHistory();
+}
+// ===== QC de consistência entre alunos =====
+// Para cada critério de uma mesma atividade, analisa os descontos aplicados a todos os alunos
+// e sinaliza padrões que merecem revisão humana. A ideia não é dizer "a IA errou", e sim apontar
+// onde vale a pena o professor conferir se a régua foi aplicada igual para todo mundo.
+function analisarConsistencia(rs){
+  const alertas=[];
+  if(!rs||rs.length<2) return alertas; // com menos de 2 alunos não há o que comparar
+  const porCriterio={};
+  rs.forEach(r=>{
+    (r.criterios||[]).forEach(c=>{
+      if(!c.label) return;
+      if(!porCriterio[c.label]) porCriterio[c.label]={label:c.label,itens:[],peso:parseFloat(c.peso_max)||0};
+      porCriterio[c.label].itens.push({aluno:r.nome_aluno||'(sem nome)',desconto:parseFloat(c.desconto)||0,motivo:safeText(c.motivo).trim(),editado:!!r._editadoManualmente});
+    });
+  });
+  Object.values(porCriterio).forEach(info=>{
+    const itens=info.itens;
+    if(itens.length<2) return;
+    const descontos=itens.map(i=>i.desconto);
+    const distintos=[...new Set(descontos)];
+    const peso=info.peso||0;
+
+    // 1) Motivos parecidos, mas descontos diferentes — o caso mais claro de inconsistência.
+    // Compara os motivos par a par por similaridade de palavras relevantes (Jaccard), em vez de
+    // exigir texto idêntico, porque a IA raramente repete a mesma frase literal entre alunos.
+    const palavrasRelevantes=m=>new Set(normPlain(m).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>3));
+    const comMotivo=itens.filter(i=>i.motivo);
+    for(let a=0;a<comMotivo.length;a++){
+      for(let b=a+1;b<comMotivo.length;b++){
+        if(comMotivo[a].desconto===comMotivo[b].desconto) continue;
+        const sa=palavrasRelevantes(comMotivo[a].motivo), sb=palavrasRelevantes(comMotivo[b].motivo);
+        if(sa.size<2||sb.size<2) continue;
+        const intersec=[...sa].filter(w=>sb.has(w)).length;
+        const uniao=new Set([...sa,...sb]).size;
+        const similaridade=uniao?intersec/uniao:0;
+        if(similaridade>=0.5){
+          alertas.push({nivel:'alto',criterio:info.label,
+            texto:`${comMotivo[a].aluno} (desconto ${comMotivo[a].desconto}) e ${comMotivo[b].aluno} (desconto ${comMotivo[b].desconto}) têm justificativas parecidas, mas descontos diferentes.`});
+        }
+      }
+    }
+
+    // 2) Dispersão alta em relação ao peso do critério — pode ser legítimo (desempenho real diferente),
+    // mas vale conferir quando a variação ocupa boa parte do peso total.
+    if(peso>0 && distintos.length>1){
+      const amplitude=Math.max(...descontos)-Math.min(...descontos);
+      if(amplitude>=peso*0.6){
+        alertas.push({nivel:'medio',criterio:info.label,
+          texto:`Descontos variam bastante neste critério (de ${Math.min(...descontos)} a ${Math.max(...descontos)}, peso ${peso}). Confirme se reflete diferença real de desempenho.`});
+      }
+    }
+
+    // 3) Desconto aplicado sem nenhuma justificativa registrada — dificulta defender a nota depois.
+    const semMotivo=itens.filter(i=>i.desconto>0 && !i.motivo);
+    if(semMotivo.length){
+      alertas.push({nivel:'medio',criterio:info.label,
+        texto:`${semMotivo.length} aluno(s) com desconto sem motivo registrado: ${semMotivo.map(i=>i.aluno).join(', ')}.`});
+    }
+  });
+  return alertas;
+}
+// Detecta quando alunos da mesma atividade (disciplina+tipo) foram corrigidos com versões
+// diferentes do critério fixo — o cenário exato de "coerência entre datas diferentes" que
+// justifica guardar um snapshot do critério em cada correção.
+function verificarMudancaDeCriterio(rs){
+  const comSnapshot=(rs||[]).filter(r=>r._criterioTextoUsado);
+  if(comSnapshot.length<2) return null;
+  const versoes=new Map(); // texto do critério -> lista de {aluno,data}
+  comSnapshot.forEach(r=>{
+    const chave=r._criterioTextoUsado;
+    if(!versoes.has(chave)) versoes.set(chave,[]);
+    versoes.get(chave).push({aluno:r.nome_aluno||'(sem nome)',data:r._sessaoData||''});
+  });
+  if(versoes.size<2) return null;
+  const grupos=[...versoes.entries()].map(([_,itens],i)=>
+    `Versão ${i+1} (${itens.length} aluno[s], ${[...new Set(itens.map(x=>x.data))].filter(Boolean).join(', ')||'data não registrada'}): ${itens.map(x=>x.aluno).join(', ')}`
+  );
+  return {nivel:'alto',criterio:'⚠ Critério fixo mudou entre correções',
+    texto:`Esta atividade foi corrigida com ${versoes.size} versões diferentes do critério fixo. Notas podem não ser diretamente comparáveis entre esses alunos. ${grupos.join(' | ')}`};
+}
+function qcHtml(rs){
+  const alertas=analisarConsistencia(rs);
+  const mudancaCriterio=verificarMudancaDeCriterio(rs);
+  if(mudancaCriterio) alertas.unshift(mudancaCriterio);
+  if(!alertas.length){
+    return rs&&rs.length>=2?'<div style="font-size:11px;color:var(--green);margin-top:8px;">✓ QC: nenhuma inconsistência aparente entre os alunos.</div>':'';
+  }
+  const altos=alertas.filter(a=>a.nivel==='alto').length;
+  const cor=altos?'var(--red)':'var(--yellow)';
+  return `<details style="margin-top:8px;">
+    <summary style="cursor:pointer;list-style:none;font-size:11px;color:${cor};">⚠ QC: ${alertas.length} ponto(s) para revisar${altos?` (${altos} crítico(s))`:''} — clique para ver</summary>
+    <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+      ${alertas.map(a=>`<div style="font-size:11px;line-height:1.45;padding:7px 9px;border-radius:6px;background:var(--bg);border-left:3px solid ${a.nivel==='alto'?'var(--red)':'var(--yellow)'};">
+        <b>${esc(a.criterio)}</b><br>${esc(a.texto)}
+      </div>`).join('')}
+    </div>
+  </details>`;
 }
 function distribuicaoHtml(notas,esc){
   if(!notas.length) return '';
@@ -2398,7 +2796,8 @@ function distribuicaoHtml(notas,esc){
 }
 function renderHistory(){
   const el=document.getElementById('hist-body');
-  if(!sessions.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Histórico vazio</div></div>`;return;}
+  const sessionsAtivas=sessions.filter(s=>!estaNaLixeira(s));
+  if(!sessionsAtivas.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">Histórico vazio</div></div>`;return;}
 
   const anoSel=document.getElementById('hist-filter-ano');
   const modSel=document.getElementById('hist-filter-mod');
@@ -2407,16 +2806,16 @@ function renderHistory(){
   const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const allMods=[...new Set(sessions.filter(s=>anoMatches(s.ano,fano)).map(s=>String(s.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const allMods=[...new Set(sessionsAtivas.filter(s=>anoMatches(s.ano,fano)).map(s=>String(s.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){modSel.innerHTML='<option value="">Todos</option>'+allMods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');}
   const fmod=normPlain(modSel?.value||'');
-  const allDiscs=[...new Set(sessions.filter(s=>(!fmod||normPlain(s.modulo)===fmod)&&anoMatches(s.ano,fano)).flatMap(s=>safeArray(s.groups).map(g=>g.disciplina)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const allDiscs=[...new Set(sessionsAtivas.filter(s=>(!fmod||normPlain(s.modulo)===fmod)&&anoMatches(s.ano,fano)).flatMap(s=>safeArray(s.groups).map(g=>g.disciplina)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){discSel.innerHTML='<option value="">Todas</option>'+allDiscs.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');}
   const fdisc=normPlain(discSel?.value||'');
   const ftipo=normPlain(tipoSel?.value||'');
 
   const tree={};
-  sessions.forEach(s=>{
+  sessionsAtivas.forEach(s=>{
     if(fmod&&normPlain(s.modulo)!==fmod)return;
     if(!anoMatches(s.ano,fano))return;
     const ak=anoLabel(s.ano);
@@ -2439,7 +2838,7 @@ function renderHistory(){
     <details class="fcard" style="margin-bottom:14px;" ${anoOpen?'open':''}>
       <summary style="cursor:pointer;list-style:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);">${ano} <span style="font-size:10px;color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0;">· clique para ${anoOpen?'recolher':'expandir'}</span></summary>
       <div style="margin-top:10px;">
-        ${Object.entries(byMod).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${distribuicaoHtml(ns,esc)}${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="event.preventDefault();event.stopPropagation();exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<details class="h-disc-block" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s) · clique para ${shouldOpen?'recolher':'expandir'}</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></summary><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></details>`;}).join('')}</div>`).join('')}
+        ${Object.entries(byMod).sort().map(([mod,discs])=>`<div class="h-mod-sec"><div class="h-mod-title">Módulo ${mod}</div>${Object.entries(discs).map(([disc,data])=>{const allN=ATV_TYPES.flatMap(t=>data[t].rs.map(r=>r.nota_numerica)).filter(n=>n>0);const med=allN.length?(allN.reduce((a,b)=>a+b,0)/allN.length).toFixed(1):'-';const esc=data.escala||10;const p=esc>0?parseFloat(med)/esc:0;const cor=p>=0.7?'var(--green)':p>=0.5?'var(--yellow)':'var(--red)';const total=ATV_TYPES.reduce((a,t)=>a+data[t].rs.length,0);const sessoes=new Set(ATV_TYPES.flatMap(t=>[...data[t].sessoes])).size;const tipos=ATV_TYPES.map(t=>{const rs=data[t].rs;const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);const tm=ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1):'-';const cor2=ns.length?(parseFloat(tm)/esc>=0.7?'var(--green)':parseFloat(tm)/esc>=0.5?'var(--yellow)':'var(--red)'):'var(--muted)';return`<div class="hatv-card"><div class="hatv-type ${t}">${t.charAt(0).toUpperCase()+t.slice(1)}</div><div class="hatv-avg" style="color:${cor2}">${tm}</div><div class="hatv-meta">${rs.length} aluno(s) · ${data[t].sessoes.size} envio(s)</div>${distribuicaoHtml(ns,esc)}${qcHtml(rs)}${rs.length>0?`<button class="btn-sm green" style="width:100%;margin-top:7px;font-size:10px;" onclick="event.preventDefault();event.stopPropagation();exportMesclado('${mod}','${disc.replace(/'/g,"\\'")}','${t}')">↓ Excel</button>`:''}</div>`;}).join('');return`<details class="h-disc-block" ${shouldOpen?'open':''}><summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><div class="h-disc-title">${disc}</div><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">${total} aluno(s) · ${sessoes} envio(s) · clique para ${shouldOpen?'recolher':'expandir'}</div></div><div style="text-align:right;"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor}">${med}<span style="font-size:11px;color:var(--muted);">/${esc}</span></div></div></summary><div class="h-atv-grid">${tipos}</div><div class="h-disc-export"><span style="font-size:12px;color:var(--muted2);">Completo:</span><button class="btn-sm accent" onclick="editarSessaoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">✎ Editar resultados</button><button class="btn-sm green" onclick="exportMescladoDisc('${mod}','${disc.replace(/'/g,"\\'")}')">↓ Excel (3 abas + resumo)</button><button class="btn-sm red" onclick="delDisc('${mod}','${disc.replace(/'/g,"\\'")}')">Excluir</button></div></details>`;}).join('')}</div>`).join('')}
       </div>
     </details>`).join('');
 }
@@ -2483,6 +2882,7 @@ function selecionarAlunoBoletim(nome){
 function coletarResultadosAluno(nome){
   const linhas=[];
   sessions.forEach(s=>{
+    if(estaNaLixeira(s))return;
     safeArray(s.groups).forEach(g=>{
       ATV_TYPES.forEach(t=>{
         safeArray(g?.atividades?.[t]).forEach(r=>{
@@ -2540,8 +2940,9 @@ function renderBoletimAluno(nome){
                   <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;">${r._disc}</span>
                   <span class="gab-row-mod">${displayTipo(r._tipo)}</span>
                   <span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${r._data||''}</span>
+                  ${r._editadoManualmente?'<span style="font-size:10px;color:var(--yellow);">✎ editado manualmente</span>':''}
                 </div>
-                ${r.feedback?`<div style="font-size:12px;color:var(--muted2);line-height:1.5;">${safeText(r.feedback)}</div>`:''}
+                ${r.feedback?`<div style="font-size:12px;color:var(--muted2);line-height:1.5;">${esc(r.feedback)}</div>`:''}
               </div>
               <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:${cor};white-space:nowrap;">${r.nota_final||'-'}</div>
             </div>`;
@@ -2705,12 +3106,11 @@ function selecionarAlunoAtvSugerido(i,nome){
   esconderSugestoesAlunoAtv(i);
 }
 async function delDisc(mod,disc){
-  if(!(await confirmarAcao('Excluir disciplina?',`Todas as correções de "${disc}" do Módulo ${mod} serão apagadas.`,'Excluir')))return;
-  const toDelete=sessions.filter(s=>s.modulo===mod&&s.groups.some(g=>g.disciplina===disc));
-  for(const s of toDelete)await sbDelete('sessoes',s.id);
-  sessions=sessions.filter(s=>!(s.modulo===mod&&s.groups.some(g=>g.disciplina===disc)));
+  if(!(await confirmarAcao('Mover para a lixeira?',`Todas as correções de "${disc}" do Módulo ${mod} saem da lista, mas ficam recuperáveis por ${LIXEIRA_DIAS} dias.`,'Mover para lixeira')))return;
+  const toDelete=sessions.filter(s=>!estaNaLixeira(s)&&s.modulo===mod&&safeArray(s.groups).some(g=>g.disciplina===disc));
+  for(const s of toDelete)await softDeleteSessao(s);
   if(cur&&toDelete.find(s=>s.id===cur.id))cur=null;
-  renderSidebar();renderHistory();toast('Excluído da nuvem.','ok');
+  renderSidebar();renderHistory();toast(`${toDelete.length} correção(ões) movida(s) para a lixeira.`,'ok');
 }
 function editarSessaoDisc(mod,disc){
   // Encontra a sessão mais recente que contém essa disciplina
@@ -2794,6 +3194,52 @@ async function delGab(path,nome){
 }
 
 
+// ===== Extração de critério a partir de um gabarito, usando IA =====
+// Tarefa pontual (algumas vezes por semestre, não por aluno) — usa um modelo mais capaz (Opus)
+// já que aqui o que importa é redigir bem a rubrica, não o custo por chamada.
+async function extrairCriterioComIA(){
+  const key=getKey();
+  if(!key){toast('Informe a chave API antes de extrair.','err');return;}
+  const fileInput=document.getElementById('extrair-criterio-file');
+  const file=fileInput?.files?.[0];
+  if(!file){toast('Selecione o arquivo do gabarito/critério primeiro.','err');return;}
+  const statusEl=document.getElementById('extrair-criterio-status');
+  statusEl.style.color='var(--muted2)';statusEl.textContent='Lendo o arquivo...';
+  try{
+    const conteudo=await extrairArquivo(file);
+    statusEl.textContent='Consultando a IA para estruturar o critério (pode levar alguns segundos)...';
+    const content=[];
+    content.push({type:'text',text:`Você é um especialista em avaliação educacional. Vai analisar um documento de gabarito/critério de correção e estruturá-lo para uso num sistema de correção automática por IA.
+REGRAS OBRIGATÓRIAS:
+1. Identifique a disciplina e o tipo de atividade (entender, delinear, criar ou complementar) a partir do documento. Se não conseguir identificar com segurança, deixe o campo em branco.
+2. Se o documento já definir níveis fechados de nota (ex: "Nota 100:", "Nota 75:", etc.), preserve essa estrutura de níveis com as descrições completas de cada um — não resuma, não generalize, mantenha a redação original sempre que possível.
+3. Se o documento for objetivo/calculável (gabarito com resposta certa, cálculos, fórmulas), estruture como pontuação por item, citando o valor esperado de cada item quando existir.
+4. Se o documento cobrir mais de um tipo de atividade (ex: Entender e Delinear juntos), extraia só UM tipo — o mais completo/central — e diga isso no início do "texto".
+5. NUNCA invente critério, peso ou nível que não conste no documento. Se algo estiver ambíguo, prefira deixar uma observação no próprio texto (ex: "[revisar: não ficou claro o peso deste item]") a inventar um valor.
+6. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
+{"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério completo, pronto para colar no campo de critérios fixos do sistema"}`});
+    adicionarConteudoAoArray(content,'DOCUMENTO DE GABARITO/CRITÉRIO:',conteudo);
+    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,temperature:0,messages:[{role:'user',content}]})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data?.error?.message||`Erro ${res.status} ao chamar a API`);
+    const txt=data.content.map(c=>c.text||'').join('').trim();
+    const p=tryParseJSONObject(txt);
+    if(p.disciplina) document.getElementById('crit-disciplina').value=p.disciplina;
+    if(p.tipo && ATV_TYPES.includes(p.tipo)) document.getElementById('crit-tipo').value=p.tipo;
+    if(p.texto) document.getElementById('crit-texto').value=p.texto;
+    const tokIn=data.usage?.input_tokens||0,tokOut=data.usage?.output_tokens||0;
+    const tokCW=data.usage?.cache_creation_input_tokens||0,tokCR=data.usage?.cache_read_input_tokens||0;
+    await registrarUsoTokens(tokIn,tokOut,tokCW,tokCR,PRECOS_OPUS);
+    const custo=custoUsd(tokIn,tokOut,tokCW,tokCR,PRECOS_OPUS);
+    statusEl.style.color='var(--green)';
+    statusEl.textContent=`✓ Sugestão gerada (custo desta extração: $${custo.toFixed(3)}). Revise Disciplina, Tipo e o texto com atenção antes de salvar.`;
+    fileInput.value='';
+  }catch(err){
+    console.error('Falha ao extrair critério com IA:',err);
+    statusEl.style.color='var(--red)';
+    statusEl.textContent='Erro ao extrair: '+(err.message||err);
+  }
+}
 function clearCriterioForm(){
   editingCriterioId=null;
   ['crit-modulo','crit-disciplina','crit-texto'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -2847,12 +3293,14 @@ async function saveCriterioFixo(){
   }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
 }
 async function delCriterioFixo(id){
-  if(!(await confirmarAcao('Excluir critério fixo?','Este critério deixará de ser usado nas próximas correções.','Excluir'))) return;
-  await sbDelete('criterios_fixos',id);
-  criteriosFixos=criteriosFixos.filter(c=>c.id!==id);
+  if(!(await confirmarAcao('Mover critério para a lixeira?','O critério deixa de ser usado nas próximas correções, mas fica recuperável por '+LIXEIRA_DIAS+' dias.','Mover para lixeira'))) return;
+  const c=criteriosFixos.find(x=>x.id===id); if(!c)return;
+  c.deletado_em=new Date().toISOString();
+  await sbUpsert('criterios_fixos',{id:c.id,ano:c.ano||null,modulo:c.modulo,disciplina:c.disciplina,tipo:c.tipo,texto:c.texto,deletado_em:c.deletado_em,updated_at:new Date().toISOString()});
   renderCriteriosList();syncNovaCriteriaContext();checkReady();toast('Critério excluído.','ok');
 }
 function renderCriteriosList(){
+  const criteriosAtivos=criteriosFixos.filter(c=>!estaNaLixeira(c));
   const el=document.getElementById('criterios-list'); if(!el) return;
   const modSel=document.getElementById('crit-filter-mod');
   const tipoSel=document.getElementById('crit-filter-tipo');
@@ -2863,20 +3311,20 @@ function renderCriteriosList(){
   const fano=anoSel?.value||'';
   const currentMod=modSel?.value||'';
   const currentDisc=discSel?.value||'';
-  const mods=[...new Set(criteriosFixos.filter(c=>anoMatches(c.ano,fano)).map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+  const mods=[...new Set(criteriosAtivos.filter(c=>anoMatches(c.ano,fano)).map(c=>String(c.modulo||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
   if(modSel){
     modSel.innerHTML='<option value="">Todos</option>'+mods.map(m=>'<option value="'+String(m).replace(/"/g,'&quot;')+'"'+(m===currentMod?' selected':'')+'>'+m+'</option>').join('');
   }
 
   const fmod=normPlain(modSel?.value||'');
   const ftipo=normPlain(tipoSel?.value||'');
-  const discOptions=[...new Set(criteriosFixos.filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&anoMatches(c.ano,fano)).map(c=>String(c.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const discOptions=[...new Set(criteriosAtivos.filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&anoMatches(c.ano,fano)).map(c=>String(c.disciplina||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   if(discSel){
     discSel.innerHTML='<option value="">Todas</option>'+discOptions.map(d=>'<option value="'+String(d).replace(/"/g,'&quot;')+'"'+(d===currentDisc?' selected':'')+'>'+d+'</option>').join('');
   }
   const fdisc=normPlain(discSel?.value||'');
 
-  const list=criteriosFixos
+  const list=criteriosAtivos
     .filter(c=>(!fmod||normPlain(c.modulo)===fmod)&&(!fdisc||normPlain(c.disciplina)===fdisc)&&(!ftipo||normPlain(c.tipo)===ftipo)&&anoMatches(c.ano,fano))
     .sort((a,b)=>`${a.ano||''} ${a.modulo} ${a.disciplina} ${a.tipo}`.localeCompare(`${b.ano||''} ${b.modulo} ${b.disciplina} ${b.tipo}`,'pt-BR'));
 
@@ -2934,7 +3382,7 @@ function renderCriteriosList(){
       </div>
     </details>`).join('');
 }
-function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(s.modulo!==mod)return;safeArray(s.groups).forEach(g=>{if(g.disciplina!==disc)return;safeArray(g?.atividades?.[tipo]).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
+function getMesclado(mod,disc,tipo){const rs=[];sessions.forEach(s=>{if(estaNaLixeira(s))return;if(s.modulo!==mod)return;safeArray(s.groups).forEach(g=>{if(g.disciplina!==disc)return;safeArray(g?.atividades?.[tipo]).forEach(r=>rs.push({...r,_sessaoData:s.data}));});});return rs;}
 function exportMesclado(mod,disc,tipo){
   const rs=getMesclado(mod,disc,tipo);if(!rs.length){toast('Sem dados.','err');return;}
   const wb=XLSX.utils.book_new();const sn=tipo.charAt(0).toUpperCase()+tipo.slice(1);
@@ -2959,6 +3407,7 @@ function colsFromHeader(header){
     if(/Esperado|Entregue|Feedback|Positivos|Melhorar/.test(s)) return {wch:34};
     if(/Aluno/.test(s)) return {wch:28};
     if(/Arquivo/.test(s)) return {wch:24};
+    if(/Editado Manualmente/.test(s)) return {wch:26};
     if(/Desconto/.test(s)) return {wch:26};
     if(/Peso/.test(s)) return {wch:9};
     return {wch:13};
@@ -2970,7 +3419,7 @@ function buildRows(mod,disc,tipo,rs){
   const critSet=[];const seen=new Set();
   rs.forEach(r=>(r.criterios||[]).forEach(c=>{if(c.label&&!seen.has(c.label)){seen.add(c.label);critSet.push(c.label);}}));
   const critHeaderCols=critSet.flatMap(lbl=>[`${lbl} — Peso`,`${lbl} — Esperado`,`${lbl} — Entregue`,`${lbl} — Desconto`]);
-  const rows=[[`Módulo ${mod} — ${disc} — ${tipo}`],[`Total: ${rs.length} · ${new Date().toLocaleDateString('pt-BR')}`],[''],['Aluno','Data','Arquivo','Nota Final','Nota Num.','Escala',...critHeaderCols,'Total Descontado','Positivos','A Melhorar','Feedback']];
+  const rows=[[`Módulo ${mod} — ${disc} — ${tipo}`],[`Total: ${rs.length} · ${new Date().toLocaleDateString('pt-BR')}`],[''],['Aluno','Data','Arquivo','Nota Final','Nota Num.','Escala',...critHeaderCols,'Total Descontado','Editado Manualmente','Positivos','A Melhorar','Feedback']];
   rs.forEach(r=>{
     const critCells=critSet.flatMap(lbl=>{
       const c=(r.criterios||[]).find(x=>x.label===lbl);
@@ -2982,13 +3431,14 @@ function buildRows(mod,disc,tipo,rs){
     // Soma real dos descontos, calculada a partir de cada critério — corrige o bug em que
     // esse total vinha de um campo (r.descontos) que a IA nunca preenche de fato.
     const totalDesc=(r.criterios||[]).reduce((a,c)=>a+(parseFloat(c.desconto)||0),0).toFixed(1);
-    rows.push([r.nome_aluno||'—',r._sessaoData||'—',r._arquivo||'—',r.nota_final||'—',r.nota_numerica||0,r.escala_maxima||10,...critCells,totalDesc,(r.pontos_positivos||[]).join('; '),(r.pontos_negativos||[]).join('; '),r.feedback||'—']);
+    const editadoTxt=r._editadoManualmente?('Sim — '+(r._editadoEm?new Date(r._editadoEm).toLocaleString('pt-BR'):'')):'Não';
+    rows.push([r.nome_aluno||'—',r._sessaoData||'—',r._arquivo||'—',r.nota_final||'—',r.nota_numerica||0,r.escala_maxima||10,...critCells,totalDesc,editadoTxt,(r.pontos_positivos||[]).join('; '),(r.pontos_negativos||[]).join('; '),r.feedback||'—']);
   });
   const ns=rs.map(r=>r.nota_numerica).filter(n=>n>0);
   if(ns.length){rows.push([''],['MÉDIA','','','',ns.length?(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(2):'-'],['MAIOR','','','',Math.max(...ns).toFixed(1)],['MENOR','','','',Math.min(...ns).toFixed(1)]);}
   return rows;
 }
-function exportBackup(){if(!sessions.length){toast('Sem histórico.','err');return;}const blob=new Blob([JSON.stringify({v:'cIA5',exported:new Date().toISOString(),sessions,turmas},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`CorretoIA_backup_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.json`;a.click();URL.revokeObjectURL(url);toast('✓ Backup exportado!','ok');}
+function exportBackup(){if(!sessions.length){toast('Sem histórico.','err');return;}const blob=new Blob([JSON.stringify({v:'cIA6',exported:new Date().toISOString(),sessions,turmas,criteriosFixos,alunosCadastro,disciplinasCadastro},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`CorretoIA_backup_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.json`;a.click();URL.revokeObjectURL(url);toast('✓ Backup exportado!','ok');}
 async function importBackup(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -2997,10 +3447,13 @@ async function importBackup(e){
       const data=JSON.parse(ev.target.result);
       if(!data.sessions)throw new Error('Formato inválido');
       const existing=sessions.map(s=>s.id);const novos=data.sessions.filter(s=>!existing.includes(s.id));
-      for(const s of novos)await sbUpsert('sessoes',{id:s.id,modulo:s.modulo,data:s.data,hora:s.hora,total:s.total,groups:s.groups});
+      for(const s of novos)await sbUpsert('sessoes',{id:s.id,modulo:s.modulo,ano:s.ano||null,data:s.data,hora:s.hora,total:s.total,groups:s.groups,deletado_em:s.deletado_em||null});
       sessions=[...sessions,...novos];
-      if(data.turmas){const et=turmas.map(t=>t.id);const nt=data.turmas.filter(t=>!et.includes(t.id));for(const t of nt)await sbUpsert('turmas',{id:t.id,modulo:t.modulo,disciplina:t.disciplina,alunos:t.alunos});turmas=[...turmas,...nt];}
-      renderSidebar();renderTurmasList();
+      if(data.turmas){const et=turmas.map(t=>t.id);const nt=data.turmas.filter(t=>!et.includes(t.id));for(const t of nt)await sbUpsert('turmas',{id:t.id,ano:t.ano||null,modulo:t.modulo,disciplina:t.disciplina,alunos:t.alunos,deletado_em:t.deletado_em||null});turmas=[...turmas,...nt];}
+      if(data.criteriosFixos){const ec=criteriosFixos.map(c=>c.id);const nc=data.criteriosFixos.filter(c=>!ec.includes(c.id));for(const cf of nc){try{await sbUpsert('criterios_fixos',{id:cf.id,ano:cf.ano||null,modulo:cf.modulo,disciplina:cf.disciplina,tipo:cf.tipo,texto:cf.texto,deletado_em:cf.deletado_em||null,updated_at:new Date().toISOString()});}catch(_e){}}criteriosFixos=[...criteriosFixos,...nc];}
+      if(data.alunosCadastro){const ea=alunosCadastro.map(a=>a.id);const na=data.alunosCadastro.filter(a=>!ea.includes(a.id));for(const al of na){try{await sbUpsert('alunos_cadastro',{id:al.id,nome:al.nome});}catch(_e){}}alunosCadastro=[...alunosCadastro,...na];}
+      if(data.disciplinasCadastro){const ed=disciplinasCadastro.map(d=>d.id);const nd=data.disciplinasCadastro.filter(d=>!ed.includes(d.id));for(const di of nd){try{await sbUpsert('disciplinas_cadastro',{id:di.id,nome:di.nome});}catch(_e){}}disciplinasCadastro=[...disciplinasCadastro,...nd];}
+      renderSidebar();renderTurmasList();renderCriteriosList();
       const m=document.getElementById('backup-msg');if(m){m.style.color='var(--green)';m.textContent=`✓ ${novos.length} sessão(ões) importada(s).`;}
       toast('✓ Backup importado!','ok');
     }catch(err){toast('Erro ao importar.','err');}
@@ -3008,7 +3461,7 @@ async function importBackup(e){
   };
   reader.readAsText(file);
 }
-async function limparTudo(){if(!(await confirmarAcao('Apagar TODO o histórico?','Todas as correções salvas na nuvem serão apagadas permanentemente. Esta ação não pode ser desfeita.','Apagar tudo')))return;for(const s of sessions)await sbDelete('sessoes',s.id);sessions=[];cur=null;renderSidebar();renderHistory();toast('Histórico apagado.','ok');}
+async function limparTudo(){if(!(await confirmarAcao('Apagar TODO o histórico?','Todas as correções salvas na nuvem serão apagadas permanentemente — inclusive as que estão na lixeira. Esta ação não pode ser desfeita.','Apagar tudo')))return;for(const s of sessions)await sbDelete('sessoes',s.id);sessions=[];cur=null;renderSidebar();renderHistory();toast('Histórico apagado.','ok');}
 function goTab(tab){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
@@ -3024,6 +3477,7 @@ function goTab(tab){
   if(tab==='migracao')renderMigracao();
   if(tab==='boletim')renderBuscaAluno();
   if(tab==='cadastro'){renderAlunosCadastro();renderDisciplinasCadastro();}
+  if(tab==='config')renderLixeira();
 }
 // Verifica se existem registros legados (sem Ano definido) e mostra/esconde a aba de migração.
 function updateMigracaoTabVisibility(){
@@ -3122,6 +3576,14 @@ function limparArquivosNova(){
 function showLoad(on){document.getElementById('loading').classList.toggle('on',on);if(!on)document.getElementById('lbar').style.width='0%';}
 function setLoad(msg,pct){document.getElementById('lmsg').textContent=msg;document.getElementById('lbar').style.width=pct+'%';}
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
+// Evita recalcular listas grandes a cada tecla digitada nos filtros de texto — espera uma pausa
+// curta de digitação antes de re-renderizar.
+function debounce(fn,ms){let t;return function(...args){clearTimeout(t);t=setTimeout(()=>fn.apply(this,args),ms);};}
+const debouncedRenderDashboard=debounce(renderDashboard,220);
+const debouncedRenderGabList=debounce(renderGabList,220);
+const debouncedRenderResLista=debounce(()=>renderResLista(),220);
+const debouncedRenderBuscaAluno=debounce(renderBuscaAluno,180);
+const debouncedRenderAlunosCadastro=debounce(renderAlunosCadastro,220);
 // Abre/fecha a sidebar de "Correções salvas" como gaveta em telas estreitas (mobile/tablet).
 // Sem argumento, alterna o estado atual; com true/false, força abrir/fechar.
 function toggleMobileSidebar(force){
