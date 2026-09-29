@@ -591,7 +591,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div class="fcard-title">➕ Novo critério</div>
           <div class="row-fields">
             <span class="flabel">Ano</span>
-            <select class="finput mod" id="crit-ano" style="width:120px;">
+            <select class="finput mod" id="crit-ano" style="width:120px;" onchange="popularGabaritosParaExtracao()">
               <option value="">Selecione</option>
               <option value="Ano 1">Ano 1</option>
               <option value="Ano 2">Ano 2</option>
@@ -599,7 +599,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <option value="Ano 4">Ano 4</option>
             </select>
             <span class="flabel">Módulo</span>
-            <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I">
+            <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I" oninput="popularGabaritosParaExtracao()">
             <span class="flabel">Disciplina</span>
             <span style="position:relative;display:inline-block;">
               <input class="finput disc" type="text" id="crit-disciplina" placeholder="Ex: Introdução a EaD" oninput="mostrarSugestoesDisciplina('crit-disciplina')" onblur="setTimeout(()=>esconderSugestoesDisciplina('crit-disciplina'),150)" autocomplete="off">
@@ -615,8 +615,15 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           </div>
           <div class="fcard" style="background:var(--bg);padding:12px 14px;margin-bottom:14px;">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:8px;">🤖 Extrair critério de um gabarito com IA</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+              <span class="flabel">Gabarito já enviado</span>
+              <select class="finput disc" id="extrair-criterio-gabarito-select" style="width:280px;text-align:left;" onchange="if(this.value)document.getElementById('extrair-criterio-file').value='';">
+                <option value="">Selecione (Ano/Módulo preenchidos acima)</option>
+              </select>
+            </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <input type="file" id="extrair-criterio-file" accept=".pdf,.docx,.doc" style="font-size:12px;max-width:260px;">
+              <span style="font-size:11px;color:var(--muted2);">ou envie um arquivo novo:</span>
+              <input type="file" id="extrair-criterio-file" accept=".pdf,.docx,.doc" style="font-size:12px;max-width:220px;" onchange="if(this.files.length)document.getElementById('extrair-criterio-gabarito-select').value='';">
               <button class="btn-sm accent" onclick="extrairCriterioComIA()">✨ Extrair e preencher</button>
             </div>
             <div id="extrair-criterio-status" style="font-size:11px;margin-top:8px;min-height:16px;color:var(--muted2);"></div>
@@ -1750,8 +1757,8 @@ REGRAS OBRIGATÓRIAS — siga à risca:
   // a partir da 2ª chamada do lote. O conteúdo específico do aluno entra DEPOIS, fora do cache.
   content[content.length-1].cache_control={type:'ephemeral'};
   adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
-  const sys=[{type:'text',text:`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Se o critério definir níveis fechados de nota, escolha sempre um nível exato — nunca um valor interpolado. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`,cache_control:{type:'ephemeral'}}];
-  const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:2400,temperature:0,system:sys,messages:[{role:'user',content}]})});
+  const sys=[{type:'text',text:`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Seja o mais determinístico e consistente possível: para o mesmo tipo de erro ou acerto, aplique sempre o mesmo julgamento, independentemente de quando ou em que ordem esta correção está sendo feita. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Se o critério definir níveis fechados de nota, escolha sempre um nível exato — nunca um valor interpolado. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`,cache_control:{type:'ephemeral'}}];
+  const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:2400,system:sys,messages:[{role:'user',content}]})});
   if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
@@ -2363,8 +2370,15 @@ async function salvarTurma(){
   await sbUpsert('turmas',{id:editingTurma.id,ano:editingTurma.ano,modulo:editingTurma.modulo,disciplina:editingTurma.disciplina,alunos:editingTurma.alunos});
   const idx=turmas.findIndex(t=>t.id===editingTurma.id);
   if(idx>=0)turmas[idx]=editingTurma;else turmas.push({...editingTurma});
-  const m=document.getElementById('turma-msg');m.style.color='var(--green)';m.textContent=`✓ Turma salva! ${editingTurma.alunos.length} aluno(s).`;
+  const nomeDisc=editingTurma.disciplina,qtd=editingTurma.alunos.length;
+  // Zera o painel depois de salvar, para já ficar pronto pra cadastrar a próxima turma.
+  editingTurma=null;
+  document.getElementById('turma-editor').style.display='none';
+  document.getElementById('t-ano').value='';
+  document.getElementById('t-modulo').value='';
+  document.getElementById('t-disciplina').value='';
   renderTurmasList();
+  toast(`✓ Turma "${nomeDisc}" salva! ${qtd} aluno(s).`,'ok');
 }
 function clearTurmasFilters(){
   const z=document.getElementById('turma-filter-ano');if(z)z.value='';
@@ -3197,15 +3211,36 @@ async function delGab(path,nome){
 // ===== Extração de critério a partir de um gabarito, usando IA =====
 // Tarefa pontual (algumas vezes por semestre, não por aluno) — usa um modelo mais capaz (Opus)
 // já que aqui o que importa é redigir bem a rubrica, não o custo por chamada.
+// Preenche o dropdown de gabaritos já enviados, filtrando por Ano/Módulo já escolhidos no
+// formulário de critério (se vazios, mostra todos) — evita ter que subir o mesmo arquivo de novo.
+function popularGabaritosParaExtracao(){
+  const sel=document.getElementById('extrair-criterio-gabarito-select'); if(!sel) return;
+  const ano=document.getElementById('crit-ano')?.value||'';
+  const mod=(document.getElementById('crit-modulo')?.value||'').trim();
+  const atual=sel.value;
+  const lista=gabListCache.filter(g=>anoMatches(g.ano,ano)&&(!mod||normPlain(g.modulo)===normPlain(mod)));
+  sel.innerHTML='<option value="">'+(lista.length?'Selecione um gabarito já enviado...':'Nenhum gabarito enviado para esse Ano/Módulo')+'</option>'
+    +lista.map(g=>`<option value="${g.id.replace(/"/g,'&quot;')}">${esc(g.nome)} (${anoLabel(g.ano)} · Mód. ${g.modulo})</option>`).join('');
+  if(lista.some(g=>g.id===atual)) sel.value=atual;
+}
 async function extrairCriterioComIA(){
   const key=getKey();
   if(!key){toast('Informe a chave API antes de extrair.','err');return;}
+  const selGab=document.getElementById('extrair-criterio-gabarito-select');
+  const gabId=selGab?.value||'';
   const fileInput=document.getElementById('extrair-criterio-file');
-  const file=fileInput?.files?.[0];
-  if(!file){toast('Selecione o arquivo do gabarito/critério primeiro.','err');return;}
+  const fileEscolhido=fileInput?.files?.[0];
+  if(!gabId&&!fileEscolhido){toast('Escolha um gabarito já enviado ou envie um arquivo.','err');return;}
   const statusEl=document.getElementById('extrair-criterio-status');
   statusEl.style.color='var(--muted2)';statusEl.textContent='Lendo o arquivo...';
   try{
+    let file=fileEscolhido;
+    if(!file&&gabId){
+      const g=gabListCache.find(x=>x.id===gabId);
+      if(!g) throw new Error('Gabarito selecionado não foi encontrado na lista.');
+      const blob=await stDownload(g.id);
+      file=new File([blob],g.nome,{type:g.tipo_mime||'application/pdf'});
+    }
     const conteudo=await extrairArquivo(file);
     statusEl.textContent='Consultando a IA para estruturar o critério (pode levar alguns segundos)...';
     const content=[];
@@ -3219,7 +3254,7 @@ REGRAS OBRIGATÓRIAS:
 6. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
 {"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério completo, pronto para colar no campo de critérios fixos do sistema"}`});
     adicionarConteudoAoArray(content,'DOCUMENTO DE GABARITO/CRITÉRIO:',conteudo);
-    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,temperature:0,messages:[{role:'user',content}]})});
+    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,messages:[{role:'user',content}]})});
     const data=await res.json();
     if(!res.ok) throw new Error(data?.error?.message||`Erro ${res.status} ao chamar a API`);
     const txt=data.content.map(c=>c.text||'').join('').trim();
@@ -3234,6 +3269,7 @@ REGRAS OBRIGATÓRIAS:
     statusEl.style.color='var(--green)';
     statusEl.textContent=`✓ Sugestão gerada (custo desta extração: $${custo.toFixed(3)}). Revise Disciplina, Tipo e o texto com atenção antes de salvar.`;
     fileInput.value='';
+    if(selGab) selGab.value='';
   }catch(err){
     console.error('Falha ao extrair critério com IA:',err);
     statusEl.style.color='var(--red)';
@@ -3472,7 +3508,7 @@ function goTab(tab){
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
   if(tab==='gabaritos')renderGabList();
-  if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();}
+  if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();popularGabaritosParaExtracao();}
   if(tab==='turmas')renderTurmasList();
   if(tab==='migracao')renderMigracao();
   if(tab==='boletim')renderBuscaAluno();
