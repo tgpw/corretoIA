@@ -627,7 +627,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <button class="btn-sm accent" onclick="extrairCriterioComIA()">✨ Extrair e preencher</button>
             </div>
             <div id="extrair-criterio-status" style="font-size:11px;margin-top:8px;min-height:16px;color:var(--muted2);"></div>
-            <div style="font-size:10px;color:var(--muted2);margin-top:4px;">Preenche disciplina, tipo e o texto abaixo automaticamente — sempre revise antes de salvar.</div>
+            <div style="font-size:10px;color:var(--muted2);margin-top:4px;"><b>Escolha o Tipo acima (Entender/Delinear/Criar/Complementar) antes de clicar</b> — a IA procura no documento especificamente a seção daquele tipo. Se o gabarito tiver vários tipos juntos, extraia um de cada vez, trocando o Tipo entre uma extração e outra. Sempre revise antes de salvar.</div>
           </div>
           <div class="row-fields" style="align-items:flex-start;">
             <span class="flabel">Critérios e pesos</span>
@@ -3243,16 +3243,51 @@ async function extrairCriterioComIA(){
     }
     const conteudo=await extrairArquivo(file);
     statusEl.textContent='Consultando a IA para estruturar o critério (pode levar alguns segundos)...';
+    const tipoAlvo=document.getElementById('crit-tipo')?.value||'';
+    const discAlvo=(document.getElementById('crit-disciplina')?.value||'').trim();
     const content=[];
-    content.push({type:'text',text:`Você é um especialista em avaliação educacional. Vai analisar um documento de gabarito/critério de correção e estruturá-lo para uso num sistema de correção automática por IA.
+    content.push({type:'text',text:`Você é um especialista em avaliação educacional. Vai analisar um documento de gabarito/critério de correção e estruturá-lo para uso num sistema de correção automática por IA, no formato EXATO do exemplo abaixo — ele será colado direto num campo de texto e reenviado em toda correção de aluno, então precisa ser curto e direto, não um resumo acadêmico do documento.
+
+TIPO DE ATIVIDADE QUE O PROFESSOR QUER EXTRAIR AGORA: "${tipoAlvo||'não informado'}"${discAlvo?` (disciplina informada: "${discAlvo}")`:''}
+Isso é uma instrução, não uma sugestão: procure no documento especificamente a seção referente a esse tipo de atividade. Se o documento tiver mais de um tipo (ex: Entender e Delinear juntos), extraia SÓ a seção do tipo pedido acima, mesmo que outra seção pareça "mais completa". Se o documento não tiver conteúdo para o tipo pedido, retorne "tipo":"" e explique em 1 frase, no campo "texto", quais tipos foram encontrados no documento em vez disso — não devolva outra seção no lugar.
+
+FORMATO EXATO A SEGUIR (exemplos reais já usados neste sistema):
+
+Exemplo A — quando o documento já define níveis fechados de nota:
+"""
+Atividade: Nota de diagnóstico sobre a experiência de um cidadão com o serviço público — duas situações do cenário, cada uma com fato, causa, impacto, conceito/princípio relacionado e necessidade não atendida.
+
+Nota 100: Analisa as duas situações de forma clara e completa, com causas plausíveis, impactos coerentes e relação correta com conceitos da disciplina.
+Nota 75: Analisa as duas situações com a maior parte dos elementos solicitados, mas um aspecto pouco desenvolvido.
+Nota 50: Identifica as situações de forma descritiva, com relações limitadas aos conceitos.
+Nota 25: Analisa só uma situação ou de forma muito superficial.
+Nota 0: Não envia a atividade ou copia material sem desenvolver análise própria.
+"""
+
+Exemplo B — quando o documento é objetivo/calculável (tem resposta certa):
+"""
+Atividade: Cálculo de medidas descritivas e representação gráfica de dados de tempo de espera.
+
+Pontuação por item (total 100 pontos):
+a) Identificação dos elementos da pesquisa (população, amostra, variáveis) — 15 pontos
+b) Rol dos dados em ordem crescente — 10 pontos
+c) Medidas descritivas (média, mediana, moda, desvio-padrão) — 25 pontos
+d) Interpretação das medidas — 15 pontos
+e) Representação gráfica (histograma com eixos e título) — 25 pontos
+f) Duas conclusões administrativas coerentes — 10 pontos
+
+Regra de correção: cada item vale pontuação cheia se o aluno chegou ao valor correto (ou equivalente coerente) e apresentou a interpretação pedida. Aceitar variações de arredondamento razoáveis.
+
+Gabarito de referência: média ≈ 24,2 min; mediana = 24 min; moda = 18 min; desvio-padrão ≈ 5,65 min.
+"""
+
 REGRAS OBRIGATÓRIAS:
-1. Identifique a disciplina e o tipo de atividade (entender, delinear, criar ou complementar) a partir do documento. Se não conseguir identificar com segurança, deixe o campo em branco.
-2. Se o documento já definir níveis fechados de nota (ex: "Nota 100:", "Nota 75:", etc.), preserve essa estrutura de níveis com as descrições completas de cada um — não resuma, não generalize, mantenha a redação original sempre que possível.
-3. Se o documento for objetivo/calculável (gabarito com resposta certa, cálculos, fórmulas), estruture como pontuação por item, citando o valor esperado de cada item quando existir.
-4. Se o documento cobrir mais de um tipo de atividade (ex: Entender e Delinear juntos), extraia só UM tipo — o mais completo/central — e diga isso no início do "texto".
-5. NUNCA invente critério, peso ou nível que não conste no documento. Se algo estiver ambíguo, prefira deixar uma observação no próprio texto (ex: "[revisar: não ficou claro o peso deste item]") a inventar um valor.
-6. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
-{"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério completo, pronto para colar no campo de critérios fixos do sistema"}`});
+1. Identifique a disciplina a partir do documento (ou confirme a informada acima). Se não conseguir identificar com segurança, deixe em branco.
+2. Siga rigorosamente o estilo dos exemplos: frases curtas, sem reproduzir o enunciado completo do documento, sem contexto de fundo (história, cenário detalhado), sem seções tipo "ORIENTAÇÕES DE ENTREGA" ou formatação de arquivo — só o que afeta a nota.
+3. NUNCA insira notas entre colchetes tipo "[revisar: ...]" no meio do texto. Se algo estiver genuinamente ambíguo ou faltando no documento, prefira registrar isso em UMA frase só, ao final do texto, após uma linha em branco — nunca espalhado no meio dos critérios.
+4. NUNCA invente critério, peso ou nível que não conste no documento.
+5. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
+{"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério no formato exato dos exemplos acima"}`});
     adicionarConteudoAoArray(content,'DOCUMENTO DE GABARITO/CRITÉRIO:',conteudo);
     const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,messages:[{role:'user',content}]})});
     const data=await res.json();
