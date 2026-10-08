@@ -1423,7 +1423,7 @@ async function extrairArquivo(file,preferirImagem=false){
       }
       // PDF escaneado, ou preferirImagem=true: renderiza as páginas como imagem.
       const pages=[];
-      const maxImgPages=preferirImagem?8:3;
+      const maxImgPages=preferirImagem?16:3; // gabaritos reais passam de 10 páginas (ex: 11) — com 8, a Atividade Complementar ficava de fora
       for(let i=1;i<=Math.min(pdf.numPages,maxImgPages);i++){
         const page=await pdf.getPage(i);
         const vp=page.getViewport({scale:1.5});
@@ -3292,8 +3292,10 @@ REGRAS OBRIGATÓRIAS:
 1. Identifique a disciplina a partir do documento (ou confirme a informada acima). Se não conseguir identificar com segurança, deixe em branco.
 2. Siga rigorosamente o estilo dos exemplos: frases curtas, sem reproduzir o enunciado completo do documento, sem contexto de fundo (história, cenário detalhado), sem seções tipo "ORIENTAÇÕES DE ENTREGA" ou formatação de arquivo — só o que afeta a nota.
 3. NUNCA insira notas entre colchetes tipo "[revisar: ...]" no meio do texto. Se algo estiver genuinamente ambíguo ou faltando no documento, prefira registrar isso em UMA frase só, ao final do texto, após uma linha em branco — nunca espalhado no meio dos critérios.
-4. NUNCA invente critério, peso ou nível que não conste no documento.
-5. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
+4. NUNCA invente critério, peso ou nível que não conste no documento. Em exemplos de respostas aceitas, use os exemplos do PRÓPRIO documento (as ações, conclusões ou respostas que o professor citou) — não crie exemplos novos seus.
+5. Percorra TODAS as páginas antes de concluir que algo "não consta": a tabela de pontuação de uma atividade costuma ficar no FIM da seção, às vezes duas ou três páginas depois do enunciado, e valores numéricos do gabarito (médias, variâncias, etc.) podem estar dentro de tabelas ou figuras. Só escreva "o documento não informa X" se você realmente procurou em todas as páginas, inclusive nas imagens.
+6. No "Gabarito de referência", inclua TODOS os valores numéricos que o documento apresenta para aquele tipo de atividade (ex: se a tabela traz média, variância, desvio-padrão, mediana e moda, liste os cinco).
+7. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
 {"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério no formato exato dos exemplos acima"}`});
     adicionarConteudoAoArray(content,'DOCUMENTO DE GABARITO/CRITÉRIO:',conteudo);
     const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,messages:[{role:'user',content}]})});
