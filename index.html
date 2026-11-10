@@ -456,7 +456,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div class="fcard-desc">Informe o módulo e a disciplina para criar ou editar a lista de alunos.</div>
           <div class="row-fields">
             <span class="flabel">Ano</span>
-            <select class="finput mod" id="t-ano" style="width:120px;">
+            <select class="finput mod" id="t-ano" style="width:120px;" onchange="popularDisciplinasTurma()">
               <option value="">Selecione</option>
               <option value="Ano 1">Ano 1</option>
               <option value="Ano 2">Ano 2</option>
@@ -464,11 +464,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <option value="Ano 4">Ano 4</option>
             </select>
             <span class="flabel">Módulo</span>
-            <input class="finput mod" type="text" id="t-modulo" placeholder="Ex: I">
+            <input class="finput mod" type="text" id="t-modulo" placeholder="Ex: I" oninput="popularDisciplinasTurma()">
             <span class="flabel">Disciplina</span>
-            <span style="position:relative;display:inline-block;">
-              <input class="finput disc" type="text" id="t-disciplina" placeholder="Ex: Cálculo III" oninput="mostrarSugestoesDisciplina('t-disciplina')" onblur="setTimeout(()=>esconderSugestoesDisciplina('t-disciplina'),150)" autocomplete="off">
-              <div id="t-disciplina-sug" class="disc-sug"></div>
+            <select class="finput disc" id="t-disciplina" onchange="onTurmaDisciplinaChange()" style="width:270px;text-align:left;">
+              <option value="">Selecione Ano e Módulo...</option>
+            </select>
+            <span id="t-disciplina-nova-wrap" style="position:relative;display:none;">
+              <input class="finput disc" type="text" id="t-disciplina-nova" placeholder="Nome da nova disciplina" oninput="mostrarSugestoesDisciplina('t-disciplina-nova')" onblur="setTimeout(()=>esconderSugestoesDisciplina('t-disciplina-nova'),150)" autocomplete="off">
+              <div id="t-disciplina-nova-sug" class="disc-sug"></div>
             </span>
             <button class="btn" onclick="criarOuCarregarTurma()">Carregar / Criar</button>
           </div>
@@ -591,7 +594,7 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
           <div class="fcard-title">➕ Novo critério</div>
           <div class="row-fields">
             <span class="flabel">Ano</span>
-            <select class="finput mod" id="crit-ano" style="width:120px;" onchange="popularGabaritosParaExtracao()">
+            <select class="finput mod" id="crit-ano" style="width:120px;" onchange="popularGabaritosParaExtracao();popularDisciplinasCriterio()">
               <option value="">Selecione</option>
               <option value="Ano 1">Ano 1</option>
               <option value="Ano 2">Ano 2</option>
@@ -599,11 +602,14 @@ header{padding:0 20px;height:54px;border-bottom:1px solid var(--border);display:
               <option value="Ano 4">Ano 4</option>
             </select>
             <span class="flabel">Módulo</span>
-            <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I" oninput="popularGabaritosParaExtracao()">
+            <input class="finput mod" type="text" id="crit-modulo" placeholder="Ex: I" oninput="popularGabaritosParaExtracao();popularDisciplinasCriterio()">
             <span class="flabel">Disciplina</span>
-            <span style="position:relative;display:inline-block;">
-              <input class="finput disc" type="text" id="crit-disciplina" placeholder="Ex: Introdução a EaD" oninput="mostrarSugestoesDisciplina('crit-disciplina')" onblur="setTimeout(()=>esconderSugestoesDisciplina('crit-disciplina'),150)" autocomplete="off">
-              <div id="crit-disciplina-sug" class="disc-sug"></div>
+            <select class="finput disc" id="crit-disciplina" onchange="onCritDisciplinaChange()" style="width:270px;text-align:left;">
+              <option value="">Selecione Ano e Módulo...</option>
+            </select>
+            <span id="crit-disciplina-nova-wrap" style="position:relative;display:none;">
+              <input class="finput disc" type="text" id="crit-disciplina-nova" placeholder="Nome da nova disciplina" oninput="mostrarSugestoesDisciplina('crit-disciplina-nova')" onblur="setTimeout(()=>esconderSugestoesDisciplina('crit-disciplina-nova'),150)" autocomplete="off">
+              <div id="crit-disciplina-nova-sug" class="disc-sug"></div>
             </span>
             <span class="flabel">Tipo</span>
             <select class="finput mod" id="crit-tipo" style="width:140px;text-align:left;">
@@ -1094,7 +1100,7 @@ function syncNovaCriteriaContext(){
   checkReady();
 }
 function prefillIntroEadCriterios(){
-  document.getElementById('crit-disciplina').value='Introdução a EaD';
+  setCritDisciplina('Introdução a EaD');
   document.getElementById('crit-modulo').value=document.getElementById('crit-modulo').value||'I';
   const tipo=document.getElementById('crit-tipo').value;
   const presets={
@@ -1765,16 +1771,30 @@ REGRAS OBRIGATÓRIAS — siga à risca:
   content[content.length-1].cache_control={type:'ephemeral'};
   adicionarConteudoAoArray(content,`\nATIVIDADE DO ALUNO (arquivo: ${atvName}):`,atvConteudo);
   const sys=[{type:'text',text:`Você é um professor universitário experiente. Use linguagem objetiva e econômica. Seja o mais determinístico e consistente possível: para o mesmo tipo de erro ou acerto, aplique sempre o mesmo julgamento, independentemente de quando ou em que ordem esta correção está sendo feita. Quando houver critério fixo, use apenas ele como referência de pesos e critérios. Nunca invente critérios. Se o critério definir níveis fechados de nota, escolha sempre um nível exato — nunca um valor interpolado. Calcule a nota numericamente a partir dos critérios. Responda apenas com JSON válido.`,cache_control:{type:'ephemeral'}}];
-  const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:2400,system:sys,messages:[{role:'user',content}]})});
-  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
-  const data=await res.json();
-  const tokIn=data.usage?.input_tokens||0;const tokOut=data.usage?.output_tokens||0;
-  const tokCacheWrite=data.usage?.cache_creation_input_tokens||0;const tokCacheRead=data.usage?.cache_read_input_tokens||0;
+  // Sonnet 5 pensa por padrão ("adaptive thinking"), e esse raciocínio conta no max_tokens e é cobrado como
+  // saída. Para corrigir contra uma rubrica fixa isso só gera custo e variação entre alunos — e foi o que
+  // cortou a resposta da Dafny no meio do JSON. Desligamos o thinking (mesmo comportamento validado antes)
+  // e damos folga de tokens, porque o tokenizador novo gera ~30% mais tokens para o mesmo texto.
+  const chamarIA=async(maxTok)=>{
+    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-5',max_tokens:maxTok,thinking:{type:'disabled'},system:sys,messages:[{role:'user',content}]})});
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
+    return await res.json();
+  };
+  let data=await chamarIA(6000);
+  let tokIn=data.usage?.input_tokens||0,tokOut=data.usage?.output_tokens||0;
+  let tokCacheWrite=data.usage?.cache_creation_input_tokens||0,tokCacheRead=data.usage?.cache_read_input_tokens||0;
   registrarUsoTokens(tokIn,tokOut,tokCacheWrite,tokCacheRead);
+  if(data.stop_reason==='max_tokens'){
+    // Rede de segurança: uma segunda tentativa automática com bem mais espaço antes de desistir do aluno.
+    data=await chamarIA(16000);
+    const i2=data.usage?.input_tokens||0,o2=data.usage?.output_tokens||0,cw2=data.usage?.cache_creation_input_tokens||0,cr2=data.usage?.cache_read_input_tokens||0;
+    registrarUsoTokens(i2,o2,cw2,cr2);
+    tokIn+=i2;tokOut+=o2;tokCacheWrite+=cw2;tokCacheRead+=cr2;
+  }
   const txt=data.content.map(c=>c.text||'').join('').trim();
   const cortadoPorLimite = data.stop_reason==='max_tokens';
   try{
-    if(cortadoPorLimite) throw new Error('A resposta da IA foi cortada por atingir o limite de tokens (max_tokens) — o critério desta atividade provavelmente tem detalhe demais para o espaço reservado.');
+    if(cortadoPorLimite) throw new Error('A resposta da IA foi cortada por limite de tokens mesmo após uma segunda tentativa automática com mais espaço.');
     const p=tryParseJSONObject(txt);
     p._arquivo=atvName;
     p._disc=p.disciplina||'Não identificado';
@@ -1802,7 +1822,7 @@ REGRAS OBRIGATÓRIAS — siga à risca:
   }catch(ex){
     console.error('Falha ao interpretar resposta da IA:', ex, txt);
     const motivoFalha = cortadoPorLimite
-      ? 'A resposta da IA foi cortada por atingir o limite de tokens (a atividade/critério é maior do que o espaço reservado). Considere simplificar o critério fixo ou avisar o suporte para aumentar o limite.'
+      ? 'A resposta da IA foi cortada por limite de tokens, mesmo após uma segunda tentativa automática com mais espaço. Exclua este resultado e corrija o aluno de novo; se repetir, o arquivo pode ser muito extenso ou o critério detalhado demais.'
       : 'Erro ao processar automaticamente. Revisão manual necessária.';
     return {nome_aluno:nomeManual||atvName.replace(/\.[^.]+$/,''),disciplina:'Revisão',tipo_atividade:'entender',status_correcao:'revisao',nota_final:'Revisão',nota_numerica:NaN,escala_maxima:10,memoria_calculo:txt?txt.substring(0,1000):ex.message,criterios:[],descontos:[],pontos_positivos:[],pontos_negativos:[cortadoPorLimite?'Resposta cortada por limite de tokens (max_tokens)':'Falha no processamento do retorno da IA'],feedback:motivoFalha,_arquivo:atvName,_disc:'Revisão',_tipo:'entender',_tokIn:tokIn,_tokOut:tokOut,_tokCacheWrite:tokCacheWrite,_tokCacheRead:tokCacheRead};
   }
@@ -2312,7 +2332,7 @@ function exportTurmaExcel(){
 async function criarOuCarregarTurma(){
   const ano=document.getElementById('t-ano').value.trim();
   const mod=document.getElementById('t-modulo').value.trim();
-  const discDigitada=document.getElementById('t-disciplina').value.trim();
+  const discDigitada=getTurmaDisciplina();
   if(!ano||!mod||!discDigitada){toast('Informe Ano, módulo e disciplina.','err');return;}
   const disc=await registrarDisciplinaSeNova(discDigitada); // usa a grafia já cadastrada, se existir, ou cadastra esta como nova
   const id=`${ano}||${mod}||${disc}`;
@@ -2383,7 +2403,8 @@ async function salvarTurma(){
   document.getElementById('turma-editor').style.display='none';
   document.getElementById('t-ano').value='';
   document.getElementById('t-modulo').value='';
-  document.getElementById('t-disciplina').value='';
+  document.getElementById('t-disciplina-nova').value='';
+  setTurmaDisciplina(''); // t-ano/t-modulo já foram limpos acima: a lista volta ao estado "sem contexto"
   renderTurmasList();
   toast(`✓ Turma "${nomeDisc}" salva! ${qtd} aluno(s).`,'ok');
 }
@@ -2435,7 +2456,7 @@ function editTurma(id){
   editingTurma={...t,alunos:[...t.alunos]};
   const anoSel=document.getElementById('t-ano'); if(anoSel) anoSel.value=t.ano||'';
   document.getElementById('t-modulo').value=t.modulo;
-  document.getElementById('t-disciplina').value=t.disciplina;
+  setTurmaDisciplina(t.disciplina);
   document.getElementById('turma-editor').style.display='block';
   document.getElementById('turma-msg').textContent='';
   populateCopiarDeTurmaSelect();
@@ -3251,7 +3272,7 @@ async function extrairCriterioComIA(){
     const conteudo=await extrairArquivo(file,true);
     statusEl.textContent='Consultando a IA para estruturar o critério (pode levar alguns segundos)...';
     const tipoAlvo=document.getElementById('crit-tipo')?.value||'';
-    const discAlvo=(document.getElementById('crit-disciplina')?.value||'').trim();
+    const discAlvo=getCritDisciplina();
     const content=[];
     content.push({type:'text',text:`Você é um especialista em avaliação educacional. Vai analisar um documento de gabarito/critério de correção e estruturá-lo para uso num sistema de correção automática por IA, no formato EXATO do exemplo abaixo — ele será colado direto num campo de texto e reenviado em toda correção de aluno, então precisa ser curto e direto, não um resumo acadêmico do documento.
 
@@ -3298,12 +3319,14 @@ REGRAS OBRIGATÓRIAS:
 7. Responda APENAS com JSON válido, sem markdown, sem texto antes ou depois, no formato:
 {"disciplina":"","tipo":"entender|delinear|criar|complementar","texto":"critério no formato exato dos exemplos acima"}`});
     adicionarConteudoAoArray(content,'DOCUMENTO DE GABARITO/CRITÉRIO:',conteudo);
-    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:3000,messages:[{role:'user',content}]})});
+    const res=await fetchComRetry('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5',max_tokens:16000,messages:[{role:'user',content}]})});
     const data=await res.json();
     if(!res.ok) throw new Error(data?.error?.message||`Erro ${res.status} ao chamar a API`);
+    if(data.stop_reason==='max_tokens') throw new Error('A resposta foi cortada por limite de tokens (o raciocínio da IA consumiu o espaço). Tente de novo; se repetir, extraia um tipo de atividade por vez.');
     const txt=data.content.map(c=>c.text||'').join('').trim();
     const p=tryParseJSONObject(txt);
-    if(p.disciplina) document.getElementById('crit-disciplina').value=p.disciplina;
+    // A escolha do professor na lista manda; só preenche pela IA se ele ainda não escolheu nenhuma.
+    if(!getCritDisciplina() && p.disciplina) setCritDisciplina(p.disciplina,true);
     if(p.tipo && ATV_TYPES.includes(p.tipo)) document.getElementById('crit-tipo').value=p.tipo;
     if(p.texto) document.getElementById('crit-texto').value=p.texto;
     const tokIn=data.usage?.input_tokens||0,tokOut=data.usage?.output_tokens||0;
@@ -3320,10 +3343,87 @@ REGRAS OBRIGATÓRIAS:
     statusEl.textContent='Erro ao extrair: '+(err.message||err);
   }
 }
+// ===== Disciplina em lista fechada (sem digitar nome livre) — usada em Critérios ('crit') e Turmas ('t') =====
+// Mostra primeiro as disciplinas do Ano/Módulo escolhidos (turmas, critérios e correções já
+// existentes ali) e depois as demais do cadastro central; "Nova disciplina..." abre um campo
+// de texto (com sugestões) e a disciplina nova entra no cadastro ao salvar.
+// Convenção de ids: `${p}-ano`, `${p}-modulo`, `${p}-disciplina`, `${p}-disciplina-nova(-wrap)`.
+const DISC_NOVA='__nova__';
+function getDisciplinaLista(p){
+  const sel=document.getElementById(p+'-disciplina'); if(!sel) return '';
+  if(sel.value===DISC_NOVA) return (document.getElementById(p+'-disciplina-nova')?.value||'').trim();
+  return (sel.value||'').trim();
+}
+function onDisciplinaListaChange(p){
+  const sel=document.getElementById(p+'-disciplina');
+  const wrap=document.getElementById(p+'-disciplina-nova-wrap');
+  if(!sel||!wrap) return;
+  const nova=sel.value===DISC_NOVA;
+  wrap.style.display=nova?'inline-block':'none';
+  if(nova) document.getElementById(p+'-disciplina-nova')?.focus();
+}
+function popularDisciplinasLista(p){
+  const sel=document.getElementById(p+'-disciplina'); if(!sel) return;
+  const ano=document.getElementById(p+'-ano')?.value||'';
+  const mod=(document.getElementById(p+'-modulo')?.value||'').trim();
+  const atual=sel.value;
+  const dedupe=lista=>{const vistos=new Set(),out=[];lista.forEach(n=>{const t=safeText(n).trim();const k=normPlain(t);if(t&&!vistos.has(k)){vistos.add(k);out.push(t);}});return out.sort((a,b)=>a.localeCompare(b,'pt-BR'));};
+  const nomesDe=(lista,filtrar)=>lista.filter(x=>!estaNaLixeira(x)&&(!filtrar||((!mod||normPlain(x.modulo)===normPlain(mod))&&anoMatches(x.ano,ano))));
+  const coletar=filtrar=>{
+    const out=[];
+    nomesDe(turmas,filtrar).forEach(t=>out.push(t.disciplina));
+    nomesDe(criteriosFixos,filtrar).forEach(x=>out.push(x.disciplina));
+    nomesDe(sessions,filtrar).forEach(s=>safeArray(s.groups).forEach(g=>out.push(g.disciplina)));
+    return out;
+  };
+  const doContexto=(ano||mod)?dedupe(coletar(true)):[];
+  const ctxSet=new Set(doContexto.map(normPlain));
+  // "demais": cadastro central + tudo que já existe, menos o que já está no grupo do contexto
+  const demais=dedupe([...disciplinasCadastro.map(d=>d.nome),...coletar(false)]).filter(n=>!ctxSet.has(normPlain(n)));
+  const opt=n=>`<option value="${esc(n)}">${esc(n)}</option>`;
+  let html='<option value="">'+((ano||mod)?'Selecione a disciplina...':'Selecione a disciplina (ou escolha Ano/Módulo)...')+'</option>';
+  if(doContexto.length) html+=`<optgroup label="Deste Ano/Módulo">${doContexto.map(opt).join('')}</optgroup>`;
+  if(demais.length) html+=`<optgroup label="${doContexto.length?'Outras disciplinas cadastradas':'Disciplinas cadastradas'}">${demais.map(opt).join('')}</optgroup>`;
+  html+=`<option value="${DISC_NOVA}">➕ Nova disciplina...</option>`;
+  sel.innerHTML=html;
+  // mantém a escolha anterior; se ela não está mais na lista (ex: registro antigo), acrescenta como opção
+  if(atual===DISC_NOVA){ sel.value=DISC_NOVA; }
+  else if(atual){
+    const existe=[...sel.options].some(o=>o.value===atual);
+    if(!existe) sel.insertAdjacentHTML('afterbegin',opt(atual));
+    sel.value=atual;
+  }
+  onDisciplinaListaChange(p);
+}
+// Seleciona uma disciplina na lista; se não houver correspondente, abre "Nova disciplina" já preenchida.
+// fuzzy=true (usado na extração por IA) também aceita nomes parecidos, ex: "Estatística" ≈ "Estatística Aplicada...".
+function setDisciplinaLista(p,nome,fuzzy){
+  const sel=document.getElementById(p+'-disciplina'); if(!sel) return;
+  const alvo=safeText(nome).trim();
+  sel.value=''; // evita herdar a escolha anterior ao repopular
+  popularDisciplinasLista(p);
+  if(!alvo){ sel.value=''; onDisciplinaListaChange(p); return; }
+  const opcoes=[...sel.options].filter(o=>o.value&&o.value!==DISC_NOVA);
+  let achada=opcoes.find(o=>normPlain(o.value)===normPlain(alvo));
+  if(!achada&&fuzzy) achada=opcoes.find(o=>namesMatch(o.value,alvo));
+  if(achada){ sel.value=achada.value; }
+  else{ sel.value=DISC_NOVA; const inp=document.getElementById(p+'-disciplina-nova'); if(inp) inp.value=alvo; }
+  onDisciplinaListaChange(p);
+}
+// Atalhos por formulário (os ids/handlers do HTML e o resto do código usam estes nomes)
+function getCritDisciplina(){return getDisciplinaLista('crit');}
+function onCritDisciplinaChange(){return onDisciplinaListaChange('crit');}
+function popularDisciplinasCriterio(){return popularDisciplinasLista('crit');}
+function setCritDisciplina(nome,fuzzy){return setDisciplinaLista('crit',nome,fuzzy);}
+function getTurmaDisciplina(){return getDisciplinaLista('t');}
+function onTurmaDisciplinaChange(){return onDisciplinaListaChange('t');}
+function popularDisciplinasTurma(){return popularDisciplinasLista('t');}
+function setTurmaDisciplina(nome,fuzzy){return setDisciplinaLista('t',nome,fuzzy);}
 function clearCriterioForm(){
   editingCriterioId=null;
-  ['crit-modulo','crit-disciplina','crit-texto'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['crit-modulo','crit-texto','crit-disciplina-nova'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const ano=document.getElementById('crit-ano'); if(ano) ano.value='';
+  setCritDisciplina(''); // depois de limpar Ano/Módulo, para a lista voltar ao estado "sem contexto"
   const tipo=document.getElementById('crit-tipo'); if(tipo) tipo.value='entender';
   const msg=document.getElementById('crit-msg'); if(msg){ msg.style.color='var(--muted2)'; msg.textContent='Formulário limpo.'; }
 }
@@ -3339,7 +3439,7 @@ function loadCriterioFixo(id){
   editingCriterioId=id;
   const ano=document.getElementById('crit-ano'); if(ano) ano.value=c.ano||'';
   document.getElementById('crit-modulo').value=c.modulo||'';
-  document.getElementById('crit-disciplina').value=c.disciplina||'';
+  setCritDisciplina(c.disciplina||'');
   document.getElementById('crit-tipo').value=c.tipo||'entender';
   document.getElementById('crit-texto').value=c.texto||'';
   const msg=document.getElementById('crit-msg'); if(msg){ msg.style.color='var(--green)'; msg.textContent='Critério carregado para edição.'; }
@@ -3349,7 +3449,7 @@ function loadCriterioFixo(id){
 async function saveCriterioFixo(){
   const ano=(document.getElementById('crit-ano')?.value||'').trim();
   const modulo=document.getElementById('crit-modulo').value.trim();
-  const disciplinaDigitada=document.getElementById('crit-disciplina').value.trim();
+  const disciplinaDigitada=getCritDisciplina();
   const tipo=document.getElementById('crit-tipo').value.trim();
   const texto=document.getElementById('crit-texto').value.trim();
   const msg=document.getElementById('crit-msg');
@@ -3369,6 +3469,7 @@ async function saveCriterioFixo(){
     editingCriterioId=row.id;
     msg.style.color='var(--green)';
     msg.textContent=(oldId&&oldId!==newId&&oldId!==baseId)?'✓ Critério salvo como novo tipo sem sobrescrever o anterior.':'✓ Critério salvo com sucesso.';
+    setCritDisciplina(disciplina);
     renderCriteriosList();syncNovaCriteriaContext();checkReady();
   }catch(e){msg.style.color='var(--red)';msg.textContent='Erro ao salvar: '+e.message;}
 }
@@ -3552,8 +3653,8 @@ function goTab(tab){
   if(tab==='historico')renderHistory();
   if(tab==='dashboard')renderDashboard();
   if(tab==='gabaritos')renderGabList();
-  if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();popularGabaritosParaExtracao();}
-  if(tab==='turmas')renderTurmasList();
+  if(tab==='criterios'){renderCriteriosList();syncNovaCriteriaContext();popularGabaritosParaExtracao();popularDisciplinasCriterio();}
+  if(tab==='turmas'){renderTurmasList();popularDisciplinasTurma();}
   if(tab==='migracao')renderMigracao();
   if(tab==='boletim')renderBuscaAluno();
   if(tab==='cadastro'){renderAlunosCadastro();renderDisciplinasCadastro();}
